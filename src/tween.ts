@@ -1,21 +1,22 @@
 ﻿module canvas2d {
 
-    interface EasingFunc {
-        (percent: number, transition?: any): number;
+    export interface EasingFunc {
+        (percent: number, other?: any): number;
     }
-    
+
     export var tween: { [index: string]: EasingFunc } = {
         easeInQuad: function (pos) {
             return Math.pow(pos, 2);
         },
 
         easeOutQuad: function (pos) {
-            return - (Math.pow((pos - 1), 2) - 1);
+            return -(Math.pow((pos - 1), 2) - 1);
         },
 
         easeInOutQuad: function (pos) {
-            if ((pos /= 0.5) < 1)
+            if ((pos /= 0.5) < 1) {
                 return 0.5 * Math.pow(pos, 2);
+            }
             return -0.5 * ((pos -= 2) * pos - 2);
         },
 
@@ -28,8 +29,9 @@
         },
 
         easeInOutCubic: function (pos) {
-            if ((pos /= 0.5) < 1)
+            if ((pos /= 0.5) < 1) {
                 return 0.5 * Math.pow(pos, 3);
+            }
             return 0.5 * (Math.pow((pos - 2), 3) + 2);
         },
 
@@ -38,7 +40,7 @@
         },
 
         easeOutQuart: function (pos) {
-            return - (Math.pow((pos - 1), 4) - 1)
+            return -(Math.pow((pos - 1), 4) - 1)
         },
 
         easeInOutQuart: function (pos) {
@@ -56,8 +58,9 @@
         },
 
         easeInOutQuint: function (pos) {
-            if ((pos /= 0.5) < 1)
+            if ((pos /= 0.5) < 1) {
                 return 0.5 * Math.pow(pos, 5);
+            }
             return 0.5 * (Math.pow((pos - 2), 5) + 2);
         },
 
@@ -70,7 +73,7 @@
         },
 
         easeInOutSine: function (pos) {
-            return (- .5 * (Math.cos(Math.PI * pos) - 1));
+            return (-.5 * (Math.cos(Math.PI * pos) - 1));
         },
 
         easeInExpo: function (pos) {
@@ -92,7 +95,7 @@
         },
 
         easeInCirc: function (pos) {
-            return - (Math.sqrt(1 - (pos * pos)) - 1);
+            return -(Math.sqrt(1 - (pos * pos)) - 1);
         },
 
         easeOutCirc: function (pos) {
@@ -108,11 +111,14 @@
         easeOutBounce: function (pos) {
             if ((pos) < (1 / 2.75)) {
                 return (7.5625 * pos * pos);
-            } else if (pos < (2 / 2.75)) {
+            }
+            else if (pos < (2 / 2.75)) {
                 return (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
-            } else if (pos < (2.5 / 2.75)) {
+            }
+            else if (pos < (2.5 / 2.75)) {
                 return (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
-            } else {
+            }
+            else {
                 return (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
             }
         },
@@ -141,7 +147,7 @@
         swingFromTo: function (pos) {
             var s = 1.70158;
             return ((pos /= 0.5) < 1) ? 0.5 * (pos * pos * (((s *= (1.525)) + 1) * pos - s)) :
-                0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2);
+            0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2);
         },
 
         swingFrom: function (pos) {
@@ -157,11 +163,14 @@
         bounce: function (pos) {
             if (pos < (1 / 2.75)) {
                 return (7.5625 * pos * pos);
-            } else if (pos < (2 / 2.75)) {
+            }
+            else if (pos < (2 / 2.75)) {
                 return (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
-            } else if (pos < (2.5 / 2.75)) {
+            }
+            else if (pos < (2.5 / 2.75)) {
                 return (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
-            } else {
+            }
+            else {
                 return (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
             }
         },
@@ -169,11 +178,14 @@
         bouncePast: function (pos) {
             if (pos < (1 / 2.75)) {
                 return (7.5625 * pos * pos);
-            } else if (pos < (2 / 2.75)) {
+            }
+            else if (pos < (2 / 2.75)) {
                 return 2 - (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
-            } else if (pos < (2.5 / 2.75)) {
+            }
+            else if (pos < (2.5 / 2.75)) {
                 return 2 - (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
-            } else {
+            }
+            else {
                 return 2 - (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
             }
         },

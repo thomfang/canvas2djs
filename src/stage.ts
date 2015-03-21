@@ -3,23 +3,19 @@
 
 module canvas2d.Stage {
 
-    interface OrientationChangedHandler {
-        (isPortrait: boolean): void;
-    }
-
-    var timerID       : number;
-    var lastUpdate    : number;
-    var bufferCanvas  : HTMLCanvasElement;
-    var bufferContext : CanvasRenderingContext2D;
+    var timerID: number;
+    var lastUpdate: number;
+    var bufferCanvas: HTMLCanvasElement;
+    var bufferContext: CanvasRenderingContext2D;
     var stageScaleMode: ScaleMode;
 
-    export var fps            : number = 30;
-    export var width          : number;
-    export var height         : number;
-    export var isRunning      : boolean = false;
+    export var fps: number = 30;
+    export var width: number;
+    export var height: number;
+    export var isRunning: boolean = false;
 
-    export var touchEnabled   : boolean = false;
-    export var mouseEnabled   : boolean = false;
+    export var touchEnabled: boolean = false;
+    export var mouseEnabled: boolean = false;
     export var keyboardEnabled: boolean = false;
 
     export var canvas: HTMLCanvasElement;
@@ -27,8 +23,6 @@ module canvas2d.Stage {
 
     export var sprite: Sprite;
     export var _scale: number;
-
-    export var onOrientationChange: OrientationChangedHandler;
 
     export enum ScaleMode {
         SHOW_ALL,
@@ -40,13 +34,13 @@ module canvas2d.Stage {
     function adjustStageSize(): void {
         var style = canvas.style;
         var device = {
-            width : window.innerWidth,
+            width: window.innerWidth,
             height: window.innerHeight
         };
-        var scaleX: number = device.width  / Stage.width;
+        var scaleX: number = device.width / Stage.width;
         var scaleY: number = device.height / Stage.height;
-        var scale : number;
-        var width : number;
+        var scale: number;
+        var width: number;
         var height: number;
 
         switch (stageScaleMode) {
@@ -55,7 +49,8 @@ module canvas2d.Stage {
                     scale = scaleX;
                     width = device.width;
                     height = scale * Stage.height;
-                } else {
+                }
+                else {
                     scale = scaleY;
                     width = scale * Stage.width;
                     height = device.height;
@@ -64,7 +59,8 @@ module canvas2d.Stage {
             case ScaleMode.NO_BORDER:
                 if (scaleX > scaleY) {
                     scale = scaleX;
-                } else {
+                }
+                else {
                     scale = scaleY;
                 }
                 width = Stage.width * scale;
@@ -84,10 +80,10 @@ module canvas2d.Stage {
                 throw new Error('Unknow stage scale mode "' + stageScaleMode + '"');
         }
 
-        style.width    = width + 'px';
-        style.height   = height + 'px';
-        style.top      = ((device.height - height) * 0.5) + 'px';
-        style.left     = ((device.width - width) * 0.5) + 'px';
+        style.width = width + 'px';
+        style.height = height + 'px';
+        style.top = ((device.height - height) * 0.5) + 'px';
+        style.left = ((device.width - width) * 0.5) + 'px';
         style.position = 'absolute';
 
         _scale = scale;
@@ -95,15 +91,6 @@ module canvas2d.Stage {
 
     function initScreenEvent(): void {
         window.addEventListener("resize", adjustStageSize);
-
-        window.addEventListener("orientationchange", () => {
-            var orientation = window.orientation;
-
-            if (typeof orientation === 'number' && onOrientationChange) {
-                var isPortrait = orientation === 0 || orientation === 180;
-                onOrientationChange(isPortrait);
-            }
-        }, true);
     }
 
     function getDeltaTime(): number {
@@ -115,8 +102,8 @@ module canvas2d.Stage {
     }
 
     function step(): void {
-        var width    : number = canvas.width;
-        var height   : number = canvas.height;
+        var width: number = canvas.width;
+        var height: number = canvas.height;
         var deltaTime: number = getDeltaTime();
 
         Action._step(deltaTime);
@@ -134,23 +121,23 @@ module canvas2d.Stage {
 
     export function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode): void {
         sprite = new Sprite({
-            x     : width  * 0.5,
-            y     : height * 0.5,
-            width : width,
+            x: width * 0.5,
+            y: height * 0.5,
+            width: width,
             height: height
         });
 
 
         stageScaleMode = scaleMode;
 
-        this.canvas    = canvas;
-        this.context   = canvas.getContext('2d');
+        this.canvas = canvas;
+        this.context = canvas.getContext('2d');
 
-        bufferCanvas   = document.createElement("canvas");
-        bufferContext  = bufferCanvas.getContext("2d");
+        bufferCanvas = document.createElement("canvas");
+        bufferContext = bufferCanvas.getContext("2d");
 
-        this.width     = canvas.width  = bufferCanvas.width  = width;
-        this.height    = canvas.height = bufferCanvas.height = height;
+        this.width = canvas.width = bufferCanvas.width = width;
+        this.height = canvas.height = bufferCanvas.height = height;
 
         adjustStageSize();
         initScreenEvent();
@@ -179,7 +166,7 @@ module canvas2d.Stage {
     export function addChild(child: Sprite): void {
         sprite.addChild(child);
     }
-    
+
     export function removeChild(child: Sprite): void {
         sprite.removeChild(child);
     }

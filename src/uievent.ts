@@ -3,39 +3,39 @@
 module canvas2d.UIEvent {
 
     interface EventHelper {
-        identifier? : number;
-        beginX      : number;
-        beginY      : number;
-        localX?     : number;
-        localY?     : number;
-        stageX?     : number;
-        stageY?     : number;
-        _moved?     : boolean;
+        identifier?: number;
+        beginX: number;
+        beginY: number;
+        localX?: number;
+        localY?: number;
+        stageX?: number;
+        stageY?: number;
+        _moved?: boolean;
         beginTarget?: Sprite;
-        target?     : Sprite;
+        target?: Sprite;
     }
 
     interface Rect {
-        x     : number;
-        y     : number;
-        width : number;
+        x: number;
+        y: number;
+        width: number;
         height: number;
     }
 
-    var keyDown        = "keydown";
-    var keyUp          = "keyup";
+    var keyDown = "keydown";
+    var keyUp = "keyup";
 
-    var touchBegin     = "touchstart";
-    var touchMoved     = "touchmove";
-    var touchEnded     = "touchend";
+    var touchBegin = "touchstart";
+    var touchMoved = "touchmove";
+    var touchEnded = "touchend";
 
-    var mouseBegin     = "mousedown";
-    var mouseMoved     = "mousemove";
-    var mouseEnded     = "mouseup";
+    var mouseBegin = "mousedown";
+    var mouseMoved = "mousemove";
+    var mouseEnded = "mouseup";
 
-    var ON_CLICK       = "onclick";
-    var ON_KEY_UP      = "onkeyup";
-    var ON_KEY_DOWN    = "onkeydown";
+    var ON_CLICK = "onclick";
+    var ON_KEY_UP = "onkeyup";
+    var ON_KEY_DOWN = "onkeydown";
 
     var ON_TOUCH_BEGIN = "ontouchbegin";
     var ON_TOUCH_MOVED = "ontouchmoved";
@@ -78,7 +78,7 @@ module canvas2d.UIEvent {
         for (var i: number = 0, x: number, y: number, id: number, transformed, touch; touch = touches[i]; i++) {
             id = touch.identifier;
             x = (touch.clientX - pos.left) / Stage._scale;
-            y = (touch.clientY - pos.top)  / Stage._scale;
+            y = (touch.clientY - pos.top) / Stage._scale;
 
             transformed = touchMap[id];
 
@@ -88,7 +88,8 @@ module canvas2d.UIEvent {
                     beginX: x,
                     beginY: y
                 };
-            } else if (!justGet) {
+            }
+            else if (!justGet) {
                 transformed._moved = x - transformed.beginX !== 0 || y - transformed.beginY !== 0;
             }
 
@@ -103,14 +104,15 @@ module canvas2d.UIEvent {
     function transformLocation(event): EventHelper {
         var pos = Stage.canvas.getBoundingClientRect();
         var x = (event.clientX - pos.left) / Stage._scale;
-        var y = (event.clientY - pos.top)  / Stage._scale;
+        var y = (event.clientY - pos.top) / Stage._scale;
 
         if (!mouseLoc) {
             mouseLoc = {
                 beginX: x,
                 beginY: y
             };
-        } else {
+        }
+        else {
             mouseLoc._moved = x - mouseLoc.beginX !== 0 || y - mouseLoc.beginY !== 0;
         }
 
@@ -121,8 +123,8 @@ module canvas2d.UIEvent {
     }
 
     function isRectContainPoint(rect: Rect, p: EventHelper) {
-        return rect.x <= p.stageX && rect.x + rect.width  >= p.stageX &&
-               rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
+        return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
+            rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
     }
 
     function touchBeginHandler(event) {
@@ -234,7 +236,7 @@ module canvas2d.UIEvent {
     }
 
     function keyDownHandler(event) {
-        if(!Stage.isRunning || !Stage.keyboardEnabled) {
+        if (!Stage.isRunning || !Stage.keyboardEnabled) {
             return;
         }
         dispatchKeyboard(Stage.sprite, event.keyCode, event, ON_KEY_DOWN);
@@ -278,9 +280,9 @@ module canvas2d.UIEvent {
 
         var hits: EventHelper[] = [];
         var rect: Rect = {
-            x     : offsetX,
-            y     : offsetY,
-            width : sprite.width,
+            x: offsetX,
+            y: offsetY,
+            width: sprite.width,
             height: sprite.height
         };
 
@@ -334,9 +336,9 @@ module canvas2d.UIEvent {
         }
 
         var rect: Rect = {
-            x     : offsetX,
-            y     : offsetY,
-            width : sprite.width,
+            x: offsetX,
+            y: offsetY,
+            width: sprite.width,
             height: sprite.height
         };
 

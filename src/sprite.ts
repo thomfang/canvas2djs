@@ -3,76 +3,76 @@
 
 module canvas2d {
 
-    interface SpriteAttrs {
-        x?              : number;
-        y?              : number;
-        width?          : number;
-        height?         : number;
-        scaleX?         : number;
-        scaleY?         : number;
-        originX?        : number;
-        originY?        : number;
-        bgColor?        : string;
-        texture?        : Texture;
-        rotation?       : number;
-        opacity?        : number;
-        visible?        : boolean;
-        flippedX?       : boolean;
-        flippedY?       : boolean;
-        sourceX?        : number;
-        sourceY?        : number;
-        sourceWidth?    : number;
-        sourceHeight?   : number;
-        lighterMode?    : boolean;
-        touchEnabled?   : boolean;
-        mouseEnabled?   : boolean;
+    export interface SpriteAttrs {
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        scaleX?: number;
+        scaleY?: number;
+        originX?: number;
+        originY?: number;
+        bgColor?: string;
+        texture?: Texture;
+        rotation?: number;
+        opacity?: number;
+        visible?: boolean;
+        flippedX?: boolean;
+        flippedY?: boolean;
+        sourceX?: number;
+        sourceY?: number;
+        sourceWidth?: number;
+        sourceHeight?: number;
+        lighterMode?: boolean;
+        touchEnabled?: boolean;
+        mouseEnabled?: boolean;
         keyboardEnabled?: boolean;
     }
 
     var RAD_PER_DEG: number = Math.PI / 180;
 
     export class Sprite {
-        private _width       : number = 0;
-        private _height      : number = 0;
-        private _originX     : number = 0.5;
-        private _originY     : number = 0.5;
-        private _rotation    : number = 0;
-        private _rotationRad : number = 0;
-        private _texture     : Texture;
+        private _width: number = 0;
+        private _height: number = 0;
+        private _originX: number = 0.5;
+        private _originY: number = 0.5;
+        private _rotation: number = 0;
+        private _rotationRad: number = 0;
+        private _texture: Texture;
 
 
         _originPixelX: number = 0;
         _originPixelY: number = 0;
 
-        x           : number = 0;
-        y           : number = 0;
-        scaleX      : number = 1;
-        scaleY      : number = 1;
-        sourceX     : number = 0;
-        sourceY     : number = 0;
-        opacity     : number = 1;
+        x: number = 0;
+        y: number = 0;
+        scaleX: number = 1;
+        scaleY: number = 1;
+        sourceX: number = 0;
+        sourceY: number = 0;
+        opacity: number = 1;
 
-        lighterMode : boolean = false;
-        autoResize  : boolean = true;
-        flippedX    : boolean = false;
-        flippedY    : boolean = false;
-        visible     : boolean = true;
+        lighterMode: boolean = false;
+        autoResize: boolean = true;
+        flippedX: boolean = false;
+        flippedY: boolean = false;
+        visible: boolean = true;
 
-        sourceWidth : number;
+        sourceWidth: number;
         sourceHeight: number;
-        bgColor     : string;
-        parent      : Sprite;
-        children    : Sprite[];
-        
-        touchEnabled   : boolean = true;
-        mouseEnabled   : boolean = true;
+        bgColor: string;
+        parent: Sprite;
+        children: Sprite[];
+
+        touchEnabled: boolean = true;
+        mouseEnabled: boolean = true;
         keyboardEnabled: boolean = true;
 
         constructor(attrs?: SpriteAttrs) {
             var name: string;
 
             for (name in attrs) {
-                this[name] = attrs[name];
+                (<any>this)[name] = (<any>attrs)[name];
             }
 
             if (this.init) {
@@ -84,6 +84,7 @@ module canvas2d {
             this._width = value;
             this._originPixelX = this._width * this._originX;
         }
+
         get width(): number {
             return this._width;
         }
@@ -92,6 +93,7 @@ module canvas2d {
             this._height = value;
             this._originPixelY = this._height * this._originY;
         }
+
         get height(): number {
             return this._height;
         }
@@ -100,6 +102,7 @@ module canvas2d {
             this._originX = value;
             this._originPixelX = this._originX * this._width;
         }
+
         get originX(): number {
             return this._originX;
         }
@@ -108,6 +111,7 @@ module canvas2d {
             this._originY = value;
             this._originPixelY = this._originY * this._height;
         }
+
         get originY(): number {
             return this._originY;
         }
@@ -116,6 +120,7 @@ module canvas2d {
             this._rotation = value;
             this._rotationRad = this._rotation * RAD_PER_DEG;
         }
+
         get rotation(): number {
             return this._rotation;
         }
@@ -126,13 +131,15 @@ module canvas2d {
             if (this.autoResize) {
                 if (value) {
                     this.width = value.width;
-                    this.height =  value.height;
-                } else {
+                    this.height = value.height;
+                }
+                else {
                     this.width = 0;
                     this.height = 0;
                 }
             }
         }
+
         get texture() {
             return this._texture;
         }
@@ -220,7 +227,7 @@ module canvas2d {
             if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
                 var sx: number = this.sourceX;
                 var sy: number = this.sourceY;
-                var sw: number = this.sourceWidth  == null ? texture.width  : this.sourceWidth;
+                var sw: number = this.sourceWidth == null ? texture.width : this.sourceWidth;
                 var sh: number = this.sourceHeight == null ? texture.height : this.sourceHeight;
 
                 context.drawImage(
@@ -230,8 +237,11 @@ module canvas2d {
             }
         }
 
-        init(): void { }
-        update(deltaTime: number): void { }
+        init(): void {
+        }
+
+        update(deltaTime: number): void {
+        }
 
         addChild(target: Sprite, position?: number): void {
             if (target.parent) {
@@ -247,7 +257,8 @@ module canvas2d {
             if (children.indexOf(target) === -1) {
                 if (position > -1 && position < children.length) {
                     children.splice(position, 0, target);
-                } else {
+                }
+                else {
                     children.push(target);
                 }
                 target.parent = this;

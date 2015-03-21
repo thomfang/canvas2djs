@@ -4,12 +4,12 @@
 module canvas2d {
 
     interface ActionAttr {
-        name  : string;
-        dest  : number;
+        name: string;
+        dest: number;
         easing: string;
     }
 
-    interface ActionArg {
+    export interface ActionArg {
         [index: string]: any;
     }
 
@@ -21,30 +21,31 @@ module canvas2d {
         end(sprite: Sprite): void;
     }
 
-    function ensureItem(array: any[], item: any): void {
+    function ensureItem(array: Array<any>, item: any): void {
         if (array.indexOf(item) < 0) {
             array.push(item);
         }
     }
 
-    function removeItem(array: any[], item: any): void {
+    function removeItem(array: Array<any>, item: any): void {
         var index = array.indexOf(item);
         if (index > -1) {
             array.splice(index, 1);
         }
     }
 
-    function publish(callbackList: Function[]): void {
+    function publish(callbackList: Array<Function>): void {
         callbackList.forEach((callback) => {
             callback();
         });
     }
 
     class Callback implements ActionDefinition {
-        done     : boolean = false;
+        done: boolean = false;
         immediate: boolean = true;
 
-        constructor(public func: Function) { }
+        constructor(public func: Function) {
+        }
 
         step(): void {
             if (!this.done) {
@@ -59,11 +60,12 @@ module canvas2d {
     }
 
     class Delay implements ActionDefinition {
-        done     : boolean = false;
-        elapsed  : number = 0;
+        done: boolean = false;
+        elapsed: number = 0;
         immediate: boolean = true;
 
-        constructor(public duration: number) { }
+        constructor(public duration: number) {
+        }
 
         step(deltaTime: number): void {
             this.elapsed += deltaTime;
@@ -72,28 +74,29 @@ module canvas2d {
             }
         }
 
-        end(): void { }
+        end(): void {
+        }
     }
 
     class Transition implements ActionDefinition {
-        done     : boolean           = false;
-        immediate: boolean           = false;
-        elapsed  : number            = 0;
-        attrs    : Array<ActionAttr> = [];
+        done: boolean = false;
+        immediate: boolean = false;
+        elapsed: number = 0;
+        attrs: Array<ActionAttr> = [];
 
-        starts   : { [index: string]: number } = {};
-        deltas   : { [index: string]: number } = {};
+        starts: { [index: string]: number } = {};
+        deltas: { [index: string]: number } = {};
 
         constructor(attrs: ActionArg, public duration: number) {
-            var name : string;
+            var name: string;
             var value: any;
 
             for (name in attrs) {
                 value = attrs[name];
 
                 this.attrs.push({
-                    name  : name,
-                    dest  : typeof value === 'object' ? value.dest : value,
+                    name: name,
+                    dest: typeof value === 'object' ? value.dest : value,
                     easing: value.easing || 'easeInOutQuad'
                 });
             }
@@ -107,45 +110,45 @@ module canvas2d {
             }
             else {
                 var percent = this.elapsed / this.duration;
-                var starts  = this.starts;
-                var deltas  = this.deltas;
+                var starts = this.starts;
+                var deltas = this.deltas;
 
                 var start: number;
-                var dest : number;
+                var dest: number;
                 var delta: number;
-                var name : string;
+                var name: string;
 
                 this.attrs.forEach((attr) => {
-                    name  = attr.name;
-                    dest  = attr.dest;
+                    name = attr.name;
+                    dest = attr.dest;
                     delta = tween[attr.easing](percent);
                     start = starts[name];
 
                     if (start == null) {
-                        start = starts[name] = sprite[name];
+                        start = starts[name] = (<any>sprite)[name];
                         deltas[name] = dest - start;
                     }
 
-                    sprite[name] = start + (delta * deltas[name]);
+                    (<any>sprite)[name] = start + (delta * deltas[name]);
                 });
             }
         }
 
         end(sprite: Sprite): void {
             this.attrs.forEach((attr) => {
-                sprite[attr.name] = attr.dest;
+                (<any>sprite)[attr.name] = attr.dest;
             });
             this.done = true;
         }
     }
 
     class Animation implements ActionDefinition {
-        done      : boolean = false;
-        immediate : boolean = false;
-        elapsed   : number  = 0;
-        count     : number  = 0;
-        frameIndex: number  = 0;
-        interval  : number;
+        done: boolean = false;
+        immediate: boolean = false;
+        elapsed: number = 0;
+        count: number = 0;
+        frameIndex: number = 0;
+        interval: number;
 
         constructor(public frameList: Texture[], frameRate: number, public repetitions?: number) {
             this.interval = 1 / frameRate;
@@ -164,7 +167,8 @@ module canvas2d {
                     }
 
                     this.count++;
-                } else {
+                }
+                else {
                     this.done = true;
                 }
 
@@ -172,15 +176,17 @@ module canvas2d {
             }
         }
 
-        end() { }
+        end() {
+        }
     }
 
-    class Listener {
+    export class Listener {
 
         private _resolved: boolean = false;
         private _callback: { any?: Array<Function>; all?: Array<Function> } = {};
-        
-        constructor(private _actions: Array<Action>) { }
+
+        constructor(private _actions: Array<Action>) {
+        }
 
         allDone(callback: Function): Listener {
             if (this._resolved) {
@@ -199,7 +205,8 @@ module canvas2d {
         anyDone(callback: Function): Listener {
             if (this._resolved) {
                 callback();
-            } else {
+            }
+            else {
                 if (!this._callback.any) {
                     this._callback.any = [];
                 }
@@ -209,14 +216,15 @@ module canvas2d {
             return this;
         }
 
-        private _step(): void {
+        _step(): void {
             var allDone: boolean = true;
             var anyDone: boolean = false;
 
             this._actions.forEach((action) => {
                 if (action._done) {
                     anyDone = true;
-                } else {
+                }
+                else {
                     allDone = false;
                 }
             });
@@ -237,14 +245,15 @@ module canvas2d {
     export class Action {
 
         static _actionList: Array<Action> = [];
-        static _listenerList = [];
+        static _listenerList: Array<Listener> = [];
 
         private _queue: Array<ActionDefinition> = [];
 
-        _done  : boolean = false;
+        _done: boolean = false;
         running: boolean = false;
 
-        constructor(public sprite: Sprite) { }
+        constructor(public sprite: Sprite) {
+        }
 
         static stop(sprite: Sprite) {
             Action._actionList.slice().forEach((action) => {
@@ -262,10 +271,10 @@ module canvas2d {
 
         static _step(deltaTime: number): void {
             var actionList: Array<Action> = Action._actionList;
-            var i         : number = 0;
-            var action    : Action;
+            var i: number = 0;
+            var action: Action;
 
-            for ( ; action = actionList[i]; i++) {
+            for (; action = actionList[i]; i++) {
                 action._step(deltaTime);
 
                 if (action._done) {
@@ -278,7 +287,7 @@ module canvas2d {
             });
         }
 
-        private _step(deltaTime: number) {
+        private _step(deltaTime: number): void {
             if (!this._queue.length) {
                 return;
             }
@@ -294,7 +303,8 @@ module canvas2d {
                     this._done = true;
                     this.running = false;
                     this.sprite = null;
-                } else if (action.immediate) {
+                }
+                else if (action.immediate) {
                     this._step(deltaTime);
                 }
             }
@@ -317,7 +327,7 @@ module canvas2d {
             return this;
         }
 
-        to(attrs: ActionArg, duration: number) {
+        to(attrs: ActionArg, duration: number): Action {
             this._queue.push(new Transition(attrs, duration));
             return this;
         }
@@ -331,8 +341,8 @@ module canvas2d {
         }
 
         stop() {
-            this._done         = true;
-            this.running       = false;
+            this._done = true;
+            this.running = false;
             this._queue.length = 0;
 
             removeItem(Action._actionList, this);

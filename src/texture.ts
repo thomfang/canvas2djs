@@ -1,14 +1,14 @@
 ﻿module canvas2d {
 
-    interface Rect {
-        x     : number;
-        y     : number;
-        width : number;
+    export interface Rect {
+        x: number;
+        y: number;
+        width: number;
         height: number;
     }
 
-    var cache  : { [index: string]: Texture } = {};
-    var loaded : { [index: string]: boolean } = {};
+    var cache: { [index: string]: Texture } = {};
+    var loaded: { [index: string]: boolean } = {};
     var loading: { [index: string]: boolean } = {};
 
     function getName(source: any, rect?: Rect): any {
@@ -19,16 +19,16 @@
         }
 
         var src = isStr ? source : source.src;
-        var str = rect  ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
+        var str = rect ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
 
         return src + str;
     }
 
     function createCanvas(image: HTMLImageElement, rect: Rect): HTMLCanvasElement {
-        var canvas :  HTMLCanvasElement       = document.createElement("canvas");
+        var canvas: HTMLCanvasElement = document.createElement("canvas");
         var context: CanvasRenderingContext2D = canvas.getContext('2d');
 
-        canvas.width  = rect.width;
+        canvas.width = rect.width;
         canvas.height = rect.height;
 
         context.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, rect.width, rect.height);
@@ -37,9 +37,9 @@
     }
 
     export class Texture {
-        ready : boolean = false;
-        width : number  = 0;
-        height: number  = 0;
+        ready: boolean = false;
+        width: number = 0;
+        height: number = 0;
         source: HTMLCanvasElement;
 
         static create(source: any, rect?: Rect): Texture {
@@ -109,10 +109,10 @@
 
             var source: HTMLCanvasElement = createCanvas(image, rect);
 
-            this.width  = source.width;
+            this.width = source.width;
             this.height = source.height;
             this.source = source;
-            this.ready  = true;
+            this.ready = true;
         }
     }
 }

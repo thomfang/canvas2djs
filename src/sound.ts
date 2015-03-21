@@ -6,13 +6,13 @@
     export var extention: string = ".mp3";
     export var supportedType: { [index: string]: boolean } = {};
 
-    interface Resource {
+    export interface Resource {
         name: string;
         channels?: number;
     }
 
     export function load(basePath: string, name: string, onComplete: Function, channels = 1) {
-        var path : string           = basePath + name + extention;
+        var path: string = basePath + name + extention;
         var audio: HTMLAudioElement = document.createElement("audio");
 
         function onCanPlayThrough() {
@@ -30,11 +30,11 @@
         }
 
         audio.addEventListener('canplaythrough', onCanPlayThrough, false);
-        audio.addEventListener('error',          onError,          false);
+        audio.addEventListener('error', onError, false);
 
-        audio.preload    = "auto";
+        audio.preload = "auto";
         audio.autobuffer = true;
-        audio.src        = path;
+        audio.src = path;
 
         audio.load();
 
@@ -50,7 +50,7 @@
         }
     }
 
-    export function loadList(basePath: string, resList: Array<Resource>, callback: Function) {
+    export function loadList(basePath: string, resList: Array<Resource>, callback?: Function) {
         var counter = resList.length;
 
         function onCompleted() {
@@ -102,7 +102,8 @@
             if (loop) {
                 audio.loop = true;
                 audio.addEventListener("ended", replay, false);
-            } else {
+            }
+            else {
                 audio.loop = false;
                 audio.removeEventListener("ended", replay, false);
             }
@@ -151,6 +152,6 @@
 
         aud = null;
     }
-    
+
     detectSupportedType();
 }
