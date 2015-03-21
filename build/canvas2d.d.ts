@@ -181,11 +181,11 @@ declare module canvas2d.Stage {
 }
 declare module canvas2d {
     interface TextLabelAttrs extends Sprite {
-        fontName: string;
-        textAlign: string;
-        fontColor: string;
-        fontSize: number;
-        lineSpace: number;
+        fontName?: string;
+        textAlign?: string;
+        fontColor?: string;
+        fontSize?: number;
+        lineSpace?: number;
     }
     class TextLabel extends Sprite {
         fontName: string;

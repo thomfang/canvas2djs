@@ -3,11 +3,11 @@
 module canvas2d {
 
     export interface TextLabelAttrs extends Sprite {
-        fontName: string;
-        textAlign: string;
-        fontColor: string;
-        fontSize: number;
-        lineSpace: number;
+        fontName?: string;
+        textAlign?: string;
+        fontColor?: string;
+        fontSize?: number;
+        lineSpace?: number;
     }
 
     var measureContext = document.createElement("canvas").getContext("2d");
