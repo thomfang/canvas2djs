@@ -1,100 +1,98 @@
-﻿module canvas2d.UIEvent {
+﻿module canvas2d.UIEvent.key {
 
-    export var key: { [index: string]: number } = {
-        MOUSE_LEFT: 1,
-        MOUSE_MID: 2,
-        MOUSE_RIGHT: 3,
+    export var MOUSE_LEFT: number = 1;
+    export var MOUSE_MID: number = 2;
+    export var MOUSE_RIGHT: number = 3;
 
-        BACKSPACE: 8,
-        TAB: 9,
-        NUM_CENTER: 12,
-        ENTER: 13,
-        RETURN: 13,
-        SHIFT: 16,
-        CTRL: 17,
-        ALT: 18,
-        PAUSE: 19,
-        CAPS_LOCK: 20,
-        ESC: 27,
-        ESCAPE: 27,
-        SPACE: 32,
-        PAGE_UP: 33,
-        PAGE_DOWN: 34,
-        END: 35,
-        HOME: 36,
-        LEFT: 37,
-        UP: 38,
-        RIGHT: 39,
-        DOWN: 40,
-        PRINT_SCREEN: 44,
-        INSERT: 45,
-        DELETE: 46,
+    export var BACKSPACE: number = 8;
+    export var TAB: number = 9;
+    export var NUM_CENTER: number = 12;
+    export var ENTER: number = 13;
+    export var RETURN: number = 13;
+    export var SHIFT: number = 16;
+    export var CTRL: number = 17;
+    export var ALT: number = 18;
+    export var PAUSE: number = 19;
+    export var CAPS_LOCK: number = 20;
+    export var ESC: number = 27;
+    export var ESCAPE: number = 27;
+    export var SPACE: number = 32;
+    export var PAGE_UP: number = 33;
+    export var PAGE_DOWN: number = 34;
+    export var END: number = 35;
+    export var HOME: number = 36;
+    export var LEFT: number = 37;
+    export var UP: number = 38;
+    export var RIGHT: number = 39;
+    export var DOWN: number = 40;
+    export var PRINT_SCREEN: number = 44;
+    export var INSERT: number = 45;
+    export var DELETE: number = 46;
 
-        ZERO: 48,
-        ONE: 49,
-        TWO: 50,
-        THREE: 51,
-        FOUR: 52,
-        FIVE: 53,
-        SIX: 54,
-        SEVEN: 55,
-        EIGHT: 56,
-        NINE: 57,
+    export var ZERO: number = 48;
+    export var ONE: number = 49;
+    export var TWO: number = 50;
+    export var THREE: number = 51;
+    export var FOUR: number = 52;
+    export var FIVE: number = 53;
+    export var SIX: number = 54;
+    export var SEVEN: number = 55;
+    export var EIGHT: number = 56;
+    export var NINE: number = 57;
 
-        A: 65,
-        B: 66,
-        C: 67,
-        D: 68,
-        E: 69,
-        F: 70,
-        G: 71,
-        H: 72,
-        I: 73,
-        J: 74,
-        K: 75,
-        L: 76,
-        M: 77,
-        N: 78,
-        O: 79,
-        P: 80,
-        Q: 81,
-        R: 82,
-        S: 83,
-        T: 84,
-        U: 85,
-        V: 86,
-        W: 87,
-        X: 88,
-        Y: 89,
-        Z: 90,
+    export var A: number = 65;
+    export var B: number = 66;
+    export var C: number = 67;
+    export var D: number = 68;
+    export var E: number = 69;
+    export var F: number = 70;
+    export var G: number = 71;
+    export var H: number = 72;
+    export var I: number = 73;
+    export var J: number = 74;
+    export var K: number = 75;
+    export var L: number = 76;
+    export var M: number = 77;
+    export var N: number = 78;
+    export var O: number = 79;
+    export var P: number = 80;
+    export var Q: number = 81;
+    export var R: number = 82;
+    export var S: number = 83;
+    export var T: number = 84;
+    export var U: number = 85;
+    export var V: number = 86;
+    export var W: number = 87;
+    export var X: number = 88;
+    export var Y: number = 89;
+    export var Z: number = 90;
 
-        CONTEXT_MENU: 93,
-        NUM0: 96,
-        NUM1: 97,
-        NUM2: 98,
-        NUM3: 99,
-        NUM4: 100,
-        NUM5: 101,
-        NUM6: 102,
-        NUM7: 103,
-        NUM8: 104,
-        NUM9: 105,
-        NUM_MULTIPLY: 106,
-        NUM_PLUS: 107,
-        NUM_MINUS: 109,
-        NUM_PERIOD: 110,
-        NUM_DIVISION: 111,
-        F1: 112,
-        F2: 113,
-        F3: 114,
-        F4: 115,
-        F5: 116,
-        F6: 117,
-        F7: 118,
-        F8: 119,
-        F9: 120,
-        F10: 121,
-        F11: 122,
-        F12: 123
-    }
+    export var CONTEXT_MENU: number = 93;
+    export var NUM0: number = 96;
+    export var NUM1: number = 97;
+    export var NUM2: number = 98;
+    export var NUM3: number = 99;
+    export var NUM4: number = 100;
+    export var NUM5: number = 101;
+    export var NUM6: number = 102;
+    export var NUM7: number = 103;
+    export var NUM8: number = 104;
+    export var NUM9: number = 105;
+    export var NUM_MULTIPLY: number = 106;
+    export var NUM_PLUS: number = 107;
+    export var NUM_MINUS: number = 109;
+    export var NUM_PERIOD: number = 110;
+    export var NUM_DIVISION: number = 111;
+    export var F1: number = 112;
+    export var F2: number = 113;
+    export var F3: number = 114;
+    export var F4: number = 115;
+    export var F5: number = 116;
+    export var F6: number = 117;
+    export var F7: number = 118;
+    export var F8: number = 119;
+    export var F9: number = 120;
+    export var F10: number = 121;
+    export var F11: number = 122;
+    export var F12: number = 123
 }

@@ -118,6 +118,9 @@ var canvas2d;
             this.touchEnabled = true;
             this.mouseEnabled = true;
             this.keyboardEnabled = true;
+            this._init(attrs);
+        }
+        Sprite.prototype._init = function (attrs) {
             var name;
             for (name in attrs) {
                 this[name] = attrs[name];
@@ -125,7 +128,7 @@ var canvas2d;
             if (this.init) {
                 this.init();
             }
-        }
+        };
         Object.defineProperty(Sprite.prototype, "width", {
             get: function () {
                 return this._width;
@@ -233,6 +236,9 @@ var canvas2d;
             if (this.flippedY) {
                 sy = -sy;
             }
+            if (sx !== 1 || sy !== 1) {
+                context.scale(sx, sy);
+            }
             var rotationRad = this._rotationRad % 360;
             if (rotationRad !== 0) {
                 context.rotate(rotationRad);
@@ -271,7 +277,7 @@ var canvas2d;
                 var sy = this.sourceY;
                 var sw = this.sourceWidth == null ? texture.width : this.sourceWidth;
                 var sh = this.sourceHeight == null ? texture.height : this.sourceHeight;
-                context.drawImage(texture.source, sx, sy, sw, sh, -this._originX, -this._originY, this.width, this.height);
+                context.drawImage(texture.source, sx, sy, sw, sh, -this._originPixelY, -this._originPixelY, this.width, this.height);
             }
         };
         Sprite.prototype.init = function () {
@@ -653,15 +659,14 @@ var canvas2d;
         Animation.prototype.step = function (deltaTime, sprite) {
             this.elapsed += deltaTime;
             if (this.elapsed >= this.interval) {
-                if (this.repetitions == null || this.count < this.repetitions) {
-                    sprite.texture = this.frameList[this.frameIndex++];
-                    if (this.frameIndex === this.frameList.length) {
+                sprite.texture = this.frameList[this.frameIndex++];
+                if (this.frameIndex === this.frameList.length) {
+                    if (this.repetitions == null || ++this.count < this.repetitions) {
                         this.frameIndex = 0;
                     }
-                    this.count++;
-                }
-                else {
-                    this.done = true;
+                    else {
+                        this.done = true;
+                    }
                 }
                 this.elapsed = 0;
             }
@@ -1388,14 +1393,17 @@ var canvas2d;
     var TextLabel = (function (_super) {
         __extends(TextLabel, _super);
         function TextLabel(attrs) {
-            _super.call(this, attrs);
+            _super.call(this);
             this.fontName = 'Arial';
             this.textAlign = 'center';
             this.fontColor = '#000';
             this.fontSize = 20;
             this.lineSpace = 5;
             this._text = '';
+            _super.prototype._init.call(this, attrs);
         }
+        TextLabel.prototype._init = function (attrs) {
+        };
         Object.defineProperty(TextLabel.prototype, "text", {
             get: function () {
                 return this._text;
@@ -1463,98 +1471,99 @@ var canvas2d;
 (function (canvas2d) {
     var UIEvent;
     (function (UIEvent) {
-        UIEvent.key = {
-            MOUSE_LEFT: 1,
-            MOUSE_MID: 2,
-            MOUSE_RIGHT: 3,
-            BACKSPACE: 8,
-            TAB: 9,
-            NUM_CENTER: 12,
-            ENTER: 13,
-            RETURN: 13,
-            SHIFT: 16,
-            CTRL: 17,
-            ALT: 18,
-            PAUSE: 19,
-            CAPS_LOCK: 20,
-            ESC: 27,
-            ESCAPE: 27,
-            SPACE: 32,
-            PAGE_UP: 33,
-            PAGE_DOWN: 34,
-            END: 35,
-            HOME: 36,
-            LEFT: 37,
-            UP: 38,
-            RIGHT: 39,
-            DOWN: 40,
-            PRINT_SCREEN: 44,
-            INSERT: 45,
-            DELETE: 46,
-            ZERO: 48,
-            ONE: 49,
-            TWO: 50,
-            THREE: 51,
-            FOUR: 52,
-            FIVE: 53,
-            SIX: 54,
-            SEVEN: 55,
-            EIGHT: 56,
-            NINE: 57,
-            A: 65,
-            B: 66,
-            C: 67,
-            D: 68,
-            E: 69,
-            F: 70,
-            G: 71,
-            H: 72,
-            I: 73,
-            J: 74,
-            K: 75,
-            L: 76,
-            M: 77,
-            N: 78,
-            O: 79,
-            P: 80,
-            Q: 81,
-            R: 82,
-            S: 83,
-            T: 84,
-            U: 85,
-            V: 86,
-            W: 87,
-            X: 88,
-            Y: 89,
-            Z: 90,
-            CONTEXT_MENU: 93,
-            NUM0: 96,
-            NUM1: 97,
-            NUM2: 98,
-            NUM3: 99,
-            NUM4: 100,
-            NUM5: 101,
-            NUM6: 102,
-            NUM7: 103,
-            NUM8: 104,
-            NUM9: 105,
-            NUM_MULTIPLY: 106,
-            NUM_PLUS: 107,
-            NUM_MINUS: 109,
-            NUM_PERIOD: 110,
-            NUM_DIVISION: 111,
-            F1: 112,
-            F2: 113,
-            F3: 114,
-            F4: 115,
-            F5: 116,
-            F6: 117,
-            F7: 118,
-            F8: 119,
-            F9: 120,
-            F10: 121,
-            F11: 122,
-            F12: 123
-        };
+        var key;
+        (function (key) {
+            key.MOUSE_LEFT = 1;
+            key.MOUSE_MID = 2;
+            key.MOUSE_RIGHT = 3;
+            key.BACKSPACE = 8;
+            key.TAB = 9;
+            key.NUM_CENTER = 12;
+            key.ENTER = 13;
+            key.RETURN = 13;
+            key.SHIFT = 16;
+            key.CTRL = 17;
+            key.ALT = 18;
+            key.PAUSE = 19;
+            key.CAPS_LOCK = 20;
+            key.ESC = 27;
+            key.ESCAPE = 27;
+            key.SPACE = 32;
+            key.PAGE_UP = 33;
+            key.PAGE_DOWN = 34;
+            key.END = 35;
+            key.HOME = 36;
+            key.LEFT = 37;
+            key.UP = 38;
+            key.RIGHT = 39;
+            key.DOWN = 40;
+            key.PRINT_SCREEN = 44;
+            key.INSERT = 45;
+            key.DELETE = 46;
+            key.ZERO = 48;
+            key.ONE = 49;
+            key.TWO = 50;
+            key.THREE = 51;
+            key.FOUR = 52;
+            key.FIVE = 53;
+            key.SIX = 54;
+            key.SEVEN = 55;
+            key.EIGHT = 56;
+            key.NINE = 57;
+            key.A = 65;
+            key.B = 66;
+            key.C = 67;
+            key.D = 68;
+            key.E = 69;
+            key.F = 70;
+            key.G = 71;
+            key.H = 72;
+            key.I = 73;
+            key.J = 74;
+            key.K = 75;
+            key.L = 76;
+            key.M = 77;
+            key.N = 78;
+            key.O = 79;
+            key.P = 80;
+            key.Q = 81;
+            key.R = 82;
+            key.S = 83;
+            key.T = 84;
+            key.U = 85;
+            key.V = 86;
+            key.W = 87;
+            key.X = 88;
+            key.Y = 89;
+            key.Z = 90;
+            key.CONTEXT_MENU = 93;
+            key.NUM0 = 96;
+            key.NUM1 = 97;
+            key.NUM2 = 98;
+            key.NUM3 = 99;
+            key.NUM4 = 100;
+            key.NUM5 = 101;
+            key.NUM6 = 102;
+            key.NUM7 = 103;
+            key.NUM8 = 104;
+            key.NUM9 = 105;
+            key.NUM_MULTIPLY = 106;
+            key.NUM_PLUS = 107;
+            key.NUM_MINUS = 109;
+            key.NUM_PERIOD = 110;
+            key.NUM_DIVISION = 111;
+            key.F1 = 112;
+            key.F2 = 113;
+            key.F3 = 114;
+            key.F4 = 115;
+            key.F5 = 116;
+            key.F6 = 117;
+            key.F7 = 118;
+            key.F8 = 119;
+            key.F9 = 120;
+            key.F10 = 121;
+            key.F11 = 122;
+            key.F12 = 123;
+        })(key = UIEvent.key || (UIEvent.key = {}));
     })(UIEvent = canvas2d.UIEvent || (canvas2d.UIEvent = {}));
 })(canvas2d || (canvas2d = {}));

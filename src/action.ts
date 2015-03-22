@@ -158,18 +158,14 @@ module canvas2d {
             this.elapsed += deltaTime;
 
             if (this.elapsed >= this.interval) {
+                sprite.texture = this.frameList[this.frameIndex++];
 
-                if (this.repetitions == null || this.count < this.repetitions) {
-                    sprite.texture = this.frameList[this.frameIndex++];
-
-                    if (this.frameIndex === this.frameList.length) {
+                if (this.frameIndex === this.frameList.length) {
+                    if (this.repetitions == null || ++this.count < this.repetitions) {
                         this.frameIndex = 0;
+                    } else {
+                        this.done = true;
                     }
-
-                    this.count++;
-                }
-                else {
-                    this.done = true;
                 }
 
                 this.elapsed = 0;

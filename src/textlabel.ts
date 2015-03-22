@@ -2,7 +2,7 @@
 
 module canvas2d {
 
-    export interface TextLabelAttrs extends Sprite {
+    export interface TextLabelAttrs extends SpriteAttrs {
         fontName?: string;
         textAlign?: string;
         fontColor?: string;
@@ -25,7 +25,12 @@ module canvas2d {
         private _text: string = '';
 
         constructor(attrs?: TextLabelAttrs) {
-            super(attrs);
+            super();
+            super._init(attrs);
+        }
+
+        protected _init(attrs?: SpriteAttrs) {
+
         }
 
         set text(content: string) {
@@ -75,7 +80,7 @@ module canvas2d {
             throw new Error("TextLabel has no child");
         }
 
-        draw(context: CanvasRenderingContext2D): void {
+        protected draw(context: CanvasRenderingContext2D): void {
             if (this._text.length === 0) {
                 return;
             }

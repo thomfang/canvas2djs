@@ -69,6 +69,10 @@ module canvas2d {
         keyboardEnabled: boolean = true;
 
         constructor(attrs?: SpriteAttrs) {
+            this._init(attrs);
+        }
+
+        protected _init(attrs?: SpriteAttrs) {
             var name: string;
 
             for (name in attrs) {
@@ -181,6 +185,9 @@ module canvas2d {
             if (this.flippedY) {
                 sy = -sy;
             }
+            if (sx !== 1 || sy !== 1) {
+                context.scale(sx,  sy);
+            }
 
             var rotationRad: number = this._rotationRad % 360;
 
@@ -232,7 +239,7 @@ module canvas2d {
 
                 context.drawImage(
                     texture.source, sx, sy, sw, sh,
-                    -this._originX, -this._originY, this.width, this.height
+                    -this._originPixelY, -this._originPixelY, this.width, this.height
                 );
             }
         }

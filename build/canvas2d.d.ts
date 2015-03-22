@@ -73,6 +73,7 @@ declare module canvas2d {
         mouseEnabled: boolean;
         keyboardEnabled: boolean;
         constructor(attrs?: SpriteAttrs);
+        protected _init(attrs?: SpriteAttrs): void;
         width: number;
         height: number;
         originX: number;
@@ -180,7 +181,7 @@ declare module canvas2d.Stage {
     function removeAllChild(recusive?: boolean): void;
 }
 declare module canvas2d {
-    interface TextLabelAttrs extends Sprite {
+    interface TextLabelAttrs extends SpriteAttrs {
         fontName?: string;
         textAlign?: string;
         fontColor?: string;
@@ -196,15 +197,104 @@ declare module canvas2d {
         private _lines;
         private _text;
         constructor(attrs?: TextLabelAttrs);
+        protected _init(attrs?: SpriteAttrs): void;
         text: string;
         private _resize();
         addChild(): void;
         removeChild(): void;
-        draw(context: CanvasRenderingContext2D): void;
+        protected draw(context: CanvasRenderingContext2D): void;
     }
 }
-declare module canvas2d.UIEvent {
-    var key: {
-        [index: string]: number;
-    };
+declare module canvas2d.UIEvent.key {
+    var MOUSE_LEFT: number;
+    var MOUSE_MID: number;
+    var MOUSE_RIGHT: number;
+    var BACKSPACE: number;
+    var TAB: number;
+    var NUM_CENTER: number;
+    var ENTER: number;
+    var RETURN: number;
+    var SHIFT: number;
+    var CTRL: number;
+    var ALT: number;
+    var PAUSE: number;
+    var CAPS_LOCK: number;
+    var ESC: number;
+    var ESCAPE: number;
+    var SPACE: number;
+    var PAGE_UP: number;
+    var PAGE_DOWN: number;
+    var END: number;
+    var HOME: number;
+    var LEFT: number;
+    var UP: number;
+    var RIGHT: number;
+    var DOWN: number;
+    var PRINT_SCREEN: number;
+    var INSERT: number;
+    var DELETE: number;
+    var ZERO: number;
+    var ONE: number;
+    var TWO: number;
+    var THREE: number;
+    var FOUR: number;
+    var FIVE: number;
+    var SIX: number;
+    var SEVEN: number;
+    var EIGHT: number;
+    var NINE: number;
+    var A: number;
+    var B: number;
+    var C: number;
+    var D: number;
+    var E: number;
+    var F: number;
+    var G: number;
+    var H: number;
+    var I: number;
+    var J: number;
+    var K: number;
+    var L: number;
+    var M: number;
+    var N: number;
+    var O: number;
+    var P: number;
+    var Q: number;
+    var R: number;
+    var S: number;
+    var T: number;
+    var U: number;
+    var V: number;
+    var W: number;
+    var X: number;
+    var Y: number;
+    var Z: number;
+    var CONTEXT_MENU: number;
+    var NUM0: number;
+    var NUM1: number;
+    var NUM2: number;
+    var NUM3: number;
+    var NUM4: number;
+    var NUM5: number;
+    var NUM6: number;
+    var NUM7: number;
+    var NUM8: number;
+    var NUM9: number;
+    var NUM_MULTIPLY: number;
+    var NUM_PLUS: number;
+    var NUM_MINUS: number;
+    var NUM_PERIOD: number;
+    var NUM_DIVISION: number;
+    var F1: number;
+    var F2: number;
+    var F3: number;
+    var F4: number;
+    var F5: number;
+    var F6: number;
+    var F7: number;
+    var F8: number;
+    var F9: number;
+    var F10: number;
+    var F11: number;
+    var F12: number;
 }
