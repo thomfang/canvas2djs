@@ -277,12 +277,8 @@ var canvas2d;
                 var sy = this.sourceY;
                 var sw = this.sourceWidth == null ? texture.width : this.sourceWidth;
                 var sh = this.sourceHeight == null ? texture.height : this.sourceHeight;
-                context.drawImage(texture.source, sx, sy, sw, sh, -this._originPixelY, -this._originPixelY, this.width, this.height);
+                context.drawImage(texture.source, sx, sy, sw, sh, -this._originPixelX, -this._originPixelY, this.width, this.height);
             }
-        };
-        Sprite.prototype.init = function () {
-        };
-        Sprite.prototype.update = function (deltaTime) {
         };
         Sprite.prototype.addChild = function (target, position) {
             if (target.parent) {
@@ -325,6 +321,24 @@ var canvas2d;
                 this.removeChild(sprite);
             }
             this.children = null;
+        };
+        Sprite.prototype.init = function () {
+        };
+        Sprite.prototype.update = function (deltaTime) {
+        };
+        Sprite.prototype.onclick = function (e) {
+        };
+        Sprite.prototype.onmousebegin = function (e, event) {
+        };
+        Sprite.prototype.onmousemoved = function (e, event) {
+        };
+        Sprite.prototype.onmouseended = function (e, event) {
+        };
+        Sprite.prototype.ontouchbegin = function (touches, event) {
+        };
+        Sprite.prototype.ontouchmoved = function (touches, event) {
+        };
+        Sprite.prototype.ontouchended = function (touch, touches, event) {
         };
         return Sprite;
     })();
@@ -1064,10 +1078,10 @@ var canvas2d;
             touches.forEach(function (touch) {
                 target = touch.target;
                 if (canvas2d.Stage.isRunning && canvas2d.Stage.touchEnabled) {
-                    if (typeof target[ON_TOUCH_ENDED] === 'function') {
+                    if (hasImplements(target, ON_TOUCH_ENDED)) {
                         target[ON_TOUCH_ENDED](touch, touches, event);
                     }
-                    if (typeof target[ON_CLICK] === 'function' && target === touch.beginTarget && !touch._moved) {
+                    if (hasImplements(target, ON_CLICK) && target === touch.beginTarget && !touch._moved) {
                         target[ON_CLICK](touch, event);
                     }
                 }
@@ -1104,10 +1118,10 @@ var canvas2d;
             var target;
             if (canvas2d.Stage.mouseEnabled) {
                 target = location.target;
-                if (typeof (target[ON_MOUSE_ENDED]) === 'function') {
+                if (hasImplements(target, ON_MOUSE_ENDED)) {
                     target[ON_MOUSE_ENDED](location, event);
                 }
-                if (typeof (target[ON_CLICK]) === 'function' && target === location.beginTarget && !location._moved) {
+                if (hasImplements(target, ON_CLICK) && target === location.beginTarget && !location._moved) {
                     target[ON_CLICK](location, event);
                 }
             }
@@ -1142,8 +1156,9 @@ var canvas2d;
                     }
                 }
             }
-            var methodNotFound = typeof (sprite[method]) !== 'function';
-            if (sprite.width === 0 || sprite.height === 0 || (methodNotFound && typeof (sprite[ON_CLICK]) !== 'function')) {
+            var notImplementMethod = !hasImplements(sprite, method);
+            var notImplementClick = !hasImplements(sprite, ON_CLICK);
+            if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
                 return false;
             }
             var hits = [];
@@ -1163,11 +1178,10 @@ var canvas2d;
                 }
             }
             if (hits.length) {
-                if (!methodNotFound) {
-                    if (sprite[method](hits, event) === false) {
-                        return true;
-                    }
+                if (!notImplementMethod) {
+                    sprite[method](hits, event);
                 }
+                return true;
             }
             return false;
         }
@@ -1178,7 +1192,6 @@ var canvas2d;
             offsetX += sprite.x - sprite._originPixelX;
             offsetY += sprite.y - sprite._originPixelY;
             var children = sprite.children;
-            var dispatched;
             if (children && children.length) {
                 var index = children.length;
                 while (--index >= 0) {
@@ -1187,8 +1200,9 @@ var canvas2d;
                     }
                 }
             }
-            var methodNotFound = typeof (sprite[method]) !== 'function';
-            if (sprite.width === 0 || sprite.height === 0 || (methodNotFound && typeof sprite[ON_CLICK] !== 'function')) {
+            var notImplementMethod = !hasImplements(sprite, method);
+            var notImplementClick = !hasImplements(sprite, ON_CLICK);
+            if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
                 return false;
             }
             var rect = {
@@ -1201,11 +1215,10 @@ var canvas2d;
                 location.target = sprite;
                 location.localX = location.stageX - rect.x;
                 location.localY = location.stageY - rect.y;
-                if (!methodNotFound) {
-                    if (sprite[method](location, event) === false) {
-                        return true;
-                    }
+                if (!notImplementMethod) {
+                    sprite[method](location, event);
                 }
+                return true;
             }
             return false;
         }
@@ -1222,6 +1235,9 @@ var canvas2d;
                     dispatchKeyboard(child, keyCode, event, method);
                 }
             }
+        }
+        function hasImplements(sprite, type) {
+            return sprite[type] !== canvas2d.Sprite.prototype[type];
         }
     })(UIEvent = canvas2d.UIEvent || (canvas2d.UIEvent = {}));
 })(canvas2d || (canvas2d = {}));

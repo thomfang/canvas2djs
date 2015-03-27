@@ -2,7 +2,7 @@
 
 module canvas2d.UIEvent {
 
-    interface EventHelper {
+    export interface EventHelper {
         identifier?: number;
         beginX: number;
         beginY: number;
@@ -169,11 +169,11 @@ module canvas2d.UIEvent {
             target = touch.target;
 
             if (Stage.isRunning && Stage.touchEnabled) {
-                if (typeof target[ON_TOUCH_ENDED] === 'function') {
+                if (hasImplements(target, ON_TOUCH_ENDED)) {
                     target[ON_TOUCH_ENDED](touch, touches, event);
                 }
 
-                if (typeof target[ON_CLICK] === 'function' && target === touch.beginTarget && !touch._moved) {
+                if (hasImplements(target, ON_CLICK) && target === touch.beginTarget && !touch._moved) {
                     target[ON_CLICK](touch, event);
                 }
             }
@@ -223,11 +223,11 @@ module canvas2d.UIEvent {
         if (Stage.mouseEnabled) {
             target = location.target;
 
-            if (typeof (target[ON_MOUSE_ENDED]) === 'function') {
+            if (hasImplements(target, ON_MOUSE_ENDED)) {
                 target[ON_MOUSE_ENDED](location, event);
             }
 
-            if (typeof (target[ON_CLICK]) === 'function' && target === location.beginTarget && !location._moved) {
+            if (hasImplements(target, ON_CLICK) && target === location.beginTarget && !location._moved) {
                 target[ON_CLICK](location, event);
             }
         }
@@ -272,9 +272,10 @@ module canvas2d.UIEvent {
             }
         }
 
-        var methodNotFound: boolean = typeof (sprite[method]) !== 'function';
+        var notImplementMethod: boolean = !hasImplements(sprite, method);
+        var notImplementClick: boolean = !hasImplements(sprite, ON_CLICK);
 
-        if (sprite.width === 0 || sprite.height === 0 || (methodNotFound && typeof (sprite[ON_CLICK]) !== 'function')) {
+        if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
             return false;
         }
 
@@ -298,11 +299,10 @@ module canvas2d.UIEvent {
         }
 
         if (hits.length) {
-            if (!methodNotFound) {
-                if (sprite[method](hits, event) === false) {
-                    return true;
-                }
+            if (!notImplementMethod) {
+                sprite[method](hits, event);
             }
+            return true;
         }
 
         return false;
@@ -317,7 +317,6 @@ module canvas2d.UIEvent {
         offsetY += sprite.y - sprite._originPixelY;
 
         var children = sprite.children;
-        var dispatched;
 
         if (children && children.length) {
             var index = children.length;
@@ -329,9 +328,10 @@ module canvas2d.UIEvent {
             }
         }
 
-        var methodNotFound = typeof (sprite[method]) !== 'function';
+        var notImplementMethod: boolean = !hasImplements(sprite, method);
+        var notImplementClick: boolean = !hasImplements(sprite, ON_CLICK);
 
-        if (sprite.width === 0 || sprite.height === 0 || (methodNotFound && typeof sprite[ON_CLICK] !== 'function')) {
+        if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
             return false;
         }
 
@@ -347,11 +347,10 @@ module canvas2d.UIEvent {
             location.localX = location.stageX - rect.x;
             location.localY = location.stageY - rect.y;
 
-            if (!methodNotFound) {
-                if (sprite[method](location, event) === false) {
-                    return true;
-                }
+            if (!notImplementMethod) {
+                sprite[method](location, event);
             }
+            return true;
         }
 
         return false;
@@ -373,5 +372,9 @@ module canvas2d.UIEvent {
                 dispatchKeyboard(child, keyCode, event, method);
             }
         }
+    }
+
+    function hasImplements(sprite: Sprite, type: string) {
+        return sprite[type] !== Sprite.prototype[type];
     }
 }

@@ -85,11 +85,18 @@ declare module canvas2d {
         protected _visitAllChild(context: CanvasRenderingContext2D): void;
         protected _drawBgColor(context: CanvasRenderingContext2D): void;
         protected draw(context: CanvasRenderingContext2D): void;
-        init(): void;
-        update(deltaTime: number): void;
         addChild(target: Sprite, position?: number): void;
         removeChild(target: Sprite): void;
         removeAllChild(recusive?: boolean): void;
+        init(): void;
+        update(deltaTime: number): void;
+        onclick(e: UIEvent.EventHelper): void;
+        onmousebegin(e: UIEvent.EventHelper, event: MouseEvent): void;
+        onmousemoved(e: UIEvent.EventHelper, event: MouseEvent): void;
+        onmouseended(e: UIEvent.EventHelper, event: MouseEvent): void;
+        ontouchbegin(touches: UIEvent.EventHelper[], event: any): void;
+        ontouchmoved(touches: UIEvent.EventHelper[], event: any): void;
+        ontouchended(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event: any): void;
     }
 }
 declare module canvas2d {
@@ -151,6 +158,18 @@ declare module canvas2d.Sound {
     function stopLoop(name: string): void;
 }
 declare module canvas2d.UIEvent {
+    interface EventHelper {
+        identifier?: number;
+        beginX: number;
+        beginY: number;
+        localX?: number;
+        localY?: number;
+        stageX?: number;
+        stageY?: number;
+        _moved?: boolean;
+        beginTarget?: Sprite;
+        target?: Sprite;
+    }
     var supportTouch: boolean;
     function register(): void;
     function unregister(): void;

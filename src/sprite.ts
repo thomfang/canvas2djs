@@ -40,7 +40,6 @@ module canvas2d {
         private _rotationRad: number = 0;
         private _texture: Texture;
 
-
         _originPixelX: number = 0;
         _originPixelY: number = 0;
 
@@ -239,15 +238,9 @@ module canvas2d {
 
                 context.drawImage(
                     texture.source, sx, sy, sw, sh,
-                    -this._originPixelY, -this._originPixelY, this.width, this.height
+                    -this._originPixelX, -this._originPixelY, this.width, this.height
                 );
             }
-        }
-
-        init(): void {
-        }
-
-        update(deltaTime: number): void {
         }
 
         addChild(target: Sprite, position?: number): void {
@@ -300,5 +293,18 @@ module canvas2d {
 
             this.children = null;
         }
+
+        init(): void {}
+        update(deltaTime: number): void {}
+
+        onclick(e: UIEvent.EventHelper): void {}
+
+        onmousebegin(e: UIEvent.EventHelper, event: MouseEvent): void {}
+        onmousemoved(e: UIEvent.EventHelper, event: MouseEvent): void {}
+        onmouseended(e: UIEvent.EventHelper, event: MouseEvent): void {}
+
+        ontouchbegin(touches: UIEvent.EventHelper[], event): void {}
+        ontouchmoved(touches: UIEvent.EventHelper[], event): void {}
+        ontouchended(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event): void {}
     }
 }
