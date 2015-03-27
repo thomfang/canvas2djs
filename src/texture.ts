@@ -43,17 +43,16 @@
         source: HTMLCanvasElement;
 
         static create(source: any, rect?: Rect): Texture {
-            if (typeof source === 'string' && cache[source] && !rect) {
-                return cache[source];
+            var name = getName(source, rect);
+
+            if (name && cache[name]) {
+                return cache[name];
             }
+
             return new Texture(source, rect);
         }
 
-        constructor(source?: any, rect?: Rect) {
-            if (!source) {
-                return;
-            }
-
+        constructor(source: any, rect?: Rect) {
             if (typeof source === 'string') {
                 this._createByPath(source, rect);
             }
