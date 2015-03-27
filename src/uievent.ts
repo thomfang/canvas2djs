@@ -15,13 +15,6 @@ module canvas2d.UIEvent {
         target?: Sprite;
     }
 
-    interface Rect {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    }
-
     var keyDown = "keydown";
     var keyUp = "keyup";
 
@@ -361,7 +354,7 @@ module canvas2d.UIEvent {
             return;
         }
 
-        if (typeof sprite[method] === 'function') {
+        if (hasImplements(sprite, method)) {
             sprite[method](keyCode, event);
         }
 
@@ -375,6 +368,6 @@ module canvas2d.UIEvent {
     }
 
     function hasImplements(sprite: Sprite, type: string) {
-        return sprite[type] !== Sprite.prototype[type];
+        return sprite[type] !== Sprite.prototype[type] && typeof sprite[type] === 'function';
     }
 }
