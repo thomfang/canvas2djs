@@ -24,6 +24,8 @@ module canvas2d.Stage {
     export var sprite: Sprite;
     export var _scale: number;
 
+    export var visibleRect: { left: number; right: number; top: number; bottom: number };
+
     export enum ScaleMode {
         SHOW_ALL,
         NO_BORDER,
@@ -39,6 +41,8 @@ module canvas2d.Stage {
         };
         var scaleX: number = device.width / Stage.width;
         var scaleY: number = device.height / Stage.height;
+        var deltaWidth: number = 0;
+        var deltaHeight: number = 0;
         var scale: number;
         var width: number;
         var height: number;
@@ -65,16 +69,20 @@ module canvas2d.Stage {
                 }
                 width = Stage.width * scale;
                 height = Stage.height * scale;
+                deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
+                deltaHeight = (Stage.height - device.height / scale) * 0.5 | 0;
                 break;
             case ScaleMode.FIX_WIDTH:
                 scale = scaleX;
                 width = device.width;
                 height = device.height * scale;
+                deltaHeight = (Stage.height - device.height / scale) * 0.5 | 0;
                 break;
             case ScaleMode.FIX_HEIGHT:
                 scale = scaleY;
                 width = scale * device.width;
                 height = device.height;
+                deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
                 break;
             default:
                 throw new Error('Unknow stage scale mode "' + stageScaleMode + '"');
@@ -85,6 +93,11 @@ module canvas2d.Stage {
         style.top = ((device.height - height) * 0.5) + 'px';
         style.left = ((device.width - width) * 0.5) + 'px';
         style.position = 'absolute';
+
+        visibleRect.left += deltaWidth;
+        visibleRect.right -= deltaWidth;
+        visibleRect.top += deltaHeight;
+        visibleRect.bottom -= deltaHeight;
 
         _scale = scale;
     }
@@ -138,6 +151,8 @@ module canvas2d.Stage {
 
         this.width = canvas.width = bufferCanvas.width = width;
         this.height = canvas.height = bufferCanvas.height = height;
+
+        visibleRect = { left: 0, right: width, top: 0, bottom: height };
 
         adjustStageSize();
         initScreenEvent();
