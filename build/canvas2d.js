@@ -25,9 +25,6 @@ var canvas2d;
             this.ready = false;
             this.width = 0;
             this.height = 0;
-            if (!source) {
-                return;
-            }
             if (typeof source === 'string') {
                 this._createByPath(source, rect);
             }
@@ -43,8 +40,9 @@ var canvas2d;
             }
         }
         Texture.create = function (source, rect) {
-            if (typeof source === 'string' && cache[source] && !rect) {
-                return cache[source];
+            var name = getName(source, rect);
+            if (name && cache[name]) {
+                return cache[name];
             }
             return new Texture(source, rect);
         };
@@ -1263,6 +1261,7 @@ var canvas2d;
         Stage.context;
         Stage.sprite;
         Stage._scale;
+        Stage.visibleRect;
         (function (ScaleMode) {
             ScaleMode[ScaleMode["SHOW_ALL"] = 0] = "SHOW_ALL";
             ScaleMode[ScaleMode["NO_BORDER"] = 1] = "NO_BORDER";
@@ -1278,6 +1277,8 @@ var canvas2d;
             };
             var scaleX = device.width / Stage.width;
             var scaleY = device.height / Stage.height;
+            var deltaWidth = 0;
+            var deltaHeight = 0;
             var scale;
             var width;
             var height;
@@ -1303,16 +1304,20 @@ var canvas2d;
                     }
                     width = Stage.width * scale;
                     height = Stage.height * scale;
+                    deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
+                    deltaHeight = (Stage.height - device.height / scale) * 0.5 | 0;
                     break;
                 case 2 /* FIX_WIDTH */:
                     scale = scaleX;
                     width = device.width;
                     height = device.height * scale;
+                    deltaHeight = (Stage.height - device.height / scale) * 0.5 | 0;
                     break;
                 case 3 /* FIX_HEIGHT */:
                     scale = scaleY;
                     width = scale * device.width;
                     height = device.height;
+                    deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
                     break;
                 default:
                     throw new Error('Unknow stage scale mode "' + stageScaleMode + '"');
@@ -1322,6 +1327,10 @@ var canvas2d;
             style.top = ((device.height - height) * 0.5) + 'px';
             style.left = ((device.width - width) * 0.5) + 'px';
             style.position = 'absolute';
+            Stage.visibleRect.left += deltaWidth;
+            Stage.visibleRect.right -= deltaWidth;
+            Stage.visibleRect.top += deltaHeight;
+            Stage.visibleRect.bottom -= deltaHeight;
             Stage._scale = scale;
         }
         function initScreenEvent() {
@@ -1359,6 +1368,7 @@ var canvas2d;
             bufferContext = bufferCanvas.getContext("2d");
             this.width = canvas.width = bufferCanvas.width = width;
             this.height = canvas.height = bufferCanvas.height = height;
+            Stage.visibleRect = { left: 0, right: width, top: 0, bottom: height };
             adjustStageSize();
             initScreenEvent();
         }

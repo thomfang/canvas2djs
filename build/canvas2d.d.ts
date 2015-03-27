@@ -11,7 +11,7 @@ declare module canvas2d {
         height: number;
         source: HTMLCanvasElement;
         static create(source: any, rect?: Rect): Texture;
-        constructor(source?: any, rect?: Rect);
+        constructor(source: any, rect?: Rect);
         private _createByPath(path, rect?);
         private _createByImage(image, rect?);
     }
@@ -186,6 +186,12 @@ declare module canvas2d.Stage {
     var context: CanvasRenderingContext2D;
     var sprite: Sprite;
     var _scale: number;
+    var visibleRect: {
+        left: number;
+        right: number;
+        top: number;
+        bottom: number;
+    };
     enum ScaleMode {
         SHOW_ALL = 0,
         NO_BORDER = 1,
