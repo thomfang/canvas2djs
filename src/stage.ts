@@ -212,7 +212,7 @@ namespace canvas2d.Stage {
             lastUpdate = Date.now();
             step();
 
-            UIEvent.register();
+            UIEvent.__register();
             isRunning = true;
         }
     }
@@ -226,7 +226,7 @@ namespace canvas2d.Stage {
         }
 
         clearTimeout(timerID);
-        UIEvent.unregister();
+        UIEvent.__unregister();
         isRunning = false;
     }
 

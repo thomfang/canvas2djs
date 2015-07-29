@@ -1216,7 +1216,7 @@ var canvas2d;
             if (!Stage.isRunning) {
                 lastUpdate = Date.now();
                 step();
-                canvas2d.UIEvent.register();
+                canvas2d.UIEvent.__register();
                 Stage.isRunning = true;
             }
         }
@@ -1229,7 +1229,7 @@ var canvas2d;
                 return;
             }
             clearTimeout(timerID);
-            canvas2d.UIEvent.unregister();
+            canvas2d.UIEvent.__unregister();
             Stage.isRunning = false;
         }
         Stage.stop = stop;
@@ -1258,6 +1258,9 @@ var canvas2d;
     })(Stage = canvas2d.Stage || (canvas2d.Stage = {}));
 })(canvas2d || (canvas2d = {}));
 /// <reference path="stage.ts" />
+/**
+ * Virtual UI event manager
+ */
 var canvas2d;
 (function (canvas2d) {
     var UIEvent;
@@ -1282,7 +1285,10 @@ var canvas2d;
         var touchMap = {};
         var mouseLoc;
         UIEvent.supportTouch = "ontouchend" in window;
-        function register() {
+        /**
+         * Register UI event, internal method
+         */
+        function __register() {
             if (canvas2d.Stage.touchEnabled && UIEvent.supportTouch) {
                 canvas2d.Stage.canvas.addEventListener(touchBegin, touchBeginHandler, false);
             }
@@ -1294,14 +1300,17 @@ var canvas2d;
                 document.addEventListener(keyUp, keyUpHandler, false);
             }
         }
-        UIEvent.register = register;
-        function unregister() {
+        UIEvent.__register = __register;
+        /**
+         * Unregister UI event, internal method
+         */
+        function __unregister() {
             canvas2d.Stage.canvas.removeEventListener(touchBegin, touchBeginHandler, false);
             canvas2d.Stage.canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
             document.removeEventListener(keyDown, keyDownHandler, false);
             document.removeEventListener(keyUp, keyUpHandler, false);
         }
-        UIEvent.unregister = unregister;
+        UIEvent.__unregister = __unregister;
         function transformTouches(touches, justGet) {
             var ret = [];
             var pos = canvas2d.Stage.canvas.getBoundingClientRect();

@@ -1,8 +1,11 @@
 ﻿/// <reference path="stage.ts" />
 
-module canvas2d.UIEvent {
+/**
+ * Virtual UI event manager
+ */
+namespace canvas2d.UIEvent {
 
-    export interface EventHelper {
+    export interface IEventHelper {
         identifier?: number;
         beginX: number;
         beginY: number;
@@ -26,24 +29,27 @@ module canvas2d.UIEvent {
     var mouseMoved = "mousemove";
     var mouseEnded = "mouseup";
 
-    var ON_CLICK = "onclick";
-    var ON_KEY_UP = "onkeyup";
-    var ON_KEY_DOWN = "onkeydown";
+    const ON_CLICK = "onclick";
+    const ON_KEY_UP = "onkeyup";
+    const ON_KEY_DOWN = "onkeydown";
 
-    var ON_TOUCH_BEGIN = "ontouchbegin";
-    var ON_TOUCH_MOVED = "ontouchmoved";
-    var ON_TOUCH_ENDED = "ontouchended";
+    const ON_TOUCH_BEGIN = "ontouchbegin";
+    const ON_TOUCH_MOVED = "ontouchmoved";
+    const ON_TOUCH_ENDED = "ontouchended";
 
-    var ON_MOUSE_BEGIN = "onmousebegin";
-    var ON_MOUSE_MOVED = "onmousemoved";
-    var ON_MOUSE_ENDED = "onmouseended";
+    const ON_MOUSE_BEGIN = "onmousebegin";
+    const ON_MOUSE_MOVED = "onmousemoved";
+    const ON_MOUSE_ENDED = "onmouseended";
 
-    var touchMap: { [index: number]: EventHelper } = {};
-    var mouseLoc: EventHelper;
-
+    var touchMap: { [index: number]: IEventHelper } = {};
+    var mouseLoc: IEventHelper;
+    
     export var supportTouch: boolean = "ontouchend" in window;
 
-    export function register(): void {
+    /**
+     * Register UI event, internal method
+     */
+    export function __register(): void {
         if (Stage.touchEnabled && supportTouch) {
             Stage.canvas.addEventListener(touchBegin, touchBeginHandler, false);
         }
@@ -56,7 +62,10 @@ module canvas2d.UIEvent {
         }
     }
 
-    export function unregister(): void {
+    /**
+     * Unregister UI event, internal method
+     */
+    export function __unregister(): void {
         Stage.canvas.removeEventListener(touchBegin, touchBeginHandler, false);
         Stage.canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
 
@@ -64,8 +73,8 @@ module canvas2d.UIEvent {
         document.removeEventListener(keyUp, keyUpHandler, false);
     }
 
-    function transformTouches(touches, justGet?: boolean): EventHelper[] {
-        var ret: EventHelper[] = [];
+    function transformTouches(touches, justGet?: boolean): IEventHelper[] {
+        var ret: IEventHelper[] = [];
         var pos = Stage.canvas.getBoundingClientRect();
 
         for (var i: number = 0, x: number, y: number, id: number, transformed, touch; touch = touches[i]; i++) {
@@ -94,7 +103,7 @@ module canvas2d.UIEvent {
         return ret;
     }
 
-    function transformLocation(event): EventHelper {
+    function transformLocation(event): IEventHelper {
         var pos = Stage.canvas.getBoundingClientRect();
         var x = (event.clientX - pos.left) / Stage._scale;
         var y = (event.clientY - pos.top) / Stage._scale;
@@ -115,7 +124,7 @@ module canvas2d.UIEvent {
         return mouseLoc;
     }
 
-    function isRectContainPoint(rect: IRect, p: EventHelper) {
+    function isRectContainPoint(rect: IRect, p: IEventHelper) {
         return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
             rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
     }
@@ -144,7 +153,7 @@ module canvas2d.UIEvent {
             return;
         }
 
-        var touches: EventHelper[] = transformTouches(event.changedTouches);
+        var touches: IEventHelper[] = transformTouches(event.changedTouches);
 
         dispatchTouch(Stage.sprite, 0, 0, touches, event, ON_TOUCH_MOVED);
 
@@ -242,7 +251,7 @@ module canvas2d.UIEvent {
         dispatchKeyboard(Stage.sprite, event.keyCode, event, ON_KEY_UP);
     }
 
-    function dispatchTouch(sprite: Sprite, offsetX: number, offsetY: number, touches: EventHelper[], event, method: string): boolean {
+    function dispatchTouch(sprite: Sprite, offsetX: number, offsetY: number, touches: IEventHelper[], event, method: string): boolean {
         if (sprite.touchEnabled === false || !sprite.visible) {
             return false;
         }
@@ -272,7 +281,7 @@ module canvas2d.UIEvent {
             return false;
         }
 
-        var hits: EventHelper[] = [];
+        var hits: IEventHelper[] = [];
         var rect: IRect = {
             x: offsetX,
             y: offsetY,
@@ -280,7 +289,7 @@ module canvas2d.UIEvent {
             height: sprite.height
         };
 
-        for (var i = 0, touch: EventHelper; touch = touches[i]; i++) {
+        for (var i = 0, touch: IEventHelper; touch = touches[i]; i++) {
             if (isRectContainPoint(rect, touch)) {
                 touch.target = sprite;
                 touch.localX = touch.stageX - rect.x;
@@ -301,7 +310,7 @@ module canvas2d.UIEvent {
         return false;
     }
 
-    function dispatchMouse(sprite: Sprite, offsetX: number, offsetY: number, location: EventHelper, event, method: string): boolean {
+    function dispatchMouse(sprite: Sprite, offsetX: number, offsetY: number, location: IEventHelper, event, method: string): boolean {
         if (sprite.mouseEnabled === false || !sprite.visible) {
             return false;
         }

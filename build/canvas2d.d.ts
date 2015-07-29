@@ -93,31 +93,31 @@ declare module canvas2d {
         /**
          * Click event handler
          */
-        onclick?(e: UIEvent.EventHelper): any;
+        onclick?(e: UIEvent.IEventHelper): any;
         /**
          * Mouse begin event handler
          */
-        onmousebegin?(e: UIEvent.EventHelper, event: MouseEvent): any;
+        onmousebegin?(e: UIEvent.IEventHelper, event: MouseEvent): any;
         /**
          * Mouse moved event handler
          */
-        onmousemoved?(e: UIEvent.EventHelper, event: MouseEvent): any;
+        onmousemoved?(e: UIEvent.IEventHelper, event: MouseEvent): any;
         /**
          * Mouse ended event handler
          */
-        onmouseended?(e: UIEvent.EventHelper, event: MouseEvent): any;
+        onmouseended?(e: UIEvent.IEventHelper, event: MouseEvent): any;
         /**
          * Touch begin event handler
          */
-        ontouchbegin?(touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        ontouchbegin?(touches: UIEvent.IEventHelper[], event: TouchEvent): any;
         /**
          * Touch moved event handler
          */
-        ontouchmoved?(touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        ontouchmoved?(touches: UIEvent.IEventHelper[], event: TouchEvent): any;
         /**
          * Touch ended event hadndler
          */
-        ontouchended?(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        ontouchended?(touch: UIEvent.IEventHelper, touches: UIEvent.IEventHelper[], event: TouchEvent): any;
     }
     const RAD_PER_DEG: number;
     /**
@@ -171,13 +171,13 @@ declare module canvas2d {
         removeAllChild(recusive?: boolean): void;
         init(): any;
         update(deltaTime: number): any;
-        onclick(e: UIEvent.EventHelper): any;
-        onmousebegin(e: UIEvent.EventHelper, event: MouseEvent): any;
-        onmousemoved(e: UIEvent.EventHelper, event: MouseEvent): any;
-        onmouseended(e: UIEvent.EventHelper, event: MouseEvent): any;
-        ontouchbegin(touches: UIEvent.EventHelper[], event: TouchEvent): any;
-        ontouchmoved(touches: UIEvent.EventHelper[], event: TouchEvent): any;
-        ontouchended(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        onclick(e: UIEvent.IEventHelper): any;
+        onmousebegin(e: UIEvent.IEventHelper, event: MouseEvent): any;
+        onmousemoved(e: UIEvent.IEventHelper, event: MouseEvent): any;
+        onmouseended(e: UIEvent.IEventHelper, event: MouseEvent): any;
+        ontouchbegin(touches: UIEvent.IEventHelper[], event: TouchEvent): any;
+        ontouchmoved(touches: UIEvent.IEventHelper[], event: TouchEvent): any;
+        ontouchended(touch: UIEvent.IEventHelper, touches: UIEvent.IEventHelper[], event: TouchEvent): any;
     }
 }
 declare module canvas2d {
@@ -430,8 +430,11 @@ declare module canvas2d.Stage {
      */
     function removeAllChild(recusive?: boolean): void;
 }
+/**
+ * Virtual UI event manager
+ */
 declare module canvas2d.UIEvent {
-    interface EventHelper {
+    interface IEventHelper {
         identifier?: number;
         beginX: number;
         beginY: number;
@@ -444,8 +447,14 @@ declare module canvas2d.UIEvent {
         target?: Sprite;
     }
     var supportTouch: boolean;
-    function register(): void;
-    function unregister(): void;
+    /**
+     * Register UI event, internal method
+     */
+    function __register(): void;
+    /**
+     * Unregister UI event, internal method
+     */
+    function __unregister(): void;
 }
 declare module canvas2d.UIEvent.Key {
     var MOUSE_LEFT: number;
