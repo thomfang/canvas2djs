@@ -1,10 +1,6 @@
 ﻿module canvas2d {
 
-    export interface EasingFunc {
-        (percent: number, other?: any): number;
-    }
-
-    export var tween: { [index: string]: EasingFunc } = {
+    export var tween = {
         easeInQuad: function (pos) {
             return Math.pow(pos, 2);
         },

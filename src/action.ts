@@ -3,17 +3,13 @@
 
 module canvas2d {
 
-    interface ActionAttr {
+    interface IActionAttr {
         name: string;
         dest: number;
-        easing: string;
+        easing: Function;
     }
 
-    export interface ActionArg {
-        [index: string]: any;
-    }
-
-    interface ActionDefinition {
+    interface IActionDefinition {
         immediate?: boolean;
         done: boolean;
 
@@ -21,13 +17,13 @@ module canvas2d {
         end(sprite: Sprite): void;
     }
 
-    function ensureItem(array: Array<any>, item: any): void {
+    function addArrayItem(array: Array<any>, item: any): void {
         if (array.indexOf(item) < 0) {
             array.push(item);
         }
     }
 
-    function removeItem(array: Array<any>, item: any): void {
+    function removeArrayItem(array: Array<any>, item: any): void {
         var index = array.indexOf(item);
         if (index > -1) {
             array.splice(index, 1);
@@ -40,7 +36,7 @@ module canvas2d {
         });
     }
 
-    class Callback implements ActionDefinition {
+    class Callback implements IActionDefinition {
         done: boolean = false;
         immediate: boolean = true;
 
@@ -59,7 +55,7 @@ module canvas2d {
         }
     }
 
-    class Delay implements ActionDefinition {
+    class Delay implements IActionDefinition {
         done: boolean = false;
         elapsed: number = 0;
         immediate: boolean = true;
@@ -78,28 +74,35 @@ module canvas2d {
         }
     }
 
-    class Transition implements ActionDefinition {
+    class Transition implements IActionDefinition {
         done: boolean = false;
         immediate: boolean = false;
         elapsed: number = 0;
-        attrs: Array<ActionAttr> = [];
+        attrs: Array<IActionAttr> = [];
 
         starts: { [index: string]: number } = {};
         deltas: { [index: string]: number } = {};
 
-        constructor(attrs: ActionArg, public duration: number) {
+        constructor(attrs: {[attr: string]: number | { dest: number; easing: string | Function; }}, public duration: number) {
             var name: string;
             var value: any;
-
-            for (name in attrs) {
-                value = attrs[name];
-
-                this.attrs.push({
-                    name: name,
-                    dest: typeof value === 'object' ? value.dest : value,
-                    easing: value.easing || 'easeInOutQuad'
-                });
-            }
+            
+            Object.keys(attrs).forEach(name => {
+                let info = attrs[name];
+                let easing: Function;
+                let dest: number;
+                
+                if (typeof info === 'number') {
+                    easing = tween.easeInOutQuad;
+                    dest = info;
+                }
+                else {
+                    easing = typeof info.easing === 'function' ? info.easing : tween[<string>info.easing || 'easeInOutQuad'];
+                    dest = info.dest;
+                }
+                
+                this.attrs.push({ name, dest, easing});
+            });
         }
 
         step(deltaTime: number, sprite: Sprite): void {
@@ -121,7 +124,7 @@ module canvas2d {
                 this.attrs.forEach((attr) => {
                     name = attr.name;
                     dest = attr.dest;
-                    delta = tween[attr.easing](percent);
+                    delta = attr.easing(percent);
                     start = starts[name];
 
                     if (start == null) {
@@ -129,7 +132,7 @@ module canvas2d {
                         deltas[name] = dest - start;
                     }
 
-                    (<any>sprite)[name] = start + (delta * deltas[name]);
+                    sprite[name] = start + (delta * deltas[name]);
                 });
             }
         }
@@ -142,7 +145,7 @@ module canvas2d {
         }
     }
 
-    class Animation implements ActionDefinition {
+    class Animation implements IActionDefinition {
         done: boolean = false;
         immediate: boolean = false;
         elapsed: number = 0;
@@ -192,7 +195,7 @@ module canvas2d {
                 if (!this._callback.all) {
                     this._callback.all = [];
                 }
-                ensureItem(this._callback.all, callback);
+                addArrayItem(this._callback.all, callback);
             }
 
             return this;
@@ -206,7 +209,7 @@ module canvas2d {
                 if (!this._callback.any) {
                     this._callback.any = [];
                 }
-                ensureItem(this._callback.any, callback);
+                addArrayItem(this._callback.any, callback);
             }
 
             return this;
@@ -232,7 +235,7 @@ module canvas2d {
 
             if (allDone && this._callback.all) {
                 publish(this._callback.all);
-                removeItem(Action._listenerList, this);
+                removeArrayItem(Action._listenerList, this);
                 this._resolved = true;
             }
         }
@@ -243,7 +246,7 @@ module canvas2d {
         static _actionList: Array<Action> = [];
         static _listenerList: Array<Listener> = [];
 
-        private _queue: Array<ActionDefinition> = [];
+        private _queue: Array<IActionDefinition> = [];
 
         _done: boolean = false;
         running: boolean = false;
@@ -274,7 +277,7 @@ module canvas2d {
                 action._step(deltaTime);
 
                 if (action._done) {
-                    removeItem(actionList, action);
+                    removeArrayItem(actionList, action);
                 }
             }
 
@@ -323,14 +326,14 @@ module canvas2d {
             return this;
         }
 
-        to(attrs: ActionArg, duration: number): Action {
+        to(attrs: {[attr: string]: number | { dest: number; easing: string | Function; }}, duration: number): Action {
             this._queue.push(new Transition(attrs, duration));
             return this;
         }
 
         start(): Action {
             if (!this.running) {
-                ensureItem(Action._actionList, this);
+                addArrayItem(Action._actionList, this);
                 this.running = true;
             }
             return this;
@@ -341,7 +344,7 @@ module canvas2d {
             this.running = false;
             this._queue.length = 0;
 
-            removeItem(Action._actionList, this);
+            removeArrayItem(Action._actionList, this);
         }
     }
 }
