@@ -1,4 +1,4 @@
-﻿module canvas2d.UIEvent.key {
+﻿namespace canvas2d.UIEvent.Key {
 
     export var MOUSE_LEFT: number = 1;
     export var MOUSE_MID: number = 2;

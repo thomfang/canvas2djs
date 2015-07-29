@@ -1,9 +1,12 @@
 /// <reference path="action.ts" />
 /// <reference path="texture.ts" />
 
-module canvas2d {
+namespace canvas2d {
 
-    export interface SpriteAttrs {
+    /**
+     * Sprite attributes
+     */
+    export interface ISprite {
         x?: number;
         y?: number;
         width?: number;
@@ -19,19 +22,94 @@ module canvas2d {
         visible?: boolean;
         flippedX?: boolean;
         flippedY?: boolean;
+        
+        /**
+         * Position X of the clipping rect on texture
+         */
         sourceX?: number;
+        
+        /**
+         * Position Y of the clipping rect on texture
+         */
         sourceY?: number;
+
+        /**
+         * Width of the clipping rect on texture
+         */
         sourceWidth?: number;
+        
+        /**
+         * Height of the clipping rect on texture
+         */
         sourceHeight?: number;
+
+        /**
+         * Use lighter mode
+         */
         lighterMode?: boolean;
+        
+        /**
+         * Auto resize by the texture
+         */
+        autoResize?: boolean;
+        
         touchEnabled?: boolean;
         mouseEnabled?: boolean;
         keyboardEnabled?: boolean;
+        
+        /**
+         * Sprite initialize method
+         */
+        init?(): any;
+        
+        /**
+         * Sprite would call this method each frame
+         * @param  deltaTime  Duration between now and last frame
+         */
+        update?(deltaTime: number): any;
+        
+        /**
+         * Click event handler
+         */
+        onclick?(e: UIEvent.EventHelper): any;
+
+        /**
+         * Mouse begin event handler
+         */
+        onmousebegin?(e: UIEvent.EventHelper, event: MouseEvent): any;
+        
+        /**
+         * Mouse moved event handler
+         */
+        onmousemoved?(e: UIEvent.EventHelper, event: MouseEvent): any;
+        
+        /**
+         * Mouse ended event handler
+         */
+        onmouseended?(e: UIEvent.EventHelper, event: MouseEvent): any;
+
+        /**
+         * Touch begin event handler
+         */
+        ontouchbegin?(touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        
+        /**
+         * Touch moved event handler
+         */
+        ontouchmoved?(touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        
+        /**
+         * Touch ended event hadndler
+         */
+        ontouchended?(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event: TouchEvent): any;
     }
 
-    var RAD_PER_DEG: number = Math.PI / 180;
+    export const RAD_PER_DEG: number = Math.PI / 180;
 
-    export class Sprite {
+    /**
+     * Sprite as the base element
+     */
+    export class Sprite implements ISprite {
         private _width: number = 0;
         private _height: number = 0;
         private _originX: number = 0.5;
@@ -47,18 +125,16 @@ module canvas2d {
         y: number = 0;
         scaleX: number = 1;
         scaleY: number = 1;
+        opacity: number = 1;
         sourceX: number = 0;
         sourceY: number = 0;
-        opacity: number = 1;
-
+        sourceWidth: number;
+        sourceHeight: number;
         lighterMode: boolean = false;
         autoResize: boolean = true;
         flippedX: boolean = false;
         flippedY: boolean = false;
         visible: boolean = true;
-
-        sourceWidth: number;
-        sourceHeight: number;
         bgColor: string;
         parent: Sprite;
         children: Sprite[];
@@ -67,16 +143,12 @@ module canvas2d {
         mouseEnabled: boolean = true;
         keyboardEnabled: boolean = true;
 
-        constructor(attrs?: SpriteAttrs) {
+        constructor(attrs?: ISprite) {
             this._init(attrs);
         }
 
-        protected _init(attrs?: SpriteAttrs) {
-            var name: string;
-
-            for (name in attrs) {
-                (<any>this)[name] = (<any>attrs)[name];
-            }
+        protected _init(attrs?: ISprite) {
+            Object.keys(attrs).forEach(name => this[name] = attrs[name]);
 
             if (this.init) {
                 this.init();
@@ -294,17 +366,18 @@ module canvas2d {
             this.children = null;
         }
 
-        init(): void {}
-        update(deltaTime: number): void {}
+        init(): any {}
+        
+        update(deltaTime: number): any {}
 
-        onclick(e: UIEvent.EventHelper): void {}
+        onclick(e: UIEvent.EventHelper): any {}
 
-        onmousebegin(e: UIEvent.EventHelper, event: MouseEvent): void {}
-        onmousemoved(e: UIEvent.EventHelper, event: MouseEvent): void {}
-        onmouseended(e: UIEvent.EventHelper, event: MouseEvent): void {}
+        onmousebegin(e: UIEvent.EventHelper, event: MouseEvent): any {}
+        onmousemoved(e: UIEvent.EventHelper, event: MouseEvent): any {}
+        onmouseended(e: UIEvent.EventHelper, event: MouseEvent): any {}
 
-        ontouchbegin(touches: UIEvent.EventHelper[], event): void {}
-        ontouchmoved(touches: UIEvent.EventHelper[], event): void {}
-        ontouchended(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event): void {}
+        ontouchbegin(touches: UIEvent.EventHelper[], event: TouchEvent): any {}
+        ontouchmoved(touches: UIEvent.EventHelper[], event: TouchEvent): any {}
+        ontouchended(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event: TouchEvent): any {}
     }
 }

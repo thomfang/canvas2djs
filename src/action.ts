@@ -1,7 +1,7 @@
 ﻿/// <reference path="sprite.ts" />
 /// <reference path="tween.ts" />
 
-module canvas2d {
+namespace canvas2d {
 
     interface IActionAttr {
         name: string;
@@ -241,6 +241,9 @@ module canvas2d {
         }
     }
 
+    /**
+     * Action manager
+     */
     export class Action {
 
         static _actionList: Array<Action> = [];
@@ -249,11 +252,19 @@ module canvas2d {
         private _queue: Array<IActionDefinition> = [];
 
         _done: boolean = false;
+        
+        /**
+         * Action running state
+         */
         running: boolean = false;
 
         constructor(public sprite: Sprite) {
+            
         }
 
+        /**
+         * Stop action by sprite
+         */
         static stop(sprite: Sprite) {
             Action._actionList.slice().forEach((action) => {
                 if (action.sprite === sprite) {
@@ -262,13 +273,16 @@ module canvas2d {
             });
         }
 
+        /**
+         * Listen a action list, when all actions are done then publish to listener
+         */
         static listen(actions: Array<Action>): Listener {
             var listener = new Listener(actions);
             Action._listenerList.push(listener);
             return listener;
         }
 
-        static _step(deltaTime: number): void {
+        static _update(deltaTime: number): void {
             var actionList: Array<Action> = Action._actionList;
             var i: number = 0;
             var action: Action;
@@ -309,16 +323,25 @@ module canvas2d {
             }
         }
 
+        /**
+         * Add a callback, it will exec after previous action is done.
+         */
         then(func: Function): Action {
             this._queue.push(new Callback(func));
             return this;
         }
 
+        /**
+         * Add a delay action.
+         */
         wait(time: number): Action {
             this._queue.push(new Delay(time));
             return this;
         }
 
+        /**
+         * Add a animation action
+         */
         animate(frameList: Array<Texture>, frameRate: number, repetitions?: number): Action {
             var anim = new Animation(frameList, frameRate, repetitions);
             this._queue.push(anim);
@@ -326,11 +349,19 @@ module canvas2d {
             return this;
         }
 
+        /**
+         * Transition action
+         * @param  attrs     Transition attributes map
+         * @param  duration  Transition duration
+         */
         to(attrs: {[attr: string]: number | { dest: number; easing: string | Function; }}, duration: number): Action {
             this._queue.push(new Transition(attrs, duration));
             return this;
         }
 
+        /**
+         * Start the action
+         */
         start(): Action {
             if (!this.running) {
                 addArrayItem(Action._actionList, this);
@@ -339,6 +370,9 @@ module canvas2d {
             return this;
         }
 
+        /**
+         * Stop the action
+         */
         stop() {
             this._done = true;
             this.running = false;

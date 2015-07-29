@@ -115,7 +115,7 @@ module canvas2d.UIEvent {
         return mouseLoc;
     }
 
-    function isRectContainPoint(rect: Rect, p: EventHelper) {
+    function isRectContainPoint(rect: IRect, p: EventHelper) {
         return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
             rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
     }
@@ -273,7 +273,7 @@ module canvas2d.UIEvent {
         }
 
         var hits: EventHelper[] = [];
-        var rect: Rect = {
+        var rect: IRect = {
             x: offsetX,
             y: offsetY,
             width: sprite.width,
@@ -328,7 +328,7 @@ module canvas2d.UIEvent {
             return false;
         }
 
-        var rect: Rect = {
+        var rect: IRect = {
             x: offsetX,
             y: offsetY,
             width: sprite.width,

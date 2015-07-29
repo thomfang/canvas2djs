@@ -1,8 +1,8 @@
 ﻿/// <reference path="sprite.ts" />
 
-module canvas2d {
+namespace canvas2d {
 
-    export interface TextLabelAttrs extends SpriteAttrs {
+    export interface ITextLabel extends ISprite {
         fontName?: string;
         textAlign?: string;
         fontColor?: string;
@@ -24,12 +24,12 @@ module canvas2d {
         private _lines: string[];
         private _text: string = '';
 
-        constructor(attrs?: TextLabelAttrs) {
+        constructor(attrs?: ITextLabel) {
             super();
             super._init(attrs);
         }
 
-        protected _init(attrs?: SpriteAttrs) {
+        protected _init(attrs?: ISprite) {
 
         }
 

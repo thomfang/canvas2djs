@@ -1,18 +1,35 @@
-﻿module canvas2d.Sound {
+﻿/**
+ * Simple sound manager
+ */
+namespace canvas2d.Sound {
 
     var audios: {[index: string]: Array<HTMLAudioElement>} = {};
 
+    /**
+     * Could play sound
+     */
     export var enabled: boolean = true;
-    export var extention: string = ".mp3";
+    
+    /**
+     * Extension for media type
+     */
+    export var extension: string = ".mp3";
+    
+    /**
+     *  Supported types of the browser
+     */
     export var supportedType: { [index: string]: boolean } = {};
 
-    export interface Resource {
+    export interface ISoundResource {
         name: string;
         channels?: number;
     }
 
+    /**
+     * Load a sound resource
+     */
     export function load(basePath: string, name: string, onComplete: Function, channels = 1) {
-        var path: string = basePath + name + extention;
+        var path: string = basePath + name + extension;
         var audio: HTMLAudioElement = document.createElement("audio");
 
         function onCanPlayThrough() {
@@ -32,9 +49,9 @@
         audio.addEventListener('canplaythrough', onCanPlayThrough, false);
         audio.addEventListener('error', onError, false);
 
-        audio.preload = "auto";
-        audio.autobuffer = true;
-        audio.src = path;
+        audio['preload'] = "auto";
+        audio['autobuffer'] = true;
+        audio.setAttribute('src', path);
 
         audio.load();
 
@@ -50,7 +67,10 @@
         }
     }
 
-    export function loadList(basePath: string, resList: Array<Resource>, callback?: Function) {
+    /**
+     * Load multiple sound resources
+     */
+    export function loadList(basePath: string, resList: Array<ISoundResource>, callback?: Function) {
         var counter = resList.length;
 
         function onCompleted() {
@@ -66,6 +86,9 @@
         });
     }
 
+    /**
+     * Get audio instance by resource name, when isGetList param is true, return all the instance list.
+     */
     export function getAudio(name: string, isGetList = false): any {
         var list: any = audios[name];
 
@@ -95,6 +118,9 @@
         return audio;
     }
 
+    /**
+     * Play sound by name
+     */
     export function play(name: string, loop?: boolean): any {
         var audio = enabled && getAudio(name);
 
@@ -112,6 +138,9 @@
         return audio;
     }
 
+    /**
+     * Pause sound by name
+     */
     export function pause(name: string, reset?: boolean): void {
         var audio = getAudio(name);
 
@@ -123,6 +152,9 @@
         }
     }
 
+    /**
+     * Stop the looping sound by name
+     */
     export function stopLoop(name: string): void {
         var audio = getAudio(name);
 

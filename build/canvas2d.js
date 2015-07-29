@@ -20,8 +20,18 @@ var canvas2d;
         context.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, rect.width, rect.height);
         return canvas;
     }
+    /**
+     * Sprite texture
+     */
     var Texture = (function () {
+        /**
+         * @param  source  Drawable source
+         * @param  rect    Clipping rect
+         */
         function Texture(source, rect) {
+            /**
+             * Texture resource loading state
+             */
             this.ready = false;
             this.width = 0;
             this.height = 0;
@@ -39,6 +49,11 @@ var canvas2d;
                 cache[name] = this;
             }
         }
+        /**
+         * Create a texture by source and clipping rectangle
+         * @param  source  Drawable source
+         * @param  rect    Clipping rect
+         */
         Texture.create = function (source, rect) {
             var name = getName(source, rect);
             if (name && cache[name]) {
@@ -90,7 +105,10 @@ var canvas2d;
 /// <reference path="texture.ts" />
 var canvas2d;
 (function (canvas2d) {
-    var RAD_PER_DEG = Math.PI / 180;
+    canvas2d.RAD_PER_DEG = Math.PI / 180;
+    /**
+     * Sprite as the base element
+     */
     var Sprite = (function () {
         function Sprite(attrs) {
             this._width = 0;
@@ -105,9 +123,9 @@ var canvas2d;
             this.y = 0;
             this.scaleX = 1;
             this.scaleY = 1;
+            this.opacity = 1;
             this.sourceX = 0;
             this.sourceY = 0;
-            this.opacity = 1;
             this.lighterMode = false;
             this.autoResize = true;
             this.flippedX = false;
@@ -119,10 +137,8 @@ var canvas2d;
             this._init(attrs);
         }
         Sprite.prototype._init = function (attrs) {
-            var name;
-            for (name in attrs) {
-                this[name] = attrs[name];
-            }
+            var _this = this;
+            Object.keys(attrs).forEach(function (name) { return _this[name] = attrs[name]; });
             if (this.init) {
                 this.init();
             }
@@ -177,7 +193,7 @@ var canvas2d;
             },
             set: function (value) {
                 this._rotation = value;
-                this._rotationRad = this._rotation * RAD_PER_DEG;
+                this._rotationRad = this._rotation * canvas2d.RAD_PER_DEG;
             },
             enumerable: true,
             configurable: true
@@ -320,24 +336,15 @@ var canvas2d;
             }
             this.children = null;
         };
-        Sprite.prototype.init = function () {
-        };
-        Sprite.prototype.update = function (deltaTime) {
-        };
-        Sprite.prototype.onclick = function (e) {
-        };
-        Sprite.prototype.onmousebegin = function (e, event) {
-        };
-        Sprite.prototype.onmousemoved = function (e, event) {
-        };
-        Sprite.prototype.onmouseended = function (e, event) {
-        };
-        Sprite.prototype.ontouchbegin = function (touches, event) {
-        };
-        Sprite.prototype.ontouchmoved = function (touches, event) {
-        };
-        Sprite.prototype.ontouchended = function (touch, touches, event) {
-        };
+        Sprite.prototype.init = function () { };
+        Sprite.prototype.update = function (deltaTime) { };
+        Sprite.prototype.onclick = function (e) { };
+        Sprite.prototype.onmousebegin = function (e, event) { };
+        Sprite.prototype.onmousemoved = function (e, event) { };
+        Sprite.prototype.onmouseended = function (e, event) { };
+        Sprite.prototype.ontouchbegin = function (touches, event) { };
+        Sprite.prototype.ontouchmoved = function (touches, event) { };
+        Sprite.prototype.ontouchended = function (touch, touches, event) { };
         return Sprite;
     })();
     canvas2d.Sprite = Sprite;
@@ -460,7 +467,8 @@ var canvas2d;
         },
         swingFromTo: function (pos) {
             var s = 1.70158;
-            return ((pos /= 0.5) < 1) ? 0.5 * (pos * pos * (((s *= (1.525)) + 1) * pos - s)) : 0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2);
+            return ((pos /= 0.5) < 1) ? 0.5 * (pos * pos * (((s *= (1.525)) + 1) * pos - s)) :
+                0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2);
         },
         swingFrom: function (pos) {
             var s = 1.70158;
@@ -553,12 +561,12 @@ var canvas2d;
 /// <reference path="tween.ts" />
 var canvas2d;
 (function (canvas2d) {
-    function ensureItem(array, item) {
+    function addArrayItem(array, item) {
         if (array.indexOf(item) < 0) {
             array.push(item);
         }
     }
-    function removeItem(array, item) {
+    function removeArrayItem(array, item) {
         var index = array.indexOf(item);
         if (index > -1) {
             array.splice(index, 1);
@@ -605,6 +613,7 @@ var canvas2d;
     })();
     var Transition = (function () {
         function Transition(attrs, duration) {
+            var _this = this;
             this.duration = duration;
             this.done = false;
             this.immediate = false;
@@ -614,14 +623,20 @@ var canvas2d;
             this.deltas = {};
             var name;
             var value;
-            for (name in attrs) {
-                value = attrs[name];
-                this.attrs.push({
-                    name: name,
-                    dest: typeof value === 'object' ? value.dest : value,
-                    easing: value.easing || 'easeInOutQuad'
-                });
-            }
+            Object.keys(attrs).forEach(function (name) {
+                var info = attrs[name];
+                var easing;
+                var dest;
+                if (typeof info === 'number') {
+                    easing = canvas2d.tween.easeInOutQuad;
+                    dest = info;
+                }
+                else {
+                    easing = typeof info.easing === 'function' ? info.easing : canvas2d.tween[info.easing || 'easeInOutQuad'];
+                    dest = info.dest;
+                }
+                _this.attrs.push({ name: name, dest: dest, easing: easing });
+            });
         }
         Transition.prototype.step = function (deltaTime, sprite) {
             this.elapsed += deltaTime;
@@ -639,7 +654,7 @@ var canvas2d;
                 this.attrs.forEach(function (attr) {
                     name = attr.name;
                     dest = attr.dest;
-                    delta = canvas2d.tween[attr.easing](percent);
+                    delta = attr.easing(percent);
                     start = starts[name];
                     if (start == null) {
                         start = starts[name] = sprite[name];
@@ -701,7 +716,7 @@ var canvas2d;
                 if (!this._callback.all) {
                     this._callback.all = [];
                 }
-                ensureItem(this._callback.all, callback);
+                addArrayItem(this._callback.all, callback);
             }
             return this;
         };
@@ -713,7 +728,7 @@ var canvas2d;
                 if (!this._callback.any) {
                     this._callback.any = [];
                 }
-                ensureItem(this._callback.any, callback);
+                addArrayItem(this._callback.any, callback);
             }
             return this;
         };
@@ -734,20 +749,29 @@ var canvas2d;
             }
             if (allDone && this._callback.all) {
                 publish(this._callback.all);
-                removeItem(Action._listenerList, this);
+                removeArrayItem(Action._listenerList, this);
                 this._resolved = true;
             }
         };
         return Listener;
     })();
     canvas2d.Listener = Listener;
+    /**
+     * Action manager
+     */
     var Action = (function () {
         function Action(sprite) {
             this.sprite = sprite;
             this._queue = [];
             this._done = false;
+            /**
+             * Action running state
+             */
             this.running = false;
         }
+        /**
+         * Stop action by sprite
+         */
         Action.stop = function (sprite) {
             Action._actionList.slice().forEach(function (action) {
                 if (action.sprite === sprite) {
@@ -755,19 +779,22 @@ var canvas2d;
                 }
             });
         };
+        /**
+         * Listen a action list, when all actions are done then publish to listener
+         */
         Action.listen = function (actions) {
             var listener = new Listener(actions);
             Action._listenerList.push(listener);
             return listener;
         };
-        Action._step = function (deltaTime) {
+        Action._update = function (deltaTime) {
             var actionList = Action._actionList;
             var i = 0;
             var action;
             for (; action = actionList[i]; i++) {
                 action._step(deltaTime);
                 if (action._done) {
-                    removeItem(actionList, action);
+                    removeArrayItem(actionList, action);
                 }
             }
             Action._listenerList.slice().forEach(function (listener) {
@@ -792,36 +819,56 @@ var canvas2d;
                 }
             }
         };
+        /**
+         * Add a callback, it will exec after previous action is done.
+         */
         Action.prototype.then = function (func) {
             this._queue.push(new Callback(func));
             return this;
         };
+        /**
+         * Add a delay action.
+         */
         Action.prototype.wait = function (time) {
             this._queue.push(new Delay(time));
             return this;
         };
+        /**
+         * Add a animation action
+         */
         Action.prototype.animate = function (frameList, frameRate, repetitions) {
             var anim = new Animation(frameList, frameRate, repetitions);
             this._queue.push(anim);
             anim.step(anim.interval, this.sprite);
             return this;
         };
+        /**
+         * Transition action
+         * @param  attrs     Transition attributes map
+         * @param  duration  Transition duration
+         */
         Action.prototype.to = function (attrs, duration) {
             this._queue.push(new Transition(attrs, duration));
             return this;
         };
+        /**
+         * Start the action
+         */
         Action.prototype.start = function () {
             if (!this.running) {
-                ensureItem(Action._actionList, this);
+                addArrayItem(Action._actionList, this);
                 this.running = true;
             }
             return this;
         };
+        /**
+         * Stop the action
+         */
         Action.prototype.stop = function () {
             this._done = true;
             this.running = false;
             this._queue.length = 0;
-            removeItem(Action._actionList, this);
+            removeArrayItem(Action._actionList, this);
         };
         Action._actionList = [];
         Action._listenerList = [];
@@ -829,17 +876,32 @@ var canvas2d;
     })();
     canvas2d.Action = Action;
 })(canvas2d || (canvas2d = {}));
+/**
+ * Simple sound manager
+ */
 var canvas2d;
 (function (canvas2d) {
     var Sound;
     (function (Sound) {
         var audios = {};
+        /**
+         * Could play sound
+         */
         Sound.enabled = true;
-        Sound.extention = ".mp3";
+        /**
+         * Extension for media type
+         */
+        Sound.extension = ".mp3";
+        /**
+         *  Supported types of the browser
+         */
         Sound.supportedType = {};
+        /**
+         * Load a sound resource
+         */
         function load(basePath, name, onComplete, channels) {
             if (channels === void 0) { channels = 1; }
-            var path = basePath + name + Sound.extention;
+            var path = basePath + name + Sound.extension;
             var audio = document.createElement("audio");
             function onCanPlayThrough() {
                 this.removeEventListener('canplaythrough', onCanPlayThrough, false);
@@ -854,9 +916,9 @@ var canvas2d;
             }
             audio.addEventListener('canplaythrough', onCanPlayThrough, false);
             audio.addEventListener('error', onError, false);
-            audio.preload = "auto";
-            audio.autobuffer = true;
-            audio.src = path;
+            audio['preload'] = "auto";
+            audio['autobuffer'] = true;
+            audio.setAttribute('src', path);
             audio.load();
             console.log("Start to load: ", path);
             audios[name] = [audio];
@@ -867,6 +929,9 @@ var canvas2d;
             }
         }
         Sound.load = load;
+        /**
+         * Load multiple sound resources
+         */
         function loadList(basePath, resList, callback) {
             var counter = resList.length;
             function onCompleted() {
@@ -880,6 +945,9 @@ var canvas2d;
             });
         }
         Sound.loadList = loadList;
+        /**
+         * Get audio instance by resource name, when isGetList param is true, return all the instance list.
+         */
         function getAudio(name, isGetList) {
             if (isGetList === void 0) { isGetList = false; }
             var list = audios[name];
@@ -903,6 +971,9 @@ var canvas2d;
             return audio;
         }
         Sound.getAudio = getAudio;
+        /**
+         * Play sound by name
+         */
         function play(name, loop) {
             var audio = Sound.enabled && getAudio(name);
             if (audio) {
@@ -919,6 +990,9 @@ var canvas2d;
             return audio;
         }
         Sound.play = play;
+        /**
+         * Pause sound by name
+         */
         function pause(name, reset) {
             var audio = getAudio(name);
             if (audio) {
@@ -929,6 +1003,9 @@ var canvas2d;
             }
         }
         Sound.pause = pause;
+        /**
+         * Stop the looping sound by name
+         */
         function stopLoop(name) {
             var audio = getAudio(name);
             if (audio) {
@@ -956,6 +1033,229 @@ var canvas2d;
         }
         detectSupportedType();
     })(Sound = canvas2d.Sound || (canvas2d.Sound = {}));
+})(canvas2d || (canvas2d = {}));
+/// <reference path="action.ts" />
+/// <reference path="uievent.ts" />
+/// <reference path="sprite.ts" />
+var canvas2d;
+(function (canvas2d) {
+    var Stage;
+    (function (Stage) {
+        var timerID;
+        var lastUpdate;
+        var bufferCanvas;
+        var bufferContext;
+        var stageScaleMode;
+        /**
+         * FPS value
+         */
+        Stage.fps = 30;
+        Stage.width;
+        Stage.height;
+        /**
+         * Game running state
+         */
+        Stage.isRunning = false;
+        /**
+         * Set the stage could recieve touch event
+         */
+        Stage.touchEnabled = false;
+        /**
+         * Set the stage could recieve mouse event
+         */
+        Stage.mouseEnabled = false;
+        /**
+         * Set the stage could recieve keyboard event
+         */
+        Stage.keyboardEnabled = false;
+        /**
+         * Canvas element of this stage
+         */
+        Stage.canvas;
+        /**
+         * Canvas rendering context2d object
+         */
+        Stage.context;
+        /**
+         * Root sprite container of the stage
+         */
+        Stage.sprite;
+        /**
+         * Visible rectangle after adjusting for resolution design
+         */
+        Stage.visibleRect;
+        /**
+         *  Scale mode for adjusting resolution design
+         */
+        (function (ScaleMode) {
+            ScaleMode[ScaleMode["SHOW_ALL"] = 0] = "SHOW_ALL";
+            ScaleMode[ScaleMode["NO_BORDER"] = 1] = "NO_BORDER";
+            ScaleMode[ScaleMode["FIX_WIDTH"] = 2] = "FIX_WIDTH";
+            ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
+        })(Stage.ScaleMode || (Stage.ScaleMode = {}));
+        var ScaleMode = Stage.ScaleMode;
+        /**
+         * Scale value for adjusting the resolution design
+         */
+        Stage._scale;
+        function adjustStageSize() {
+            var style = Stage.canvas.style;
+            var device = {
+                width: window.innerWidth,
+                height: window.innerHeight
+            };
+            var scaleX = device.width / Stage.width;
+            var scaleY = device.height / Stage.height;
+            var deltaWidth = 0;
+            var deltaHeight = 0;
+            var scale;
+            var width;
+            var height;
+            switch (stageScaleMode) {
+                case ScaleMode.SHOW_ALL:
+                    if (scaleX < scaleY) {
+                        scale = scaleX;
+                        width = device.width;
+                        height = scale * Stage.height;
+                    }
+                    else {
+                        scale = scaleY;
+                        width = scale * Stage.width;
+                        height = device.height;
+                    }
+                    break;
+                case ScaleMode.NO_BORDER:
+                    if (scaleX > scaleY) {
+                        scale = scaleX;
+                    }
+                    else {
+                        scale = scaleY;
+                    }
+                    width = Stage.width * scale;
+                    height = Stage.height * scale;
+                    deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
+                    deltaHeight = (Stage.height - device.height / scale) * 0.5 | 0;
+                    break;
+                case ScaleMode.FIX_WIDTH:
+                    scale = scaleX;
+                    width = device.width;
+                    height = device.height * scale;
+                    deltaHeight = (Stage.height - device.height / scale) * 0.5 | 0;
+                    break;
+                case ScaleMode.FIX_HEIGHT:
+                    scale = scaleY;
+                    width = scale * device.width;
+                    height = device.height;
+                    deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
+                    break;
+                default:
+                    throw new Error('Unknow stage scale mode "' + stageScaleMode + '"');
+            }
+            style.width = width + 'px';
+            style.height = height + 'px';
+            style.top = ((device.height - height) * 0.5) + 'px';
+            style.left = ((device.width - width) * 0.5) + 'px';
+            style.position = 'absolute';
+            Stage.visibleRect.left += deltaWidth;
+            Stage.visibleRect.right -= deltaWidth;
+            Stage.visibleRect.top += deltaHeight;
+            Stage.visibleRect.bottom -= deltaHeight;
+            Stage._scale = scale;
+        }
+        function initScreenEvent() {
+            window.addEventListener("resize", adjustStageSize);
+        }
+        function getDeltaTime() {
+            var now = Date.now();
+            var delta = now - lastUpdate;
+            lastUpdate = now;
+            return delta / 1000;
+        }
+        function step() {
+            var width = Stage.canvas.width;
+            var height = Stage.canvas.height;
+            var deltaTime = getDeltaTime();
+            canvas2d.Action._update(deltaTime);
+            Stage.sprite._update(deltaTime);
+            bufferContext.clearRect(0, 0, width, height);
+            Stage.sprite._visit(bufferContext);
+            Stage.context.clearRect(0, 0, width, height);
+            Stage.context.drawImage(bufferCanvas, 0, 0, width, height);
+            timerID = setTimeout(step, 1000 / Stage.fps);
+        }
+        /**
+         * Initialize the stage
+         * @param  canvas     Canvas element
+         * @param  width      Resolution design width
+         * @param  height     Resolution design height
+         * @param  scaleMode  Adjust resolution design scale mode
+         */
+        function init(canvas, width, height, scaleMode) {
+            Stage.sprite = new canvas2d.Sprite({
+                x: width * 0.5,
+                y: height * 0.5,
+                width: width,
+                height: height
+            });
+            stageScaleMode = scaleMode;
+            this.canvas = canvas;
+            this.context = canvas.getContext('2d');
+            bufferCanvas = document.createElement("canvas");
+            bufferContext = bufferCanvas.getContext("2d");
+            this.width = canvas.width = bufferCanvas.width = width;
+            this.height = canvas.height = bufferCanvas.height = height;
+            Stage.visibleRect = { left: 0, right: width, top: 0, bottom: height };
+            adjustStageSize();
+            initScreenEvent();
+        }
+        Stage.init = init;
+        /**
+         * Start the stage event loop
+         */
+        function start() {
+            if (!Stage.isRunning) {
+                lastUpdate = Date.now();
+                step();
+                canvas2d.UIEvent.register();
+                Stage.isRunning = true;
+            }
+        }
+        Stage.start = start;
+        /**
+         * Stop the stage event loop
+         */
+        function stop() {
+            if (!Stage.isRunning) {
+                return;
+            }
+            clearTimeout(timerID);
+            canvas2d.UIEvent.unregister();
+            Stage.isRunning = false;
+        }
+        Stage.stop = stop;
+        /**
+         * Add sprite to the stage
+         */
+        function addChild(child) {
+            Stage.sprite.addChild(child);
+        }
+        Stage.addChild = addChild;
+        /**
+         * Remove sprite from the stage
+         */
+        function removeChild(child) {
+            Stage.sprite.removeChild(child);
+        }
+        Stage.removeChild = removeChild;
+        /**
+         * Remove all sprites from the stage
+         * @param  recusive  Recusize remove all the children
+         */
+        function removeAllChild(recusive) {
+            Stage.sprite.removeAllChild(recusive);
+        }
+        Stage.removeAllChild = removeAllChild;
+    })(Stage = canvas2d.Stage || (canvas2d.Stage = {}));
 })(canvas2d || (canvas2d = {}));
 /// <reference path="stage.ts" />
 var canvas2d;
@@ -1044,7 +1344,8 @@ var canvas2d;
             return mouseLoc;
         }
         function isRectContainPoint(rect, p) {
-            return rect.x <= p.stageX && rect.x + rect.width >= p.stageX && rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
+            return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
+                rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
         }
         function touchBeginHandler(event) {
             if (!canvas2d.Stage.isRunning || !canvas2d.Stage.touchEnabled) {
@@ -1224,7 +1525,7 @@ var canvas2d;
             if (sprite.keyboardEnabled === false) {
                 return;
             }
-            if (typeof sprite[method] === 'function') {
+            if (hasImplements(sprite, method)) {
                 sprite[method](keyCode, event);
             }
             var i = 0, children = sprite.children, child;
@@ -1235,178 +1536,112 @@ var canvas2d;
             }
         }
         function hasImplements(sprite, type) {
-            return sprite[type] !== canvas2d.Sprite.prototype[type];
+            return sprite[type] !== canvas2d.Sprite.prototype[type] && typeof sprite[type] === 'function';
         }
     })(UIEvent = canvas2d.UIEvent || (canvas2d.UIEvent = {}));
 })(canvas2d || (canvas2d = {}));
-/// <reference path="action.ts" />
-/// <reference path="uievent.ts" />
 var canvas2d;
 (function (canvas2d) {
-    var Stage;
-    (function (Stage) {
-        var timerID;
-        var lastUpdate;
-        var bufferCanvas;
-        var bufferContext;
-        var stageScaleMode;
-        Stage.fps = 30;
-        Stage.width;
-        Stage.height;
-        Stage.isRunning = false;
-        Stage.touchEnabled = false;
-        Stage.mouseEnabled = false;
-        Stage.keyboardEnabled = false;
-        Stage.canvas;
-        Stage.context;
-        Stage.sprite;
-        Stage._scale;
-        Stage.visibleRect;
-        (function (ScaleMode) {
-            ScaleMode[ScaleMode["SHOW_ALL"] = 0] = "SHOW_ALL";
-            ScaleMode[ScaleMode["NO_BORDER"] = 1] = "NO_BORDER";
-            ScaleMode[ScaleMode["FIX_WIDTH"] = 2] = "FIX_WIDTH";
-            ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
-        })(Stage.ScaleMode || (Stage.ScaleMode = {}));
-        var ScaleMode = Stage.ScaleMode;
-        function adjustStageSize() {
-            var style = Stage.canvas.style;
-            var device = {
-                width: window.innerWidth,
-                height: window.innerHeight
-            };
-            var scaleX = device.width / Stage.width;
-            var scaleY = device.height / Stage.height;
-            var deltaWidth = 0;
-            var deltaHeight = 0;
-            var scale;
-            var width;
-            var height;
-            switch (stageScaleMode) {
-                case 0 /* SHOW_ALL */:
-                    if (scaleX < scaleY) {
-                        scale = scaleX;
-                        width = device.width;
-                        height = scale * Stage.height;
-                    }
-                    else {
-                        scale = scaleY;
-                        width = scale * Stage.width;
-                        height = device.height;
-                    }
-                    break;
-                case 1 /* NO_BORDER */:
-                    if (scaleX > scaleY) {
-                        scale = scaleX;
-                    }
-                    else {
-                        scale = scaleY;
-                    }
-                    width = Stage.width * scale;
-                    height = Stage.height * scale;
-                    deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
-                    deltaHeight = (Stage.height - device.height / scale) * 0.5 | 0;
-                    break;
-                case 2 /* FIX_WIDTH */:
-                    scale = scaleX;
-                    width = device.width;
-                    height = device.height * scale;
-                    deltaHeight = (Stage.height - device.height / scale) * 0.5 | 0;
-                    break;
-                case 3 /* FIX_HEIGHT */:
-                    scale = scaleY;
-                    width = scale * device.width;
-                    height = device.height;
-                    deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
-                    break;
-                default:
-                    throw new Error('Unknow stage scale mode "' + stageScaleMode + '"');
-            }
-            style.width = width + 'px';
-            style.height = height + 'px';
-            style.top = ((device.height - height) * 0.5) + 'px';
-            style.left = ((device.width - width) * 0.5) + 'px';
-            style.position = 'absolute';
-            Stage.visibleRect.left += deltaWidth;
-            Stage.visibleRect.right -= deltaWidth;
-            Stage.visibleRect.top += deltaHeight;
-            Stage.visibleRect.bottom -= deltaHeight;
-            Stage._scale = scale;
-        }
-        function initScreenEvent() {
-            window.addEventListener("resize", adjustStageSize);
-        }
-        function getDeltaTime() {
-            var now = Date.now();
-            var delta = now - lastUpdate;
-            lastUpdate = now;
-            return delta / 1000;
-        }
-        function step() {
-            var width = Stage.canvas.width;
-            var height = Stage.canvas.height;
-            var deltaTime = getDeltaTime();
-            canvas2d.Action._step(deltaTime);
-            Stage.sprite._update(deltaTime);
-            bufferContext.clearRect(0, 0, width, height);
-            Stage.sprite._visit(bufferContext);
-            Stage.context.clearRect(0, 0, width, height);
-            Stage.context.drawImage(bufferCanvas, 0, 0, width, height);
-            timerID = setTimeout(step, 1000 / Stage.fps);
-        }
-        function init(canvas, width, height, scaleMode) {
-            Stage.sprite = new canvas2d.Sprite({
-                x: width * 0.5,
-                y: height * 0.5,
-                width: width,
-                height: height
-            });
-            stageScaleMode = scaleMode;
-            this.canvas = canvas;
-            this.context = canvas.getContext('2d');
-            bufferCanvas = document.createElement("canvas");
-            bufferContext = bufferCanvas.getContext("2d");
-            this.width = canvas.width = bufferCanvas.width = width;
-            this.height = canvas.height = bufferCanvas.height = height;
-            Stage.visibleRect = { left: 0, right: width, top: 0, bottom: height };
-            adjustStageSize();
-            initScreenEvent();
-        }
-        Stage.init = init;
-        function start() {
-            if (!Stage.isRunning) {
-                lastUpdate = Date.now();
-                step();
-                canvas2d.UIEvent.register();
-                Stage.isRunning = true;
-            }
-        }
-        Stage.start = start;
-        function stop() {
-            if (!Stage.isRunning) {
-                return;
-            }
-            clearTimeout(timerID);
-            canvas2d.UIEvent.unregister();
-            Stage.isRunning = false;
-        }
-        Stage.stop = stop;
-        function addChild(child) {
-            Stage.sprite.addChild(child);
-        }
-        Stage.addChild = addChild;
-        function removeChild(child) {
-            Stage.sprite.removeChild(child);
-        }
-        Stage.removeChild = removeChild;
-        function removeAllChild(recusive) {
-            Stage.sprite.removeAllChild(recusive);
-        }
-        Stage.removeAllChild = removeAllChild;
-    })(Stage = canvas2d.Stage || (canvas2d.Stage = {}));
+    var UIEvent;
+    (function (UIEvent) {
+        var Key;
+        (function (Key) {
+            Key.MOUSE_LEFT = 1;
+            Key.MOUSE_MID = 2;
+            Key.MOUSE_RIGHT = 3;
+            Key.BACKSPACE = 8;
+            Key.TAB = 9;
+            Key.NUM_CENTER = 12;
+            Key.ENTER = 13;
+            Key.RETURN = 13;
+            Key.SHIFT = 16;
+            Key.CTRL = 17;
+            Key.ALT = 18;
+            Key.PAUSE = 19;
+            Key.CAPS_LOCK = 20;
+            Key.ESC = 27;
+            Key.ESCAPE = 27;
+            Key.SPACE = 32;
+            Key.PAGE_UP = 33;
+            Key.PAGE_DOWN = 34;
+            Key.END = 35;
+            Key.HOME = 36;
+            Key.LEFT = 37;
+            Key.UP = 38;
+            Key.RIGHT = 39;
+            Key.DOWN = 40;
+            Key.PRINT_SCREEN = 44;
+            Key.INSERT = 45;
+            Key.DELETE = 46;
+            Key.ZERO = 48;
+            Key.ONE = 49;
+            Key.TWO = 50;
+            Key.THREE = 51;
+            Key.FOUR = 52;
+            Key.FIVE = 53;
+            Key.SIX = 54;
+            Key.SEVEN = 55;
+            Key.EIGHT = 56;
+            Key.NINE = 57;
+            Key.A = 65;
+            Key.B = 66;
+            Key.C = 67;
+            Key.D = 68;
+            Key.E = 69;
+            Key.F = 70;
+            Key.G = 71;
+            Key.H = 72;
+            Key.I = 73;
+            Key.J = 74;
+            Key.K = 75;
+            Key.L = 76;
+            Key.M = 77;
+            Key.N = 78;
+            Key.O = 79;
+            Key.P = 80;
+            Key.Q = 81;
+            Key.R = 82;
+            Key.S = 83;
+            Key.T = 84;
+            Key.U = 85;
+            Key.V = 86;
+            Key.W = 87;
+            Key.X = 88;
+            Key.Y = 89;
+            Key.Z = 90;
+            Key.CONTEXT_MENU = 93;
+            Key.NUM0 = 96;
+            Key.NUM1 = 97;
+            Key.NUM2 = 98;
+            Key.NUM3 = 99;
+            Key.NUM4 = 100;
+            Key.NUM5 = 101;
+            Key.NUM6 = 102;
+            Key.NUM7 = 103;
+            Key.NUM8 = 104;
+            Key.NUM9 = 105;
+            Key.NUM_MULTIPLY = 106;
+            Key.NUM_PLUS = 107;
+            Key.NUM_MINUS = 109;
+            Key.NUM_PERIOD = 110;
+            Key.NUM_DIVISION = 111;
+            Key.F1 = 112;
+            Key.F2 = 113;
+            Key.F3 = 114;
+            Key.F4 = 115;
+            Key.F5 = 116;
+            Key.F6 = 117;
+            Key.F7 = 118;
+            Key.F8 = 119;
+            Key.F9 = 120;
+            Key.F10 = 121;
+            Key.F11 = 122;
+            Key.F12 = 123;
+        })(Key = UIEvent.Key || (UIEvent.Key = {}));
+    })(UIEvent = canvas2d.UIEvent || (canvas2d.UIEvent = {}));
 })(canvas2d || (canvas2d = {}));
 /// <reference path="sprite.ts" />
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
@@ -1493,103 +1728,4 @@ var canvas2d;
     })(canvas2d.Sprite);
     canvas2d.TextLabel = TextLabel;
 })(canvas2d || (canvas2d = {}));
-var canvas2d;
-(function (canvas2d) {
-    var UIEvent;
-    (function (UIEvent) {
-        var key;
-        (function (key) {
-            key.MOUSE_LEFT = 1;
-            key.MOUSE_MID = 2;
-            key.MOUSE_RIGHT = 3;
-            key.BACKSPACE = 8;
-            key.TAB = 9;
-            key.NUM_CENTER = 12;
-            key.ENTER = 13;
-            key.RETURN = 13;
-            key.SHIFT = 16;
-            key.CTRL = 17;
-            key.ALT = 18;
-            key.PAUSE = 19;
-            key.CAPS_LOCK = 20;
-            key.ESC = 27;
-            key.ESCAPE = 27;
-            key.SPACE = 32;
-            key.PAGE_UP = 33;
-            key.PAGE_DOWN = 34;
-            key.END = 35;
-            key.HOME = 36;
-            key.LEFT = 37;
-            key.UP = 38;
-            key.RIGHT = 39;
-            key.DOWN = 40;
-            key.PRINT_SCREEN = 44;
-            key.INSERT = 45;
-            key.DELETE = 46;
-            key.ZERO = 48;
-            key.ONE = 49;
-            key.TWO = 50;
-            key.THREE = 51;
-            key.FOUR = 52;
-            key.FIVE = 53;
-            key.SIX = 54;
-            key.SEVEN = 55;
-            key.EIGHT = 56;
-            key.NINE = 57;
-            key.A = 65;
-            key.B = 66;
-            key.C = 67;
-            key.D = 68;
-            key.E = 69;
-            key.F = 70;
-            key.G = 71;
-            key.H = 72;
-            key.I = 73;
-            key.J = 74;
-            key.K = 75;
-            key.L = 76;
-            key.M = 77;
-            key.N = 78;
-            key.O = 79;
-            key.P = 80;
-            key.Q = 81;
-            key.R = 82;
-            key.S = 83;
-            key.T = 84;
-            key.U = 85;
-            key.V = 86;
-            key.W = 87;
-            key.X = 88;
-            key.Y = 89;
-            key.Z = 90;
-            key.CONTEXT_MENU = 93;
-            key.NUM0 = 96;
-            key.NUM1 = 97;
-            key.NUM2 = 98;
-            key.NUM3 = 99;
-            key.NUM4 = 100;
-            key.NUM5 = 101;
-            key.NUM6 = 102;
-            key.NUM7 = 103;
-            key.NUM8 = 104;
-            key.NUM9 = 105;
-            key.NUM_MULTIPLY = 106;
-            key.NUM_PLUS = 107;
-            key.NUM_MINUS = 109;
-            key.NUM_PERIOD = 110;
-            key.NUM_DIVISION = 111;
-            key.F1 = 112;
-            key.F2 = 113;
-            key.F3 = 114;
-            key.F4 = 115;
-            key.F5 = 116;
-            key.F6 = 117;
-            key.F7 = 118;
-            key.F8 = 119;
-            key.F9 = 120;
-            key.F10 = 121;
-            key.F11 = 122;
-            key.F12 = 123;
-        })(key = UIEvent.key || (UIEvent.key = {}));
-    })(UIEvent = canvas2d.UIEvent || (canvas2d.UIEvent = {}));
-})(canvas2d || (canvas2d = {}));
+//# sourceMappingURL=canvas2d.js.map

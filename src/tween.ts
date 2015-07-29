@@ -1,4 +1,4 @@
-﻿module canvas2d {
+﻿namespace canvas2d {
 
     export var tween = {
         easeInQuad: function (pos) {

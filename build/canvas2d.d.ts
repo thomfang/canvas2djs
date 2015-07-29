@@ -1,23 +1,44 @@
 declare module canvas2d {
-    interface Rect {
+    interface IRect {
         x: number;
         y: number;
         width: number;
         height: number;
     }
+    /**
+     * Sprite texture
+     */
     class Texture {
+        /**
+         * Texture resource loading state
+         */
         ready: boolean;
         width: number;
         height: number;
+        /**
+         * Texture drawable source
+         */
         source: HTMLCanvasElement;
-        static create(source: any, rect?: Rect): Texture;
-        constructor(source: any, rect?: Rect);
+        /**
+         * Create a texture by source and clipping rectangle
+         * @param  source  Drawable source
+         * @param  rect    Clipping rect
+         */
+        static create(source: string | HTMLCanvasElement | HTMLImageElement, rect?: IRect): Texture;
+        /**
+         * @param  source  Drawable source
+         * @param  rect    Clipping rect
+         */
+        constructor(source: string | HTMLCanvasElement | HTMLImageElement, rect?: IRect);
         private _createByPath(path, rect?);
         private _createByImage(image, rect?);
     }
 }
 declare module canvas2d {
-    interface SpriteAttrs {
+    /**
+     * Sprite attributes
+     */
+    interface ISprite {
         x?: number;
         y?: number;
         width?: number;
@@ -33,16 +54,76 @@ declare module canvas2d {
         visible?: boolean;
         flippedX?: boolean;
         flippedY?: boolean;
+        /**
+         * Position X of the clipping rect on texture
+         */
         sourceX?: number;
+        /**
+         * Position Y of the clipping rect on texture
+         */
         sourceY?: number;
+        /**
+         * Width of the clipping rect on texture
+         */
         sourceWidth?: number;
+        /**
+         * Height of the clipping rect on texture
+         */
         sourceHeight?: number;
+        /**
+         * Use lighter mode
+         */
         lighterMode?: boolean;
+        /**
+         * Auto resize by the texture
+         */
+        autoResize?: boolean;
         touchEnabled?: boolean;
         mouseEnabled?: boolean;
         keyboardEnabled?: boolean;
+        /**
+         * Sprite initialize method
+         */
+        init?(): any;
+        /**
+         * Sprite would call this method each frame
+         * @param  deltaTime  Duration between now and last frame
+         */
+        update?(deltaTime: number): any;
+        /**
+         * Click event handler
+         */
+        onclick?(e: UIEvent.EventHelper): any;
+        /**
+         * Mouse begin event handler
+         */
+        onmousebegin?(e: UIEvent.EventHelper, event: MouseEvent): any;
+        /**
+         * Mouse moved event handler
+         */
+        onmousemoved?(e: UIEvent.EventHelper, event: MouseEvent): any;
+        /**
+         * Mouse ended event handler
+         */
+        onmouseended?(e: UIEvent.EventHelper, event: MouseEvent): any;
+        /**
+         * Touch begin event handler
+         */
+        ontouchbegin?(touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        /**
+         * Touch moved event handler
+         */
+        ontouchmoved?(touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        /**
+         * Touch ended event hadndler
+         */
+        ontouchended?(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event: TouchEvent): any;
     }
-    class Sprite {
+    const RAD_PER_DEG: number;
+    /**
+     * Sprite as the base element
+     */
+    class Sprite implements ISprite {
         private _width;
         private _height;
         private _originX;
@@ -56,24 +137,24 @@ declare module canvas2d {
         y: number;
         scaleX: number;
         scaleY: number;
+        opacity: number;
         sourceX: number;
         sourceY: number;
-        opacity: number;
+        sourceWidth: number;
+        sourceHeight: number;
         lighterMode: boolean;
         autoResize: boolean;
         flippedX: boolean;
         flippedY: boolean;
         visible: boolean;
-        sourceWidth: number;
-        sourceHeight: number;
         bgColor: string;
         parent: Sprite;
         children: Sprite[];
         touchEnabled: boolean;
         mouseEnabled: boolean;
         keyboardEnabled: boolean;
-        constructor(attrs?: SpriteAttrs);
-        protected _init(attrs?: SpriteAttrs): void;
+        constructor(attrs?: ISprite);
+        protected _init(attrs?: ISprite): void;
         width: number;
         height: number;
         originX: number;
@@ -88,29 +169,67 @@ declare module canvas2d {
         addChild(target: Sprite, position?: number): void;
         removeChild(target: Sprite): void;
         removeAllChild(recusive?: boolean): void;
-        init(): void;
-        update(deltaTime: number): void;
-        onclick(e: UIEvent.EventHelper): void;
-        onmousebegin(e: UIEvent.EventHelper, event: MouseEvent): void;
-        onmousemoved(e: UIEvent.EventHelper, event: MouseEvent): void;
-        onmouseended(e: UIEvent.EventHelper, event: MouseEvent): void;
-        ontouchbegin(touches: UIEvent.EventHelper[], event: any): void;
-        ontouchmoved(touches: UIEvent.EventHelper[], event: any): void;
-        ontouchended(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event: any): void;
+        init(): any;
+        update(deltaTime: number): any;
+        onclick(e: UIEvent.EventHelper): any;
+        onmousebegin(e: UIEvent.EventHelper, event: MouseEvent): any;
+        onmousemoved(e: UIEvent.EventHelper, event: MouseEvent): any;
+        onmouseended(e: UIEvent.EventHelper, event: MouseEvent): any;
+        ontouchbegin(touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        ontouchmoved(touches: UIEvent.EventHelper[], event: TouchEvent): any;
+        ontouchended(touch: UIEvent.EventHelper, touches: UIEvent.EventHelper[], event: TouchEvent): any;
     }
 }
 declare module canvas2d {
-    interface EasingFunc {
-        (percent: number, other?: any): number;
-    }
     var tween: {
-        [index: string]: EasingFunc;
+        easeInQuad: (pos: any) => number;
+        easeOutQuad: (pos: any) => number;
+        easeInOutQuad: (pos: any) => number;
+        easeInCubic: (pos: any) => number;
+        easeOutCubic: (pos: any) => number;
+        easeInOutCubic: (pos: any) => number;
+        easeInQuart: (pos: any) => number;
+        easeOutQuart: (pos: any) => number;
+        easeInOutQuart: (pos: any) => number;
+        easeInQuint: (pos: any) => number;
+        easeOutQuint: (pos: any) => number;
+        easeInOutQuint: (pos: any) => number;
+        easeInSine: (pos: any) => number;
+        easeOutSine: (pos: any) => number;
+        easeInOutSine: (pos: any) => number;
+        easeInExpo: (pos: any) => number;
+        easeOutExpo: (pos: any) => number;
+        easeInOutExpo: (pos: any) => number;
+        easeInCirc: (pos: any) => number;
+        easeOutCirc: (pos: any) => number;
+        easeInOutCirc: (pos: any) => number;
+        easeOutBounce: (pos: any) => number;
+        easeInBack: (pos: any) => number;
+        easeOutBack: (pos: any) => number;
+        easeInOutBack: (pos: any) => number;
+        elastic: (pos: any) => number;
+        swingFromTo: (pos: any) => number;
+        swingFrom: (pos: any) => number;
+        swingTo: (pos: any) => number;
+        bounce: (pos: any) => number;
+        bouncePast: (pos: any) => number;
+        easeFromTo: (pos: any) => number;
+        easeFrom: (pos: any) => number;
+        easeTo: (pos: any) => number;
+        linear: (pos: any) => any;
+        sinusoidal: (pos: any) => number;
+        reverse: (pos: any) => number;
+        mirror: (pos: any, transition: any) => any;
+        flicker: (pos: any) => any;
+        wobble: (pos: any) => number;
+        pulse: (pos: any, pulses: any) => number;
+        blink: (pos: any, blinks: any) => number;
+        spring: (pos: any) => number;
+        none: (pos: any) => number;
+        full: (pos: any) => number;
     };
 }
 declare module canvas2d {
-    interface ActionArg {
-        [index: string]: any;
-    }
     class Listener {
         private _actions;
         private _resolved;
@@ -120,42 +239,196 @@ declare module canvas2d {
         anyDone(callback: Function): Listener;
         _step(): void;
     }
+    /**
+     * Action manager
+     */
     class Action {
         sprite: Sprite;
         static _actionList: Array<Action>;
         static _listenerList: Array<Listener>;
         private _queue;
         _done: boolean;
+        /**
+         * Action running state
+         */
         running: boolean;
         constructor(sprite: Sprite);
+        /**
+         * Stop action by sprite
+         */
         static stop(sprite: Sprite): void;
+        /**
+         * Listen a action list, when all actions are done then publish to listener
+         */
         static listen(actions: Array<Action>): Listener;
-        static _step(deltaTime: number): void;
+        static _update(deltaTime: number): void;
         private _step(deltaTime);
+        /**
+         * Add a callback, it will exec after previous action is done.
+         */
         then(func: Function): Action;
+        /**
+         * Add a delay action.
+         */
         wait(time: number): Action;
+        /**
+         * Add a animation action
+         */
         animate(frameList: Array<Texture>, frameRate: number, repetitions?: number): Action;
-        to(attrs: ActionArg, duration: number): Action;
+        /**
+         * Transition action
+         * @param  attrs     Transition attributes map
+         * @param  duration  Transition duration
+         */
+        to(attrs: {
+            [attr: string]: number | {
+                dest: number;
+                easing: string | Function;
+            };
+        }, duration: number): Action;
+        /**
+         * Start the action
+         */
         start(): Action;
+        /**
+         * Stop the action
+         */
         stop(): void;
     }
 }
+/**
+ * Simple sound manager
+ */
 declare module canvas2d.Sound {
+    /**
+     * Could play sound
+     */
     var enabled: boolean;
-    var extention: string;
+    /**
+     * Extension for media type
+     */
+    var extension: string;
+    /**
+     *  Supported types of the browser
+     */
     var supportedType: {
         [index: string]: boolean;
     };
-    interface Resource {
+    interface ISoundResource {
         name: string;
         channels?: number;
     }
+    /**
+     * Load a sound resource
+     */
     function load(basePath: string, name: string, onComplete: Function, channels?: number): void;
-    function loadList(basePath: string, resList: Array<Resource>, callback?: Function): void;
+    /**
+     * Load multiple sound resources
+     */
+    function loadList(basePath: string, resList: Array<ISoundResource>, callback?: Function): void;
+    /**
+     * Get audio instance by resource name, when isGetList param is true, return all the instance list.
+     */
     function getAudio(name: string, isGetList?: boolean): any;
+    /**
+     * Play sound by name
+     */
     function play(name: string, loop?: boolean): any;
+    /**
+     * Pause sound by name
+     */
     function pause(name: string, reset?: boolean): void;
+    /**
+     * Stop the looping sound by name
+     */
     function stopLoop(name: string): void;
+}
+declare module canvas2d.Stage {
+    /**
+     * FPS value
+     */
+    var fps: number;
+    var width: number;
+    var height: number;
+    /**
+     * Game running state
+     */
+    var isRunning: boolean;
+    /**
+     * Set the stage could recieve touch event
+     */
+    var touchEnabled: boolean;
+    /**
+     * Set the stage could recieve mouse event
+     */
+    var mouseEnabled: boolean;
+    /**
+     * Set the stage could recieve keyboard event
+     */
+    var keyboardEnabled: boolean;
+    /**
+     * Canvas element of this stage
+     */
+    var canvas: HTMLCanvasElement;
+    /**
+     * Canvas rendering context2d object
+     */
+    var context: CanvasRenderingContext2D;
+    /**
+     * Root sprite container of the stage
+     */
+    var sprite: Sprite;
+    /**
+     * Visible rectangle after adjusting for resolution design
+     */
+    var visibleRect: {
+        left: number;
+        right: number;
+        top: number;
+        bottom: number;
+    };
+    /**
+     *  Scale mode for adjusting resolution design
+     */
+    enum ScaleMode {
+        SHOW_ALL = 0,
+        NO_BORDER = 1,
+        FIX_WIDTH = 2,
+        FIX_HEIGHT = 3,
+    }
+    /**
+     * Scale value for adjusting the resolution design
+     */
+    var _scale: number;
+    /**
+     * Initialize the stage
+     * @param  canvas     Canvas element
+     * @param  width      Resolution design width
+     * @param  height     Resolution design height
+     * @param  scaleMode  Adjust resolution design scale mode
+     */
+    function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode): void;
+    /**
+     * Start the stage event loop
+     */
+    function start(): void;
+    /**
+     * Stop the stage event loop
+     */
+    function stop(): void;
+    /**
+     * Add sprite to the stage
+     */
+    function addChild(child: Sprite): void;
+    /**
+     * Remove sprite from the stage
+     */
+    function removeChild(child: Sprite): void;
+    /**
+     * Remove all sprites from the stage
+     * @param  recusive  Recusize remove all the children
+     */
+    function removeAllChild(recusive?: boolean): void;
 }
 declare module canvas2d.UIEvent {
     interface EventHelper {
@@ -174,63 +447,7 @@ declare module canvas2d.UIEvent {
     function register(): void;
     function unregister(): void;
 }
-declare module canvas2d.Stage {
-    var fps: number;
-    var width: number;
-    var height: number;
-    var isRunning: boolean;
-    var touchEnabled: boolean;
-    var mouseEnabled: boolean;
-    var keyboardEnabled: boolean;
-    var canvas: HTMLCanvasElement;
-    var context: CanvasRenderingContext2D;
-    var sprite: Sprite;
-    var _scale: number;
-    var visibleRect: {
-        left: number;
-        right: number;
-        top: number;
-        bottom: number;
-    };
-    enum ScaleMode {
-        SHOW_ALL = 0,
-        NO_BORDER = 1,
-        FIX_WIDTH = 2,
-        FIX_HEIGHT = 3,
-    }
-    function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode): void;
-    function start(): void;
-    function stop(): void;
-    function addChild(child: Sprite): void;
-    function removeChild(child: Sprite): void;
-    function removeAllChild(recusive?: boolean): void;
-}
-declare module canvas2d {
-    interface TextLabelAttrs extends SpriteAttrs {
-        fontName?: string;
-        textAlign?: string;
-        fontColor?: string;
-        fontSize?: number;
-        lineSpace?: number;
-    }
-    class TextLabel extends Sprite {
-        fontName: string;
-        textAlign: string;
-        fontColor: string;
-        fontSize: number;
-        lineSpace: number;
-        private _lines;
-        private _text;
-        constructor(attrs?: TextLabelAttrs);
-        protected _init(attrs?: SpriteAttrs): void;
-        text: string;
-        private _resize();
-        addChild(): void;
-        removeChild(): void;
-        protected draw(context: CanvasRenderingContext2D): void;
-    }
-}
-declare module canvas2d.UIEvent.key {
+declare module canvas2d.UIEvent.Key {
     var MOUSE_LEFT: number;
     var MOUSE_MID: number;
     var MOUSE_RIGHT: number;
@@ -322,4 +539,29 @@ declare module canvas2d.UIEvent.key {
     var F10: number;
     var F11: number;
     var F12: number;
+}
+declare module canvas2d {
+    interface ITextLabel extends ISprite {
+        fontName?: string;
+        textAlign?: string;
+        fontColor?: string;
+        fontSize?: number;
+        lineSpace?: number;
+    }
+    class TextLabel extends Sprite {
+        fontName: string;
+        textAlign: string;
+        fontColor: string;
+        fontSize: number;
+        lineSpace: number;
+        private _lines;
+        private _text;
+        constructor(attrs?: ITextLabel);
+        protected _init(attrs?: ISprite): void;
+        text: string;
+        private _resize();
+        addChild(): void;
+        removeChild(): void;
+        protected draw(context: CanvasRenderingContext2D): void;
+    }
 }

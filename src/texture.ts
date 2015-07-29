@@ -1,6 +1,6 @@
-﻿module canvas2d {
+﻿namespace canvas2d {
 
-    export interface Rect {
+    export interface IRect {
         x: number;
         y: number;
         width: number;
@@ -11,7 +11,7 @@
     var loaded: { [index: string]: boolean } = {};
     var loading: { [index: string]: boolean } = {};
 
-    function getName(source: any, rect?: Rect): any {
+    function getName(source: any, rect?: IRect): any {
         var isStr = typeof source === 'string';
 
         if (!isStr || !source.src) {
@@ -24,7 +24,7 @@
         return src + str;
     }
 
-    function createCanvas(image: HTMLImageElement, rect: Rect): HTMLCanvasElement {
+    function createCanvas(image: HTMLImageElement, rect: IRect): HTMLCanvasElement {
         var canvas: HTMLCanvasElement = document.createElement("canvas");
         var context: CanvasRenderingContext2D = canvas.getContext('2d');
 
@@ -36,13 +36,30 @@
         return canvas;
     }
 
+    /**
+     * Sprite texture
+     */
     export class Texture {
+        
+        /**
+         * Texture resource loading state
+         */
         ready: boolean = false;
+        
         width: number = 0;
         height: number = 0;
+        
+        /**
+         * Texture drawable source
+         */
         source: HTMLCanvasElement;
 
-        static create(source: any, rect?: Rect): Texture {
+        /**
+         * Create a texture by source and clipping rectangle
+         * @param  source  Drawable source
+         * @param  rect    Clipping rect
+         */
+        static create(source: string | HTMLCanvasElement | HTMLImageElement, rect?: IRect): Texture {
             var name = getName(source, rect);
 
             if (name && cache[name]) {
@@ -52,12 +69,16 @@
             return new Texture(source, rect);
         }
 
-        constructor(source: any, rect?: Rect) {
+        /**
+         * @param  source  Drawable source
+         * @param  rect    Clipping rect
+         */
+        constructor(source: string | HTMLCanvasElement | HTMLImageElement, rect?: IRect) {
             if (typeof source === 'string') {
                 this._createByPath(source, rect);
             }
             else if ((source instanceof HTMLImageElement) || (source instanceof HTMLCanvasElement)) {
-                this._createByImage(source, rect);
+                this._createByImage(<HTMLImageElement>source, rect);
             }
             else {
                 throw new Error("Invalid texture source");
@@ -70,7 +91,7 @@
             }
         }
 
-        private _createByPath(path: string, rect?: Rect): void {
+        private _createByPath(path: string, rect?: IRect): void {
             var img: HTMLImageElement = new Image();
 
             img.onload = () => {
@@ -96,7 +117,7 @@
             loading[path] = true;
         }
 
-        private _createByImage(image: HTMLImageElement, rect?: Rect): void {
+        private _createByImage(image: HTMLImageElement, rect?: IRect): void {
             if (!rect) {
                 rect = {
                     x: 0,

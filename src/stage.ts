@@ -1,7 +1,8 @@
 ﻿/// <reference path="action.ts" />
 /// <reference path="uievent.ts" />
+/// <reference path="sprite.ts" />
 
-module canvas2d.Stage {
+namespace canvas2d.Stage {
 
     var timerID: number;
     var lastUpdate: number;
@@ -9,29 +10,67 @@ module canvas2d.Stage {
     var bufferContext: CanvasRenderingContext2D;
     var stageScaleMode: ScaleMode;
 
+    /**
+     * FPS value
+     */
     export var fps: number = 30;
     export var width: number;
     export var height: number;
+    
+    /**
+     * Game running state
+     */
     export var isRunning: boolean = false;
 
+    /**
+     * Set the stage could recieve touch event
+     */
     export var touchEnabled: boolean = false;
+    
+    /**
+     * Set the stage could recieve mouse event
+     */
     export var mouseEnabled: boolean = false;
+    
+    /**
+     * Set the stage could recieve keyboard event
+     */
     export var keyboardEnabled: boolean = false;
 
+    /**
+     * Canvas element of this stage
+     */
     export var canvas: HTMLCanvasElement;
+    
+    /**
+     * Canvas rendering context2d object
+     */
     export var context: CanvasRenderingContext2D;
 
+    /**
+     * Root sprite container of the stage
+     */
     export var sprite: Sprite;
-    export var _scale: number;
-
+    
+    /**
+     * Visible rectangle after adjusting for resolution design
+     */
     export var visibleRect: { left: number; right: number; top: number; bottom: number };
 
+    /**
+     *  Scale mode for adjusting resolution design
+     */
     export enum ScaleMode {
         SHOW_ALL,
         NO_BORDER,
         FIX_WIDTH,
         FIX_HEIGHT
     }
+    
+    /**
+     * Scale value for adjusting the resolution design
+     */
+    export var _scale: number;
 
     function adjustStageSize(): void {
         var style = canvas.style;
@@ -119,7 +158,7 @@ module canvas2d.Stage {
         var height: number = canvas.height;
         var deltaTime: number = getDeltaTime();
 
-        Action._step(deltaTime);
+        Action._update(deltaTime);
         sprite._update(deltaTime);
 
         bufferContext.clearRect(0, 0, width, height);
@@ -132,6 +171,13 @@ module canvas2d.Stage {
         timerID = setTimeout(step, 1000 / fps);
     }
 
+    /**
+     * Initialize the stage
+     * @param  canvas     Canvas element
+     * @param  width      Resolution design width
+     * @param  height     Resolution design height
+     * @param  scaleMode  Adjust resolution design scale mode 
+     */
     export function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode): void {
         sprite = new Sprite({
             x: width * 0.5,
@@ -158,6 +204,9 @@ module canvas2d.Stage {
         initScreenEvent();
     }
 
+    /**
+     * Start the stage event loop
+     */
     export function start(): void {
         if (!isRunning) {
             lastUpdate = Date.now();
@@ -168,6 +217,9 @@ module canvas2d.Stage {
         }
     }
 
+    /**
+     * Stop the stage event loop
+     */
     export function stop(): void {
         if (!isRunning) {
             return;
@@ -178,14 +230,24 @@ module canvas2d.Stage {
         isRunning = false;
     }
 
+    /**
+     * Add sprite to the stage
+     */
     export function addChild(child: Sprite): void {
         sprite.addChild(child);
     }
 
+    /**
+     * Remove sprite from the stage
+     */
     export function removeChild(child: Sprite): void {
         sprite.removeChild(child);
     }
 
+    /**
+     * Remove all sprites from the stage
+     * @param  recusive  Recusize remove all the children
+     */
     export function removeAllChild(recusive?: boolean): void {
         sprite.removeAllChild(recusive);
     }
