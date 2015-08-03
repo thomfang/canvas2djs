@@ -139,8 +139,8 @@ var canvas2d;
         Sprite.prototype._init = function (attrs) {
             var _this = this;
             Object.keys(attrs).forEach(function (name) { return _this[name] = attrs[name]; });
-            if (this.init) {
-                this.init();
+            if (typeof this['init'] === 'function') {
+                this['init']();
             }
         };
         Object.defineProperty(Sprite.prototype, "width", {
@@ -219,8 +219,8 @@ var canvas2d;
             configurable: true
         });
         Sprite.prototype._update = function (deltaTime) {
-            if (this.update) {
-                this.update(deltaTime);
+            if (typeof this['update'] === 'function') {
+                this['update'](deltaTime);
             }
             if (this.children && this.children.length) {
                 this.children.slice().forEach(function (child) {
@@ -336,15 +336,6 @@ var canvas2d;
             }
             this.children = null;
         };
-        Sprite.prototype.init = function () { };
-        Sprite.prototype.update = function (deltaTime) { };
-        Sprite.prototype.onclick = function (e) { };
-        Sprite.prototype.onmousebegin = function (e, event) { };
-        Sprite.prototype.onmousemoved = function (e, event) { };
-        Sprite.prototype.onmouseended = function (e, event) { };
-        Sprite.prototype.ontouchbegin = function (touches, event) { };
-        Sprite.prototype.ontouchmoved = function (touches, event) { };
-        Sprite.prototype.ontouchended = function (touch, touches, event) { };
         return Sprite;
     })();
     canvas2d.Sprite = Sprite;
@@ -1447,7 +1438,7 @@ var canvas2d;
             }
             dispatchKeyboard(canvas2d.Stage.sprite, event.keyCode, event, ON_KEY_UP);
         }
-        function dispatchTouch(sprite, offsetX, offsetY, touches, event, method) {
+        function dispatchTouch(sprite, offsetX, offsetY, touches, event, methodName) {
             if (sprite.touchEnabled === false || !sprite.visible) {
                 return false;
             }
@@ -1458,13 +1449,13 @@ var canvas2d;
             if (children && children.length) {
                 var index = children.length;
                 while (--index >= 0) {
-                    dispatched = dispatchTouch(children[index], offsetX, offsetY, touches, event, method);
+                    dispatched = dispatchTouch(children[index], offsetX, offsetY, touches, event, methodName);
                     if (dispatched && !touches.length) {
                         return true;
                     }
                 }
             }
-            var notImplementMethod = !hasImplements(sprite, method);
+            var notImplementMethod = !hasImplements(sprite, methodName);
             var notImplementClick = !hasImplements(sprite, ON_CLICK);
             if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
                 return false;
@@ -1487,13 +1478,13 @@ var canvas2d;
             }
             if (hits.length) {
                 if (!notImplementMethod) {
-                    sprite[method](hits, event);
+                    sprite[methodName](hits, event);
                 }
                 return true;
             }
             return false;
         }
-        function dispatchMouse(sprite, offsetX, offsetY, location, event, method) {
+        function dispatchMouse(sprite, offsetX, offsetY, location, event, methodName) {
             if (sprite.mouseEnabled === false || !sprite.visible) {
                 return false;
             }
@@ -1503,12 +1494,12 @@ var canvas2d;
             if (children && children.length) {
                 var index = children.length;
                 while (--index >= 0) {
-                    if (dispatchMouse(children[index], offsetX, offsetY, location, event, method)) {
+                    if (dispatchMouse(children[index], offsetX, offsetY, location, event, methodName)) {
                         return true;
                     }
                 }
             }
-            var notImplementMethod = !hasImplements(sprite, method);
+            var notImplementMethod = !hasImplements(sprite, methodName);
             var notImplementClick = !hasImplements(sprite, ON_CLICK);
             if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
                 return false;
@@ -1524,28 +1515,28 @@ var canvas2d;
                 location.localX = location.stageX - rect.x;
                 location.localY = location.stageY - rect.y;
                 if (!notImplementMethod) {
-                    sprite[method](location, event);
+                    sprite[methodName](location, event);
                 }
                 return true;
             }
             return false;
         }
-        function dispatchKeyboard(sprite, keyCode, event, method) {
+        function dispatchKeyboard(sprite, keyCode, event, methodName) {
             if (sprite.keyboardEnabled === false) {
                 return;
             }
-            if (hasImplements(sprite, method)) {
-                sprite[method](keyCode, event);
+            if (hasImplements(sprite, methodName)) {
+                sprite[methodName](keyCode, event);
             }
             var i = 0, children = sprite.children, child;
             if (children && children.length) {
                 for (; child = children[i]; i++) {
-                    dispatchKeyboard(child, keyCode, event, method);
+                    dispatchKeyboard(child, keyCode, event, methodName);
                 }
             }
         }
-        function hasImplements(sprite, type) {
-            return sprite[type] !== canvas2d.Sprite.prototype[type] && typeof sprite[type] === 'function';
+        function hasImplements(sprite, methodName) {
+            return sprite[methodName] !== canvas2d.Sprite.prototype[methodName] && typeof sprite[methodName] === 'function';
         }
     })(UIEvent = canvas2d.UIEvent || (canvas2d.UIEvent = {}));
 })(canvas2d || (canvas2d = {}));

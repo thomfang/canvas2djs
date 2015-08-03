@@ -251,7 +251,7 @@ namespace canvas2d.UIEvent {
         dispatchKeyboard(Stage.sprite, event.keyCode, event, ON_KEY_UP);
     }
 
-    function dispatchTouch(sprite: Sprite, offsetX: number, offsetY: number, touches: IEventHelper[], event, method: string): boolean {
+    function dispatchTouch(sprite: Sprite, offsetX: number, offsetY: number, touches: IEventHelper[], event: Event, methodName: string): boolean {
         if (sprite.touchEnabled === false || !sprite.visible) {
             return false;
         }
@@ -266,7 +266,7 @@ namespace canvas2d.UIEvent {
             var index = children.length;
 
             while (--index >= 0) {
-                dispatched = dispatchTouch(children[index], offsetX, offsetY, touches, event, method);
+                dispatched = dispatchTouch(children[index], offsetX, offsetY, touches, event, methodName);
 
                 if (dispatched && !touches.length) {
                     return true;
@@ -274,7 +274,7 @@ namespace canvas2d.UIEvent {
             }
         }
 
-        var notImplementMethod: boolean = !hasImplements(sprite, method);
+        var notImplementMethod: boolean = !hasImplements(sprite, methodName);
         var notImplementClick: boolean = !hasImplements(sprite, ON_CLICK);
 
         if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
@@ -302,7 +302,7 @@ namespace canvas2d.UIEvent {
 
         if (hits.length) {
             if (!notImplementMethod) {
-                sprite[method](hits, event);
+                sprite[methodName](hits, event);
             }
             return true;
         }
@@ -310,7 +310,7 @@ namespace canvas2d.UIEvent {
         return false;
     }
 
-    function dispatchMouse(sprite: Sprite, offsetX: number, offsetY: number, location: IEventHelper, event, method: string): boolean {
+    function dispatchMouse(sprite: Sprite, offsetX: number, offsetY: number, location: IEventHelper, event: Event, methodName: string): boolean {
         if (sprite.mouseEnabled === false || !sprite.visible) {
             return false;
         }
@@ -324,13 +324,13 @@ namespace canvas2d.UIEvent {
             var index = children.length;
 
             while (--index >= 0) {
-                if (dispatchMouse(children[index], offsetX, offsetY, location, event, method)) {
+                if (dispatchMouse(children[index], offsetX, offsetY, location, event, methodName)) {
                     return true;
                 }
             }
         }
 
-        var notImplementMethod: boolean = !hasImplements(sprite, method);
+        var notImplementMethod: boolean = !hasImplements(sprite, methodName);
         var notImplementClick: boolean = !hasImplements(sprite, ON_CLICK);
 
         if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
@@ -350,7 +350,7 @@ namespace canvas2d.UIEvent {
             location.localY = location.stageY - rect.y;
 
             if (!notImplementMethod) {
-                sprite[method](location, event);
+                sprite[methodName](location, event);
             }
             return true;
         }
@@ -358,25 +358,25 @@ namespace canvas2d.UIEvent {
         return false;
     }
 
-    function dispatchKeyboard(sprite: Sprite, keyCode: number, event, method: string) {
+    function dispatchKeyboard(sprite: Sprite, keyCode: number, event, methodName: string) {
         if (sprite.keyboardEnabled === false) {
             return;
         }
 
-        if (hasImplements(sprite, method)) {
-            sprite[method](keyCode, event);
+        if (hasImplements(sprite, methodName)) {
+            sprite[methodName](keyCode, event);
         }
 
         var i = 0, children = sprite.children, child;
 
         if (children && children.length) {
             for (; child = children[i]; i++) {
-                dispatchKeyboard(child, keyCode, event, method);
+                dispatchKeyboard(child, keyCode, event, methodName);
             }
         }
     }
 
-    function hasImplements(sprite: Sprite, type: string) {
-        return sprite[type] !== Sprite.prototype[type] && typeof sprite[type] === 'function';
+    function hasImplements(sprite: Sprite, methodName: string) {
+        return sprite[methodName] !== Sprite.prototype[methodName] && typeof sprite[methodName] === 'function';
     }
 }

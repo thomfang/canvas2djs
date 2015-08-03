@@ -169,15 +169,6 @@ declare module canvas2d {
         addChild(target: Sprite, position?: number): void;
         removeChild(target: Sprite): void;
         removeAllChild(recusive?: boolean): void;
-        init(): any;
-        update(deltaTime: number): any;
-        onclick(e: UIEvent.IEventHelper): any;
-        onmousebegin(e: UIEvent.IEventHelper, event: MouseEvent): any;
-        onmousemoved(e: UIEvent.IEventHelper, event: MouseEvent): any;
-        onmouseended(e: UIEvent.IEventHelper, event: MouseEvent): any;
-        ontouchbegin(touches: UIEvent.IEventHelper[], event: TouchEvent): any;
-        ontouchmoved(touches: UIEvent.IEventHelper[], event: TouchEvent): any;
-        ontouchended(touch: UIEvent.IEventHelper, touches: UIEvent.IEventHelper[], event: TouchEvent): any;
     }
 }
 declare module canvas2d {

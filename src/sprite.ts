@@ -149,9 +149,9 @@ namespace canvas2d {
 
         protected _init(attrs?: ISprite) {
             Object.keys(attrs).forEach(name => this[name] = attrs[name]);
-
-            if (this.init) {
-                this.init();
+            
+            if (typeof this['init'] === 'function') {
+                this['init']();
             }
         }
 
@@ -220,8 +220,8 @@ namespace canvas2d {
         }
 
         _update(deltaTime: number): void {
-            if (this.update) {
-                this.update(deltaTime);
+            if (typeof this['update'] === 'function') {
+                this['update'](deltaTime);
             }
 
             if (this.children && this.children.length) {
@@ -365,19 +365,5 @@ namespace canvas2d {
 
             this.children = null;
         }
-
-        init(): any {}
-        
-        update(deltaTime: number): any {}
-
-        onclick(e: UIEvent.IEventHelper): any {}
-
-        onmousebegin(e: UIEvent.IEventHelper, event: MouseEvent): any {}
-        onmousemoved(e: UIEvent.IEventHelper, event: MouseEvent): any {}
-        onmouseended(e: UIEvent.IEventHelper, event: MouseEvent): any {}
-
-        ontouchbegin(touches: UIEvent.IEventHelper[], event: TouchEvent): any {}
-        ontouchmoved(touches: UIEvent.IEventHelper[], event: TouchEvent): any {}
-        ontouchended(touch: UIEvent.IEventHelper, touches: UIEvent.IEventHelper[], event: TouchEvent): any {}
     }
 }
