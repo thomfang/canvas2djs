@@ -124,13 +124,13 @@ declare module canvas2d {
      * Sprite as the base element
      */
     class Sprite implements ISprite {
-        private _width;
-        private _height;
-        private _originX;
-        private _originY;
-        private _rotation;
-        private _rotationRad;
-        private _texture;
+        protected _width: number;
+        protected _height: number;
+        protected _originX: number;
+        protected _originY: number;
+        protected _rotation: number;
+        protected _rotationRad: number;
+        protected _texture: Texture;
         _originPixelX: number;
         _originPixelY: number;
         x: number;

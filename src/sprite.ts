@@ -110,13 +110,13 @@ namespace canvas2d {
      * Sprite as the base element
      */
     export class Sprite implements ISprite {
-        private _width: number = 0;
-        private _height: number = 0;
-        private _originX: number = 0.5;
-        private _originY: number = 0.5;
-        private _rotation: number = 0;
-        private _rotationRad: number = 0;
-        private _texture: Texture;
+        protected _width: number = 0;
+        protected _height: number = 0;
+        protected _originX: number = 0.5;
+        protected _originY: number = 0.5;
+        protected _rotation: number = 0;
+        protected _rotationRad: number = 0;
+        protected _texture: Texture;
 
         _originPixelX: number = 0;
         _originPixelY: number = 0;
