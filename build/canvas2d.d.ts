@@ -542,6 +542,7 @@ declare module canvas2d.UIEvent.Key {
 }
 declare module canvas2d {
     interface ITextLabel extends ISprite {
+        text?: string;
         fontName?: string;
         textAlign?: string;
         fontColor?: string;

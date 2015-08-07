@@ -3,6 +3,7 @@
 namespace canvas2d {
 
     export interface ITextLabel extends ISprite {
+        text?: string;
         fontName?: string;
         textAlign?: string;
         fontColor?: string;
