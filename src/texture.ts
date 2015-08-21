@@ -41,6 +41,8 @@
      */
     export class Texture {
         
+        private _readyCallbacks: any[] = [];
+        
         /**
          * Texture resource loading state
          */
@@ -90,18 +92,30 @@
                 cache[name] = this;
             }
         }
+        
+        public onReady(callback: (size: {width: number, height: number}) => any) {
+            this._readyCallbacks.push(callback);
+        }
 
         private _createByPath(path: string, rect?: IRect): void {
             var img: HTMLImageElement = new Image();
 
             img.onload = () => {
                 this._createByImage(img, rect);
-                img = null;
 
                 if (!loaded[path]) {
                     console.log("Loaded: " + path);
                 }
                 loaded[path] = true;
+                
+                if (this._readyCallbacks.length) {
+                    let size = {width: img.width, height: img.height};
+                    this._readyCallbacks.forEach((callback) => {
+                        callback(size);
+                    });
+                    this._readyCallbacks.length = 0;
+                }
+                img = null;
             };
 
             img.onerror = () => {

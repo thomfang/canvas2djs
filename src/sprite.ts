@@ -52,7 +52,7 @@ namespace canvas2d {
          * Auto resize by the texture
          */
         autoResize?: boolean;
-        
+
         touchEnabled?: boolean;
         mouseEnabled?: boolean;
         keyboardEnabled?: boolean;
@@ -148,8 +148,10 @@ namespace canvas2d {
         }
 
         protected _init(attrs?: ISprite) {
-            Object.keys(attrs).forEach(name => this[name] = attrs[name]);
-            
+            if (attrs) {
+                Object.keys(attrs).forEach(name => this[name] = attrs[name]);
+            }
+
             if (typeof this['init'] === 'function') {
                 this['init']();
             }
@@ -200,13 +202,21 @@ namespace canvas2d {
             return this._rotation;
         }
 
-        set texture(value: Texture) {
-            this._texture = value;
+        set texture(texture: Texture) {
+            this._texture = texture;
 
             if (this.autoResize) {
-                if (value) {
-                    this.width = value.width;
-                    this.height = value.height;
+                if (texture) {
+                    if (texture.ready) {
+                        this.width = texture.width;
+                        this.height = texture.height;
+                    }
+                    else {
+                        texture.onReady((size) => {
+                            this.width = size.width;
+                            this.height = size.height;
+                        });
+                    }
                 }
                 else {
                     this.width = 0;
@@ -257,7 +267,7 @@ namespace canvas2d {
                 sy = -sy;
             }
             if (sx !== 1 || sy !== 1) {
-                context.scale(sx,  sy);
+                context.scale(sx, sy);
             }
 
             var rotationRad: number = this._rotationRad % 360;
@@ -311,7 +321,7 @@ namespace canvas2d {
                 context.drawImage(
                     texture.source, sx, sy, sw, sh,
                     -this._originPixelX, -this._originPixelY, this.width, this.height
-                );
+                    );
             }
         }
 
@@ -364,6 +374,14 @@ namespace canvas2d {
             }
 
             this.children = null;
+        }
+
+        init(): any {
+
+        }
+
+        update(deltaTime: number): any {
+
         }
     }
 }

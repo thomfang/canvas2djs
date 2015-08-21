@@ -9,6 +9,7 @@ declare module canvas2d {
      * Sprite texture
      */
     class Texture {
+        private _readyCallbacks;
         /**
          * Texture resource loading state
          */
@@ -30,6 +31,10 @@ declare module canvas2d {
          * @param  rect    Clipping rect
          */
         constructor(source: string | HTMLCanvasElement | HTMLImageElement, rect?: IRect);
+        onReady(callback: (size: {
+            width: number;
+            height: number;
+        }) => any): void;
         private _createByPath(path, rect?);
         private _createByImage(image, rect?);
     }
@@ -169,6 +174,8 @@ declare module canvas2d {
         addChild(target: Sprite, position?: number): void;
         removeChild(target: Sprite): void;
         removeAllChild(recusive?: boolean): void;
+        init(): any;
+        update(deltaTime: number): any;
     }
 }
 declare module canvas2d {

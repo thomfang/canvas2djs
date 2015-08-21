@@ -128,6 +128,13 @@ namespace canvas2d.UIEvent {
         return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
             rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
     }
+    
+    function isMovedSmallRange(e: IEventHelper) {
+        let x = Math.abs(e.beginX - e.localX);
+        let y = Math.abs(e.beginY - e.localY);
+        
+        return x <= 5 && y <= 5;
+    }
 
     function touchBeginHandler(event) {
         if (!Stage.isRunning || !Stage.touchEnabled) {
@@ -175,7 +182,7 @@ namespace canvas2d.UIEvent {
                     target[ON_TOUCH_ENDED](touch, touches, event);
                 }
 
-                if (hasImplements(target, ON_CLICK) && target === touch.beginTarget && !touch._moved) {
+                if (hasImplements(target, ON_CLICK) && target === touch.beginTarget && (!touch._moved || isMovedSmallRange(touch))) {
                     target[ON_CLICK](touch, event);
                 }
             }
@@ -229,7 +236,7 @@ namespace canvas2d.UIEvent {
                 target[ON_MOUSE_ENDED](location, event);
             }
 
-            if (hasImplements(target, ON_CLICK) && target === location.beginTarget && !location._moved) {
+            if (hasImplements(target, ON_CLICK) && target === location.beginTarget && (!location._moved || isMovedSmallRange(location))) {
                 target[ON_CLICK](location, event);
             }
         }

@@ -29,6 +29,7 @@ var canvas2d;
          * @param  rect    Clipping rect
          */
         function Texture(source, rect) {
+            this._readyCallbacks = [];
             /**
              * Texture resource loading state
              */
@@ -61,16 +62,26 @@ var canvas2d;
             }
             return new Texture(source, rect);
         };
+        Texture.prototype.onReady = function (callback) {
+            this._readyCallbacks.push(callback);
+        };
         Texture.prototype._createByPath = function (path, rect) {
             var _this = this;
             var img = new Image();
             img.onload = function () {
                 _this._createByImage(img, rect);
-                img = null;
                 if (!loaded[path]) {
                     console.log("Loaded: " + path);
                 }
                 loaded[path] = true;
+                if (_this._readyCallbacks.length) {
+                    var size = { width: img.width, height: img.height };
+                    _this._readyCallbacks.forEach(function (callback) {
+                        callback(size);
+                    });
+                    _this._readyCallbacks.length = 0;
+                }
+                img = null;
             };
             img.onerror = function () {
                 img = null;
@@ -138,7 +149,9 @@ var canvas2d;
         }
         Sprite.prototype._init = function (attrs) {
             var _this = this;
-            Object.keys(attrs).forEach(function (name) { return _this[name] = attrs[name]; });
+            if (attrs) {
+                Object.keys(attrs).forEach(function (name) { return _this[name] = attrs[name]; });
+            }
             if (typeof this['init'] === 'function') {
                 this['init']();
             }
@@ -202,12 +215,21 @@ var canvas2d;
             get: function () {
                 return this._texture;
             },
-            set: function (value) {
-                this._texture = value;
+            set: function (texture) {
+                var _this = this;
+                this._texture = texture;
                 if (this.autoResize) {
-                    if (value) {
-                        this.width = value.width;
-                        this.height = value.height;
+                    if (texture) {
+                        if (texture.ready) {
+                            this.width = texture.width;
+                            this.height = texture.height;
+                        }
+                        else {
+                            texture.onReady(function (size) {
+                                _this.width = size.width;
+                                _this.height = size.height;
+                            });
+                        }
                     }
                     else {
                         this.width = 0;
@@ -335,6 +357,10 @@ var canvas2d;
                 this.removeChild(sprite);
             }
             this.children = null;
+        };
+        Sprite.prototype.init = function () {
+        };
+        Sprite.prototype.update = function (deltaTime) {
         };
         return Sprite;
     })();
@@ -1347,6 +1373,11 @@ var canvas2d;
             return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
                 rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
         }
+        function isMovedSmallRange(e) {
+            var x = Math.abs(e.beginX - e.localX);
+            var y = Math.abs(e.beginY - e.localY);
+            return x <= 5 && y <= 5;
+        }
         function touchBeginHandler(event) {
             if (!canvas2d.Stage.isRunning || !canvas2d.Stage.touchEnabled) {
                 return;
@@ -1380,7 +1411,7 @@ var canvas2d;
                     if (hasImplements(target, ON_TOUCH_ENDED)) {
                         target[ON_TOUCH_ENDED](touch, touches, event);
                     }
-                    if (hasImplements(target, ON_CLICK) && target === touch.beginTarget && !touch._moved) {
+                    if (hasImplements(target, ON_CLICK) && target === touch.beginTarget && (!touch._moved || isMovedSmallRange(touch))) {
                         target[ON_CLICK](touch, event);
                     }
                 }
@@ -1420,7 +1451,7 @@ var canvas2d;
                 if (hasImplements(target, ON_MOUSE_ENDED)) {
                     target[ON_MOUSE_ENDED](location, event);
                 }
-                if (hasImplements(target, ON_CLICK) && target === location.beginTarget && !location._moved) {
+                if (hasImplements(target, ON_CLICK) && target === location.beginTarget && (!location._moved || isMovedSmallRange(location))) {
                     target[ON_CLICK](location, event);
                 }
             }
