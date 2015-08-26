@@ -82,19 +82,21 @@ namespace canvas2d {
         }
 
         protected draw(context: CanvasRenderingContext2D): void {
+            this._drawBgColor(context);
+            this._drawBorder(context);
+            
             if (this._text.length === 0) {
                 return;
             }
 
-            this._drawBgColor(context);
-
             context.font = this.fontSize + 'px ' + this.fontName;
             context.fillStyle = this.fontColor;
             context.textAlign = this.textAlign;
-            context.textBaseline = 'top';
+            // context.textBaseline = 'top';
+            context.textBaseline = 'middle';
 
-            var y = -this.originY * this.height;
-            var w = this.width;
+            // var y = -this._originPixelY;
+            var y = 0;
             var h = this.fontSize + this.lineSpace;
 
             this._lines.forEach((text) => {

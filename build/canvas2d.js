@@ -305,8 +305,19 @@ var canvas2d;
                 context.fill();
             }
         };
+        Sprite.prototype._drawBorder = function (context) {
+            if (this.border) {
+                context.lineWidth = this.border.width;
+                context.strokeStyle = this.border.color;
+                context.beginPath();
+                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                context.closePath();
+                context.stroke();
+            }
+        };
         Sprite.prototype.draw = function (context) {
             this._drawBgColor(context);
+            this._drawBorder(context);
             var texture = this.texture;
             if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
                 var sx = this.sourceX;
@@ -1737,16 +1748,18 @@ var canvas2d;
             throw new Error("TextLabel has no child");
         };
         TextLabel.prototype.draw = function (context) {
+            this._drawBgColor(context);
+            this._drawBorder(context);
             if (this._text.length === 0) {
                 return;
             }
-            this._drawBgColor(context);
             context.font = this.fontSize + 'px ' + this.fontName;
             context.fillStyle = this.fontColor;
             context.textAlign = this.textAlign;
-            context.textBaseline = 'top';
-            var y = -this.originY * this.height;
-            var w = this.width;
+            // context.textBaseline = 'top';
+            context.textBaseline = 'middle';
+            // var y = -this._originPixelY;
+            var y = 0;
             var h = this.fontSize + this.lineSpace;
             this._lines.forEach(function (text) {
                 if (text.length > 0) {

@@ -53,6 +53,10 @@ declare module canvas2d {
         originX?: number;
         originY?: number;
         bgColor?: string;
+        border?: {
+            width: number;
+            color: string;
+        };
         texture?: Texture;
         rotation?: number;
         opacity?: number;
@@ -153,6 +157,10 @@ declare module canvas2d {
         flippedY: boolean;
         visible: boolean;
         bgColor: string;
+        border: {
+            width: number;
+            color: string;
+        };
         parent: Sprite;
         children: Sprite[];
         touchEnabled: boolean;
@@ -170,6 +178,7 @@ declare module canvas2d {
         _visit(context: CanvasRenderingContext2D): void;
         protected _visitAllChild(context: CanvasRenderingContext2D): void;
         protected _drawBgColor(context: CanvasRenderingContext2D): void;
+        protected _drawBorder(context: CanvasRenderingContext2D): void;
         protected draw(context: CanvasRenderingContext2D): void;
         addChild(target: Sprite, position?: number): void;
         removeChild(target: Sprite): void;

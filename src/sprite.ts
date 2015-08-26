@@ -16,6 +16,10 @@ namespace canvas2d {
         originX?: number;
         originY?: number;
         bgColor?: string;
+        border?: {
+            width: number;
+            color: string;
+        };
         texture?: Texture;
         rotation?: number;
         opacity?: number;
@@ -136,6 +140,10 @@ namespace canvas2d {
         flippedY: boolean = false;
         visible: boolean = true;
         bgColor: string;
+        border: {
+            width: number;
+            color: string;
+        };
         parent: Sprite;
         children: Sprite[];
 
@@ -308,8 +316,20 @@ namespace canvas2d {
             }
         }
 
+        protected _drawBorder(context: CanvasRenderingContext2D): void {
+            if (this.border) {
+                context.lineWidth = this.border.width;
+                context.strokeStyle = this.border.color;
+                context.beginPath();
+                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                context.closePath();
+                context.stroke();
+            }
+        }
+
         protected draw(context: CanvasRenderingContext2D): void {
             this._drawBgColor(context);
+            this._drawBorder(context);
 
             var texture = this.texture;
             if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
