@@ -134,6 +134,7 @@ var canvas2d;
             this.y = 0;
             this.scaleX = 1;
             this.scaleY = 1;
+            this.radius = 0;
             this.opacity = 1;
             this.sourceX = 0;
             this.sourceY = 0;
@@ -279,7 +280,7 @@ var canvas2d;
             if (rotationRad !== 0) {
                 context.rotate(rotationRad);
             }
-            if (this._width !== 0 && this._height !== 0) {
+            if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
                 this.draw(context);
             }
             this._visitAllChild(context);
@@ -300,7 +301,12 @@ var canvas2d;
             if (typeof this.bgColor === 'string') {
                 context.fillStyle = this.bgColor;
                 context.beginPath();
-                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                if (this.radius > 0) {
+                    context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+                }
+                else {
+                    context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                }
                 context.closePath();
                 context.fill();
             }
@@ -310,7 +316,12 @@ var canvas2d;
                 context.lineWidth = this.border.width;
                 context.strokeStyle = this.border.color;
                 context.beginPath();
-                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                if (this.radius > 0) {
+                    context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+                }
+                else {
+                    context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                }
                 context.closePath();
                 context.stroke();
             }
@@ -1078,8 +1089,6 @@ var canvas2d;
          * FPS value
          */
         Stage.fps = 30;
-        Stage.width;
-        Stage.height;
         /**
          * Game running state
          */
@@ -1097,22 +1106,6 @@ var canvas2d;
          */
         Stage.keyboardEnabled = false;
         /**
-         * Canvas element of this stage
-         */
-        Stage.canvas;
-        /**
-         * Canvas rendering context2d object
-         */
-        Stage.context;
-        /**
-         * Root sprite container of the stage
-         */
-        Stage.sprite;
-        /**
-         * Visible rectangle after adjusting for resolution design
-         */
-        Stage.visibleRect;
-        /**
          *  Scale mode for adjusting resolution design
          */
         (function (ScaleMode) {
@@ -1122,10 +1115,6 @@ var canvas2d;
             ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
         })(Stage.ScaleMode || (Stage.ScaleMode = {}));
         var ScaleMode = Stage.ScaleMode;
-        /**
-         * Scale value for adjusting the resolution design
-         */
-        Stage._scale;
         function adjustStageSize() {
             var style = Stage.canvas.style;
             var device = {
@@ -1686,8 +1675,7 @@ var canvas2d;
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var canvas2d;
 (function (canvas2d) {

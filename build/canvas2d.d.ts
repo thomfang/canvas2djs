@@ -1,4 +1,4 @@
-declare module canvas2d {
+declare namespace canvas2d {
     interface IRect {
         x: number;
         y: number;
@@ -39,7 +39,7 @@ declare module canvas2d {
         private _createByImage(image, rect?);
     }
 }
-declare module canvas2d {
+declare namespace canvas2d {
     /**
      * Sprite attributes
      */
@@ -53,6 +53,7 @@ declare module canvas2d {
         originX?: number;
         originY?: number;
         bgColor?: string;
+        radius?: number;
         border?: {
             width: number;
             color: string;
@@ -146,6 +147,7 @@ declare module canvas2d {
         y: number;
         scaleX: number;
         scaleY: number;
+        radius: number;
         opacity: number;
         sourceX: number;
         sourceY: number;
@@ -187,7 +189,7 @@ declare module canvas2d {
         update(deltaTime: number): any;
     }
 }
-declare module canvas2d {
+declare namespace canvas2d {
     var tween: {
         easeInQuad: (pos: any) => number;
         easeOutQuad: (pos: any) => number;
@@ -236,7 +238,7 @@ declare module canvas2d {
         full: (pos: any) => number;
     };
 }
-declare module canvas2d {
+declare namespace canvas2d {
     class Listener {
         private _actions;
         private _resolved;
@@ -306,7 +308,7 @@ declare module canvas2d {
 /**
  * Simple sound manager
  */
-declare module canvas2d.Sound {
+declare namespace canvas2d.Sound {
     /**
      * Could play sound
      */
@@ -350,7 +352,7 @@ declare module canvas2d.Sound {
      */
     function stopLoop(name: string): void;
 }
-declare module canvas2d.Stage {
+declare namespace canvas2d.Stage {
     /**
      * FPS value
      */
@@ -440,7 +442,7 @@ declare module canvas2d.Stage {
 /**
  * Virtual UI event manager
  */
-declare module canvas2d.UIEvent {
+declare namespace canvas2d.UIEvent {
     interface IEventHelper {
         identifier?: number;
         beginX: number;
@@ -463,7 +465,7 @@ declare module canvas2d.UIEvent {
      */
     function __unregister(): void;
 }
-declare module canvas2d.UIEvent.Key {
+declare namespace canvas2d.UIEvent.Key {
     var MOUSE_LEFT: number;
     var MOUSE_MID: number;
     var MOUSE_RIGHT: number;
@@ -556,7 +558,7 @@ declare module canvas2d.UIEvent.Key {
     var F11: number;
     var F12: number;
 }
-declare module canvas2d {
+declare namespace canvas2d {
     interface ITextLabel extends ISprite {
         text?: string;
         fontName?: string;

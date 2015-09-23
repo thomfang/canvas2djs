@@ -16,6 +16,7 @@ namespace canvas2d {
         originX?: number;
         originY?: number;
         bgColor?: string;
+        radius?: number;
         border?: {
             width: number;
             color: string;
@@ -129,6 +130,7 @@ namespace canvas2d {
         y: number = 0;
         scaleX: number = 1;
         scaleY: number = 1;
+        radius: number = 0;
         opacity: number = 1;
         sourceX: number = 0;
         sourceY: number = 0;
@@ -284,7 +286,7 @@ namespace canvas2d {
                 context.rotate(rotationRad);
             }
 
-            if (this._width !== 0 && this._height !== 0) {
+            if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
                 this.draw(context);
             }
 
@@ -310,7 +312,12 @@ namespace canvas2d {
             if (typeof this.bgColor === 'string') {
                 context.fillStyle = this.bgColor;
                 context.beginPath();
-                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                if (this.radius > 0) {
+                    context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+                }
+                else {
+                    context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                }
                 context.closePath();
                 context.fill();
             }
@@ -321,7 +328,12 @@ namespace canvas2d {
                 context.lineWidth = this.border.width;
                 context.strokeStyle = this.border.color;
                 context.beginPath();
-                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                if (this.radius > 0) {
+                    context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+                }
+                else {
+                    context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+                }
                 context.closePath();
                 context.stroke();
             }
