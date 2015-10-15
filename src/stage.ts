@@ -153,10 +153,9 @@ namespace canvas2d.Stage {
         return delta / 1000;
     }
 
-    function step(): void {
+    export function step(deltaTime: number): void {
         var width: number = canvas.width;
         var height: number = canvas.height;
-        var deltaTime: number = getDeltaTime();
 
         Action._update(deltaTime);
         sprite._update(deltaTime);
@@ -167,8 +166,6 @@ namespace canvas2d.Stage {
 
         context.clearRect(0, 0, width, height);
         context.drawImage(bufferCanvas, 0, 0, width, height);
-
-        timerID = setTimeout(step, 1000 / fps);
     }
 
     /**
@@ -204,13 +201,23 @@ namespace canvas2d.Stage {
         initScreenEvent();
     }
 
+    function startTimer() {
+        timerID = setTimeout(() => {
+            var deltaTime: number = getDeltaTime();
+            step(deltaTime);
+            startTimer();
+        }, 1000 / fps);
+    }
+
     /**
      * Start the stage event loop
      */
-    export function start(): void {
+    export function start(useOuterTimer?: boolean): void {
         if (!isRunning) {
-            lastUpdate = Date.now();
-            step();
+            if (!useOuterTimer) {
+                lastUpdate = Date.now();
+                startTimer();
+            }
 
             UIEvent.__register();
             isRunning = true;

@@ -409,6 +409,7 @@ declare namespace canvas2d.Stage {
      * Scale value for adjusting the resolution design
      */
     var _scale: number;
+    function step(deltaTime: number): void;
     /**
      * Initialize the stage
      * @param  canvas     Canvas element
@@ -420,7 +421,7 @@ declare namespace canvas2d.Stage {
     /**
      * Start the stage event loop
      */
-    function start(): void;
+    function start(useOuterTimer?: boolean): void;
     /**
      * Stop the stage event loop
      */

@@ -1188,18 +1188,17 @@ var canvas2d;
             lastUpdate = now;
             return delta / 1000;
         }
-        function step() {
+        function step(deltaTime) {
             var width = Stage.canvas.width;
             var height = Stage.canvas.height;
-            var deltaTime = getDeltaTime();
             canvas2d.Action._update(deltaTime);
             Stage.sprite._update(deltaTime);
             bufferContext.clearRect(0, 0, width, height);
             Stage.sprite._visit(bufferContext);
             Stage.context.clearRect(0, 0, width, height);
             Stage.context.drawImage(bufferCanvas, 0, 0, width, height);
-            timerID = setTimeout(step, 1000 / Stage.fps);
         }
+        Stage.step = step;
         /**
          * Initialize the stage
          * @param  canvas     Canvas element
@@ -1226,13 +1225,22 @@ var canvas2d;
             initScreenEvent();
         }
         Stage.init = init;
+        function startTimer() {
+            timerID = setTimeout(function () {
+                var deltaTime = getDeltaTime();
+                step(deltaTime);
+                startTimer();
+            }, 1000 / Stage.fps);
+        }
         /**
          * Start the stage event loop
          */
-        function start() {
+        function start(useOuterTimer) {
             if (!Stage.isRunning) {
-                lastUpdate = Date.now();
-                step();
+                if (!useOuterTimer) {
+                    lastUpdate = Date.now();
+                    startTimer();
+                }
                 canvas2d.UIEvent.__register();
                 Stage.isRunning = true;
             }
