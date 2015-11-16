@@ -9,6 +9,9 @@ namespace canvas2d {
         fontColor?: string;
         fontSize?: number;
         lineSpace?: number;
+        fontStyle?: string;
+        fontWeight?: string;
+        strokeColor?: string;
     }
 
     var measureContext = document.createElement("canvas").getContext("2d");
@@ -20,7 +23,10 @@ namespace canvas2d {
         textAlign: string = 'center';
         fontColor: string = '#000';
         fontSize: number = 20;
+        fontWeight: string = 'normal';
+        fontStyle: string = 'normal';
         lineSpace: number = 5;
+        strokeColor: string;
 
         private _lines: string[];
         private _text: string = '';
@@ -60,7 +66,7 @@ namespace canvas2d {
             var lineSpace = this.lineSpace;
 
             measureContext.save();
-            measureContext.font = fontSize + 'px ' + this.fontName;
+            measureContext.font = this.fontStyle + ' ' + this.fontWeight + ' ' + fontSize + 'px ' + this.fontName;
 
             this._lines.forEach((text, i) => {
                 width = Math.max(width, measureContext.measureText(text).width);
@@ -84,16 +90,20 @@ namespace canvas2d {
         protected draw(context: CanvasRenderingContext2D): void {
             this._drawBgColor(context);
             this._drawBorder(context);
-            
+
             if (this._text.length === 0) {
                 return;
             }
 
-            context.font = this.fontSize + 'px ' + this.fontName;
+            context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
             context.fillStyle = this.fontColor;
             context.textAlign = this.textAlign;
             // context.textBaseline = 'top';
             context.textBaseline = 'middle';
+
+            if (this.strokeColor) {
+                context.strokeStyle = this.strokeColor;
+            }
 
             // var y = -this._originPixelY;
             var y = 0;
@@ -102,6 +112,10 @@ namespace canvas2d {
             this._lines.forEach((text) => {
                 if (text.length > 0) {
                     context.fillText(text, 0, y);
+                    
+                    if (this.strokeColor) {
+                        context.strokeText(text, 0, y);
+                    }
                 }
                 y += h;
             });

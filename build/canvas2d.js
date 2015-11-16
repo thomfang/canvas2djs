@@ -1085,6 +1085,7 @@ var canvas2d;
         var bufferCanvas;
         var bufferContext;
         var stageScaleMode;
+        var isUseInnerTimer = true;
         /**
          * FPS value
          */
@@ -1227,6 +1228,9 @@ var canvas2d;
         Stage.init = init;
         function startTimer() {
             timerID = setTimeout(function () {
+                if (!isUseInnerTimer) {
+                    return;
+                }
                 var deltaTime = getDeltaTime();
                 step(deltaTime);
                 startTimer();
@@ -1237,7 +1241,8 @@ var canvas2d;
          */
         function start(useOuterTimer) {
             if (!Stage.isRunning) {
-                if (!useOuterTimer) {
+                isUseInnerTimer = !useOuterTimer;
+                if (isUseInnerTimer) {
                     lastUpdate = Date.now();
                     startTimer();
                 }
@@ -1253,16 +1258,16 @@ var canvas2d;
             if (!Stage.isRunning) {
                 return;
             }
+            Stage.isRunning = false;
             clearTimeout(timerID);
             canvas2d.UIEvent.__unregister();
-            Stage.isRunning = false;
         }
         Stage.stop = stop;
         /**
          * Add sprite to the stage
          */
-        function addChild(child) {
-            Stage.sprite.addChild(child);
+        function addChild(child, position) {
+            Stage.sprite.addChild(child, position);
         }
         Stage.addChild = addChild;
         /**
@@ -1697,6 +1702,8 @@ var canvas2d;
             this.textAlign = 'center';
             this.fontColor = '#000';
             this.fontSize = 20;
+            this.fontWeight = 'normal';
+            this.fontStyle = 'normal';
             this.lineSpace = 5;
             this._text = '';
             _super.prototype._init.call(this, attrs);
@@ -1728,7 +1735,7 @@ var canvas2d;
             var fontSize = this.fontSize;
             var lineSpace = this.lineSpace;
             measureContext.save();
-            measureContext.font = fontSize + 'px ' + this.fontName;
+            measureContext.font = this.fontStyle + ' ' + this.fontWeight + ' ' + fontSize + 'px ' + this.fontName;
             this._lines.forEach(function (text, i) {
                 width = Math.max(width, measureContext.measureText(text).width);
                 height = lineSpace * i + fontSize * (i + 1);
@@ -1744,22 +1751,29 @@ var canvas2d;
             throw new Error("TextLabel has no child");
         };
         TextLabel.prototype.draw = function (context) {
+            var _this = this;
             this._drawBgColor(context);
             this._drawBorder(context);
             if (this._text.length === 0) {
                 return;
             }
-            context.font = this.fontSize + 'px ' + this.fontName;
+            context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
             context.fillStyle = this.fontColor;
             context.textAlign = this.textAlign;
             // context.textBaseline = 'top';
             context.textBaseline = 'middle';
+            if (this.strokeColor) {
+                context.strokeStyle = this.strokeColor;
+            }
             // var y = -this._originPixelY;
             var y = 0;
             var h = this.fontSize + this.lineSpace;
             this._lines.forEach(function (text) {
                 if (text.length > 0) {
                     context.fillText(text, 0, y);
+                    if (_this.strokeColor) {
+                        context.strokeText(text, 0, y);
+                    }
                 }
                 y += h;
             });

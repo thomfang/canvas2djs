@@ -429,7 +429,7 @@ declare namespace canvas2d.Stage {
     /**
      * Add sprite to the stage
      */
-    function addChild(child: Sprite): void;
+    function addChild(child: Sprite, position?: number): void;
     /**
      * Remove sprite from the stage
      */
@@ -567,13 +567,19 @@ declare namespace canvas2d {
         fontColor?: string;
         fontSize?: number;
         lineSpace?: number;
+        fontStyle?: string;
+        fontWeight?: string;
+        strokeColor?: string;
     }
     class TextLabel extends Sprite {
         fontName: string;
         textAlign: string;
         fontColor: string;
         fontSize: number;
+        fontWeight: string;
+        fontStyle: string;
         lineSpace: number;
+        strokeColor: string;
         private _lines;
         private _text;
         constructor(attrs?: ITextLabel);

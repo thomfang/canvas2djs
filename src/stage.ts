@@ -9,6 +9,8 @@ namespace canvas2d.Stage {
     var bufferCanvas: HTMLCanvasElement;
     var bufferContext: CanvasRenderingContext2D;
     var stageScaleMode: ScaleMode;
+    
+    var isUseInnerTimer = true;
 
     /**
      * FPS value
@@ -203,6 +205,10 @@ namespace canvas2d.Stage {
 
     function startTimer() {
         timerID = setTimeout(() => {
+            if (!isUseInnerTimer) {
+                return;
+            }
+            
             var deltaTime: number = getDeltaTime();
             step(deltaTime);
             startTimer();
@@ -214,7 +220,9 @@ namespace canvas2d.Stage {
      */
     export function start(useOuterTimer?: boolean): void {
         if (!isRunning) {
-            if (!useOuterTimer) {
+            isUseInnerTimer = !useOuterTimer;
+            
+            if (isUseInnerTimer) {
                 lastUpdate = Date.now();
                 startTimer();
             }
@@ -232,16 +240,16 @@ namespace canvas2d.Stage {
             return;
         }
 
+        isRunning = false;
         clearTimeout(timerID);
         UIEvent.__unregister();
-        isRunning = false;
     }
 
     /**
      * Add sprite to the stage
      */
-    export function addChild(child: Sprite): void {
-        sprite.addChild(child);
+    export function addChild(child: Sprite, position?: number): void {
+        sprite.addChild(child, position);
     }
 
     /**
