@@ -116,6 +116,14 @@ var canvas2d;
 /// <reference path="texture.ts" />
 var canvas2d;
 (function (canvas2d) {
+    (function (AlignType) {
+        AlignType[AlignType["TOP"] = 0] = "TOP";
+        AlignType[AlignType["RIGHT"] = 1] = "RIGHT";
+        AlignType[AlignType["BOTTOM"] = 2] = "BOTTOM";
+        AlignType[AlignType["LEFT"] = 3] = "LEFT";
+        AlignType[AlignType["CENTER"] = 4] = "CENTER";
+    })(canvas2d.AlignType || (canvas2d.AlignType = {}));
+    var AlignType = canvas2d.AlignType;
     canvas2d.RAD_PER_DEG = Math.PI / 180;
     /**
      * Sprite as the base element
@@ -143,6 +151,7 @@ var canvas2d;
             this.flippedX = false;
             this.flippedY = false;
             this.visible = true;
+            this.clipOverflow = false;
             this.touchEnabled = true;
             this.mouseEnabled = true;
             this.keyboardEnabled = true;
@@ -164,6 +173,7 @@ var canvas2d;
             set: function (value) {
                 this._width = value;
                 this._originPixelX = this._width * this._originX;
+                this._adjustAlignX();
             },
             enumerable: true,
             configurable: true
@@ -175,6 +185,7 @@ var canvas2d;
             set: function (value) {
                 this._height = value;
                 this._originPixelY = this._height * this._originY;
+                this._adjustAlignY();
             },
             enumerable: true,
             configurable: true
@@ -186,6 +197,7 @@ var canvas2d;
             set: function (value) {
                 this._originX = value;
                 this._originPixelX = this._originX * this._width;
+                this._adjustAlignX();
             },
             enumerable: true,
             configurable: true
@@ -197,6 +209,7 @@ var canvas2d;
             set: function (value) {
                 this._originY = value;
                 this._originPixelY = this._originY * this._height;
+                this._adjustAlignY();
             },
             enumerable: true,
             configurable: true
@@ -237,6 +250,46 @@ var canvas2d;
                         this.height = 0;
                     }
                 }
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Sprite.prototype, "parent", {
+            get: function () {
+                return this._parent;
+            },
+            set: function (sprite) {
+                this._parent = sprite;
+                this._adjustAlignX();
+                this._adjustAlignY();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Sprite.prototype, "alignX", {
+            get: function () {
+                return this._alignX;
+            },
+            set: function (value) {
+                if (this._alignX === value || value === AlignType.BOTTOM || value === AlignType.TOP) {
+                    return;
+                }
+                this._alignX = value;
+                this._adjustAlignX();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Sprite.prototype, "alignY", {
+            get: function () {
+                return this._alignY;
+            },
+            set: function (value) {
+                if (this._alignY === value || value === AlignType.LEFT || value === AlignType.RIGHT) {
+                    return;
+                }
+                this._alignY = value;
+                this._adjustAlignY();
             },
             enumerable: true,
             configurable: true
@@ -286,6 +339,48 @@ var canvas2d;
             this._visitAllChild(context);
             context.restore();
         };
+        Sprite.prototype._adjustAlignX = function () {
+            if (!this.parent || this._alignX == null) {
+                return;
+            }
+            var x;
+            var ox = this._originPixelX;
+            switch (this._alignX) {
+                case AlignType.LEFT:
+                    x = ox;
+                    break;
+                case AlignType.RIGHT:
+                    x = this.parent.width - ox;
+                    break;
+                case AlignType.CENTER:
+                    x = this.parent.width * 0.5 + ox - this.width * 0.5;
+                    break;
+            }
+            if (x != null) {
+                this.x = x;
+            }
+        };
+        Sprite.prototype._adjustAlignY = function () {
+            if (!this.parent || this._alignY == null) {
+                return;
+            }
+            var y;
+            var oy = this._originPixelY;
+            switch (this._alignY) {
+                case AlignType.TOP:
+                    y = oy;
+                    break;
+                case AlignType.BOTTOM:
+                    y = this.parent.height - oy;
+                    break;
+                case AlignType.CENTER:
+                    y = this.parent.height * 0.5 + oy - this.height * 0.5;
+                    break;
+            }
+            if (y != null) {
+                this.y = y;
+            }
+        };
         Sprite.prototype._visitAllChild = function (context) {
             if (!this.children || !this.children.length) {
                 return;
@@ -296,6 +391,20 @@ var canvas2d;
             this.children.forEach(function (child) {
                 child._visit(context);
             });
+        };
+        Sprite.prototype._clip = function (context) {
+            if (!this.clipOverflow) {
+                return;
+            }
+            context.beginPath();
+            if (this.radius > 0) {
+                context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+            }
+            else {
+                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+            }
+            context.closePath();
+            context.clip();
         };
         Sprite.prototype._drawBgColor = function (context) {
             if (typeof this.bgColor === 'string') {
@@ -327,6 +436,7 @@ var canvas2d;
             }
         };
         Sprite.prototype.draw = function (context) {
+            this._clip(context);
             this._drawBgColor(context);
             this._drawBorder(context);
             var texture = this.texture;
@@ -380,6 +490,21 @@ var canvas2d;
             }
             this.children = null;
         };
+        Sprite.prototype.release = function (recusive) {
+            canvas2d.Action.stop(this);
+            if (recusive && this.children) {
+                while (this.children.length) {
+                    this.children[0].release(recusive);
+                }
+            }
+            else {
+                this.removeAllChild();
+            }
+            if (this.parent) {
+                this.parent.removeChild(this);
+            }
+            addReleaseSprite(this);
+        };
         Sprite.prototype.init = function () {
         };
         Sprite.prototype.update = function (deltaTime) {
@@ -387,6 +512,23 @@ var canvas2d;
         return Sprite;
     })();
     canvas2d.Sprite = Sprite;
+    var list = [];
+    var timerId;
+    function addReleaseSprite(sprite) {
+        list.push(sprite);
+        if (timerId != null) {
+            return;
+        }
+        setTimeout(function () {
+            list.forEach(function (e) {
+                for (var i in e) {
+                    delete e[i];
+                }
+            });
+            timerId = null;
+            list.length = 0;
+        }, 0);
+    }
 })(canvas2d || (canvas2d = {}));
 var canvas2d;
 (function (canvas2d) {
@@ -1781,5 +1923,97 @@ var canvas2d;
         return TextLabel;
     })(canvas2d.Sprite);
     canvas2d.TextLabel = TextLabel;
+})(canvas2d || (canvas2d = {}));
+/// <reference path="sprite" />
+/// <reference path="textlabel" />
+var canvas2d;
+(function (canvas2d) {
+    var Layout;
+    (function (Layout) {
+        var classMap = {};
+        /**
+         * 解析节点生成layoutTree
+         * @param  node 自定义的html标签
+         */
+        function parseToLayoutTree(htmlNode) {
+            var layoutNode = {
+                'class': htmlNode.getAttribute('class') || htmlNode.tagName.toLowerCase(),
+                'id': htmlNode.getAttribute('id'),
+            };
+            var attrsString = htmlNode.getAttribute('attrs');
+            layoutNode.attrs = attrsString ? _parseString(attrsString) : null;
+            layoutNode.children = Array.prototype.slice.call(htmlNode.children).map(function (child) { return parseToLayoutTree(child); });
+            return layoutNode;
+        }
+        Layout.parseToLayoutTree = parseToLayoutTree;
+        /**
+         * 根据layoutNode树创建sprite树
+         */
+        function createByLayoutTree(layoutTree) {
+            return _createSpirte(layoutTree);
+        }
+        Layout.createByLayoutTree = createByLayoutTree;
+        /**
+         * 注册标签名
+         */
+        function registerTag(tagName, spriteClass) {
+            if (classMap[tagName]) {
+                console.warn("\"" + tagName + "\" was override to", spriteClass);
+            }
+            classMap[tagName] = spriteClass;
+        }
+        Layout.registerTag = registerTag;
+        function _createSpirte(layoutNode, rootNode) {
+            var Class = _getClass(layoutNode.class);
+            var sprite = new Class(layoutNode.attrs);
+            if (layoutNode.id && rootNode) {
+                rootNode[layoutNode.id] = sprite;
+            }
+            rootNode = rootNode || sprite;
+            if (layoutNode.children) {
+                layoutNode.children.forEach(function (childOptions) {
+                    sprite.addChild(_createSpirte(childOptions, rootNode));
+                });
+            }
+            return sprite;
+        }
+        function _getClass(classname) {
+            if (typeof classname === 'function') {
+                return classname;
+            }
+            var namespace = classname;
+            if (classMap[namespace]) {
+                return classMap[namespace];
+            }
+            var context = window;
+            var path = namespace.split(/\W/);
+            path.forEach(function (key) {
+                if (context[key] == null) {
+                    throw new Error(namespace + ': class not found');
+                }
+                context = context[key];
+            });
+            if (typeof context !== 'function') {
+                throw new Error(namespace + ': is not a class');
+            }
+            if (!(context instanceof canvas2d.Sprite)) {
+                throw new Error(namespace + ': invalid sprite class');
+            }
+            classMap[namespace] = context;
+            return context;
+        }
+        function _parseString(attrsValue) {
+            try {
+                var fn = new Function('return (' + attrsValue + ')');
+            }
+            catch (e) {
+                console.error("Could not parse attrs string \"" + attrsValue + "\"");
+                throw e;
+            }
+            return fn();
+        }
+        registerTag('c2d:sprite', canvas2d.Sprite);
+        registerTag('c2d:textlabel', canvas2d.TextLabel);
+    })(Layout = canvas2d.Layout || (canvas2d.Layout = {}));
 })(canvas2d || (canvas2d = {}));
 //# sourceMappingURL=canvas2d.js.map

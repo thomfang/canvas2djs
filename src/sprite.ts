@@ -3,6 +3,14 @@
 
 namespace canvas2d {
 
+    export enum AlignType {
+        TOP,
+        RIGHT,
+        BOTTOM,
+        LEFT,
+        CENTER
+    }
+
     /**
      * Sprite attributes
      */
@@ -25,8 +33,11 @@ namespace canvas2d {
         rotation?: number;
         opacity?: number;
         visible?: boolean;
+        alignX?: AlignType,
+        alignY?: AlignType,
         flippedX?: boolean;
         flippedY?: boolean;
+        clipOverflow?: boolean;
         
         /**
          * Position X of the clipping rect on texture
@@ -122,6 +133,9 @@ namespace canvas2d {
         protected _rotation: number = 0;
         protected _rotationRad: number = 0;
         protected _texture: Texture;
+        protected _alignX: AlignType;
+        protected _alignY: AlignType;
+        protected _parent: Sprite;
 
         _originPixelX: number = 0;
         _originPixelY: number = 0;
@@ -141,12 +155,12 @@ namespace canvas2d {
         flippedX: boolean = false;
         flippedY: boolean = false;
         visible: boolean = true;
+        clipOverflow: boolean = false;
         bgColor: string;
         border: {
             width: number;
             color: string;
         };
-        parent: Sprite;
         children: Sprite[];
 
         touchEnabled: boolean = true;
@@ -170,6 +184,7 @@ namespace canvas2d {
         set width(value: number) {
             this._width = value;
             this._originPixelX = this._width * this._originX;
+            this._adjustAlignX();
         }
 
         get width(): number {
@@ -179,6 +194,7 @@ namespace canvas2d {
         set height(value: number) {
             this._height = value;
             this._originPixelY = this._height * this._originY;
+            this._adjustAlignY();
         }
 
         get height(): number {
@@ -188,6 +204,7 @@ namespace canvas2d {
         set originX(value: number) {
             this._originX = value;
             this._originPixelX = this._originX * this._width;
+            this._adjustAlignX();
         }
 
         get originX(): number {
@@ -197,6 +214,7 @@ namespace canvas2d {
         set originY(value: number) {
             this._originY = value;
             this._originPixelY = this._originY * this._height;
+            this._adjustAlignY();
         }
 
         get originY(): number {
@@ -237,6 +255,40 @@ namespace canvas2d {
 
         get texture() {
             return this._texture;
+        }
+
+        set parent(sprite: Sprite) {
+            this._parent = sprite;
+            this._adjustAlignX();
+            this._adjustAlignY();
+        }
+
+        get parent() {
+            return this._parent;
+        }
+
+        set alignX(value: AlignType) {
+            if (this._alignX === value || value === AlignType.BOTTOM || value === AlignType.TOP) {
+                return;
+            }
+            this._alignX = value;
+            this._adjustAlignX();
+        }
+
+        get alignX() {
+            return this._alignX;
+        }
+
+        set alignY(value: AlignType) {
+            if (this._alignY === value || value === AlignType.LEFT || value === AlignType.RIGHT) {
+                return;
+            }
+            this._alignY = value;
+            this._adjustAlignY();
+        }
+
+        get alignY() {
+            return this._alignY;
         }
 
         _update(deltaTime: number): void {
@@ -295,6 +347,56 @@ namespace canvas2d {
             context.restore();
         }
 
+        protected _adjustAlignX() {
+            if (!this.parent || this._alignX == null) {
+                return;
+            }
+
+            let x: number;
+            let ox = this._originPixelX;
+
+            switch (this._alignX) {
+                case AlignType.LEFT:
+                    x = ox;
+                    break;
+                case AlignType.RIGHT:
+                    x = this.parent.width - ox;
+                    break;
+                case AlignType.CENTER:
+                    x = this.parent.width * 0.5 + ox - this.width * 0.5;
+                    break;
+            }
+
+            if (x != null) {
+                this.x = x;
+            }
+        }
+
+        protected _adjustAlignY() {
+            if (!this.parent || this._alignY == null) {
+                return;
+            }
+
+            let y: number;
+            let oy = this._originPixelY;
+
+            switch (this._alignY) {
+                case AlignType.TOP:
+                    y = oy;
+                    break;
+                case AlignType.BOTTOM:
+                    y = this.parent.height - oy;
+                    break;
+                case AlignType.CENTER:
+                    y = this.parent.height * 0.5 + oy - this.height * 0.5;
+                    break;
+            }
+
+            if (y != null) {
+                this.y = y;
+            }
+        }
+
         protected _visitAllChild(context: CanvasRenderingContext2D): void {
             if (!this.children || !this.children.length) {
                 return;
@@ -306,6 +408,22 @@ namespace canvas2d {
             this.children.forEach((child) => {
                 child._visit(context);
             });
+        }
+
+        protected _clip(context: CanvasRenderingContext2D) {
+            if (!this.clipOverflow) {
+                return;
+            }
+
+            context.beginPath();
+            if (this.radius > 0) {
+                context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+            }
+            else {
+                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+            }
+            context.closePath();
+            context.clip();
         }
 
         protected _drawBgColor(context: CanvasRenderingContext2D): void {
@@ -340,6 +458,7 @@ namespace canvas2d {
         }
 
         protected draw(context: CanvasRenderingContext2D): void {
+            this._clip(context);
             this._drawBgColor(context);
             this._drawBorder(context);
 
@@ -353,7 +472,7 @@ namespace canvas2d {
                 context.drawImage(
                     texture.source, sx, sy, sw, sh,
                     -this._originPixelX, -this._originPixelY, this.width, this.height
-                    );
+                );
             }
         }
 
@@ -408,6 +527,25 @@ namespace canvas2d {
             this.children = null;
         }
 
+        release(recusive?: boolean) {
+            canvas2d.Action.stop(this);
+
+            if (recusive && this.children) {
+                while (this.children.length) {
+                    this.children[0].release(recusive);
+                }
+            }
+            else {
+                this.removeAllChild();
+            }
+
+            if (this.parent) {
+                this.parent.removeChild(this);
+            }
+
+            addReleaseSprite(this);
+        }
+
         init(): any {
 
         }
@@ -415,5 +553,27 @@ namespace canvas2d {
         update(deltaTime: number): any {
 
         }
+    }
+
+    let list: Sprite[] = [];
+    let timerId: number;
+
+    function addReleaseSprite(sprite: Sprite) {
+        list.push(sprite);
+
+        if (timerId != null) {
+            return;
+        }
+
+        setTimeout(() => {
+            list.forEach(e => {
+                for (let i in e) {
+                    delete e[i];
+                }
+            });
+
+            timerId = null;
+            list.length = 0;
+        }, 0);
     }
 }

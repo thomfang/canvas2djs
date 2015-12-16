@@ -40,6 +40,13 @@ declare namespace canvas2d {
     }
 }
 declare namespace canvas2d {
+    enum AlignType {
+        TOP = 0,
+        RIGHT = 1,
+        BOTTOM = 2,
+        LEFT = 3,
+        CENTER = 4,
+    }
     /**
      * Sprite attributes
      */
@@ -62,8 +69,11 @@ declare namespace canvas2d {
         rotation?: number;
         opacity?: number;
         visible?: boolean;
+        alignX?: AlignType;
+        alignY?: AlignType;
         flippedX?: boolean;
         flippedY?: boolean;
+        clipOverflow?: boolean;
         /**
          * Position X of the clipping rect on texture
          */
@@ -141,6 +151,9 @@ declare namespace canvas2d {
         protected _rotation: number;
         protected _rotationRad: number;
         protected _texture: Texture;
+        protected _alignX: AlignType;
+        protected _alignY: AlignType;
+        protected _parent: Sprite;
         _originPixelX: number;
         _originPixelY: number;
         x: number;
@@ -158,12 +171,12 @@ declare namespace canvas2d {
         flippedX: boolean;
         flippedY: boolean;
         visible: boolean;
+        clipOverflow: boolean;
         bgColor: string;
         border: {
             width: number;
             color: string;
         };
-        parent: Sprite;
         children: Sprite[];
         touchEnabled: boolean;
         mouseEnabled: boolean;
@@ -176,15 +189,22 @@ declare namespace canvas2d {
         originY: number;
         rotation: number;
         texture: Texture;
+        parent: Sprite;
+        alignX: AlignType;
+        alignY: AlignType;
         _update(deltaTime: number): void;
         _visit(context: CanvasRenderingContext2D): void;
+        protected _adjustAlignX(): void;
+        protected _adjustAlignY(): void;
         protected _visitAllChild(context: CanvasRenderingContext2D): void;
+        protected _clip(context: CanvasRenderingContext2D): void;
         protected _drawBgColor(context: CanvasRenderingContext2D): void;
         protected _drawBorder(context: CanvasRenderingContext2D): void;
         protected draw(context: CanvasRenderingContext2D): void;
         addChild(target: Sprite, position?: number): void;
         removeChild(target: Sprite): void;
         removeAllChild(recusive?: boolean): void;
+        release(recusive?: boolean): void;
         init(): any;
         update(deltaTime: number): any;
     }
@@ -590,4 +610,27 @@ declare namespace canvas2d {
         removeChild(): void;
         protected draw(context: CanvasRenderingContext2D): void;
     }
+}
+declare namespace canvas2d.Layout {
+    interface ILayoutNode {
+        class: string | Function;
+        attrs?: {
+            [name: string]: any;
+        };
+        id?: string;
+        children?: ILayoutNode[];
+    }
+    /**
+     * 解析节点生成layoutTree
+     * @param  node 自定义的html标签
+     */
+    function parseToLayoutTree(htmlNode: any): ILayoutNode;
+    /**
+     * 根据layoutNode树创建sprite树
+     */
+    function createByLayoutTree(layoutTree: ILayoutNode): any;
+    /**
+     * 注册标签名
+     */
+    function registerTag(tagName: string, spriteClass: Function): void;
 }
