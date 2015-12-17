@@ -629,7 +629,7 @@ declare module canvas2d.Layout {
     /**
      * 根据layoutNode树创建sprite树
      */
-    function createByLayoutTree(layoutTree: ILayoutNode): any;
+    function createByLayoutTree(layoutTree: ILayoutNode, context?: any): any;
     /**
      * 注册标签名
      */

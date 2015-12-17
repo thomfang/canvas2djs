@@ -32,8 +32,8 @@ namespace canvas2d.Layout {
     /**
      * 根据layoutNode树创建sprite树
      */
-    export function createByLayoutTree(layoutTree: ILayoutNode) {
-        return _createSpirte(layoutTree);
+    export function createByLayoutTree(layoutTree: ILayoutNode, context?: any) {
+        return _createSpirte(layoutTree, context);
     }
     
     /**
@@ -46,19 +46,19 @@ namespace canvas2d.Layout {
         classMap[tagName] = spriteClass;
     }
 
-    function _createSpirte(layoutNode: ILayoutNode, rootNode?: ILayoutNode) {
+    function _createSpirte(layoutNode: ILayoutNode, context?: any) {
         let Class = _getClass(layoutNode.class);
         let sprite = new Class(layoutNode.attrs);
 
-        if (layoutNode.id && rootNode) {
-            rootNode[layoutNode.id] = sprite;
+        if (layoutNode.id && context) {
+            context[layoutNode.id] = sprite;
         }
 
-        rootNode = rootNode || sprite;
+        context = context || sprite;
 
         if (layoutNode.children) {
             layoutNode.children.forEach(childOptions => {
-                sprite.addChild(_createSpirte(childOptions, rootNode));
+                sprite.addChild(_createSpirte(childOptions, context));
             });
         }
 

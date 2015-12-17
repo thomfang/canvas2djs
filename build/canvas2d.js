@@ -1987,8 +1987,8 @@ var canvas2d;
         /**
          * 根据layoutNode树创建sprite树
          */
-        function createByLayoutTree(layoutTree) {
-            return _createSpirte(layoutTree);
+        function createByLayoutTree(layoutTree, context) {
+            return _createSpirte(layoutTree, context);
         }
         Layout.createByLayoutTree = createByLayoutTree;
         /**
@@ -2001,16 +2001,16 @@ var canvas2d;
             classMap[tagName] = spriteClass;
         }
         Layout.registerTag = registerTag;
-        function _createSpirte(layoutNode, rootNode) {
+        function _createSpirte(layoutNode, context) {
             var Class = _getClass(layoutNode.class);
             var sprite = new Class(layoutNode.attrs);
-            if (layoutNode.id && rootNode) {
-                rootNode[layoutNode.id] = sprite;
+            if (layoutNode.id && context) {
+                context[layoutNode.id] = sprite;
             }
-            rootNode = rootNode || sprite;
+            context = context || sprite;
             if (layoutNode.children) {
                 layoutNode.children.forEach(function (childOptions) {
-                    sprite.addChild(_createSpirte(childOptions, rootNode));
+                    sprite.addChild(_createSpirte(childOptions, context));
                 });
             }
             return sprite;
