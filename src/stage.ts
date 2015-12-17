@@ -9,7 +9,7 @@ namespace canvas2d.Stage {
     var bufferCanvas: HTMLCanvasElement;
     var bufferContext: CanvasRenderingContext2D;
     var stageScaleMode: ScaleMode;
-    
+
     var isUseInnerTimer = true;
 
     /**
@@ -147,29 +147,6 @@ namespace canvas2d.Stage {
         window.addEventListener("resize", adjustStageSize);
     }
 
-    function getDeltaTime(): number {
-        var now = Date.now();
-        var delta = now - lastUpdate;
-
-        lastUpdate = now;
-        return delta / 1000;
-    }
-
-    export function step(deltaTime: number): void {
-        var width: number = canvas.width;
-        var height: number = canvas.height;
-
-        Action._update(deltaTime);
-        sprite._update(deltaTime);
-
-        bufferContext.clearRect(0, 0, width, height);
-
-        sprite._visit(bufferContext);
-
-        context.clearRect(0, 0, width, height);
-        context.drawImage(bufferCanvas, 0, 0, width, height);
-    }
-
     /**
      * Initialize the stage
      * @param  canvas     Canvas element
@@ -208,9 +185,11 @@ namespace canvas2d.Stage {
             if (!isUseInnerTimer) {
                 return;
             }
-            
+
             var deltaTime: number = getDeltaTime();
+            Action.step(deltaTime);
             step(deltaTime);
+            render();
             startTimer();
         }, 1000 / fps);
     }
@@ -221,28 +200,59 @@ namespace canvas2d.Stage {
     export function start(useOuterTimer?: boolean): void {
         if (!isRunning) {
             isUseInnerTimer = !useOuterTimer;
-            
+
             if (isUseInnerTimer) {
                 lastUpdate = Date.now();
                 startTimer();
             }
 
-            UIEvent.__register();
+            UIEvent.register();
             isRunning = true;
         }
+    }
+
+    export function step(deltaTime: number): void {
+        sprite._update(deltaTime);
     }
 
     /**
      * Stop the stage event loop
      */
-    export function stop(): void {
+    export function stop(unregisterUIEvent?: boolean): void {
         if (!isRunning) {
             return;
+        }
+        
+        if (unregisterUIEvent) {
+            UIEvent.unregister();
         }
 
         isRunning = false;
         clearTimeout(timerID);
-        UIEvent.__unregister();
+    }
+
+    function getDeltaTime(): number {
+        var now = Date.now();
+        var delta = now - lastUpdate;
+
+        lastUpdate = now;
+        return delta / 1000;
+    }
+
+    export function render() {
+        if (!isRunning) {
+            return;
+        }
+        
+        var width: number = canvas.width;
+        var height: number = canvas.height;
+
+        bufferContext.clearRect(0, 0, width, height);
+
+        sprite._visit(bufferContext);
+
+        context.clearRect(0, 0, width, height);
+        context.drawImage(bufferCanvas, 0, 0, width, height);
     }
 
     /**

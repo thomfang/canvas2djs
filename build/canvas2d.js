@@ -968,7 +968,7 @@ var canvas2d;
             Action._listenerList.push(listener);
             return listener;
         };
-        Action._update = function (deltaTime) {
+        Action.step = function (deltaTime) {
             var actionList = Action._actionList;
             var i = 0;
             var action;
@@ -1089,6 +1089,11 @@ var canvas2d;
                 if (onComplete) {
                     onComplete();
                 }
+                var clone;
+                while (--channels > 0) {
+                    clone = audio.cloneNode(true);
+                    audios[name].push(clone);
+                }
                 console.log("Loaded: " + path);
             }
             function onError(e) {
@@ -1101,13 +1106,8 @@ var canvas2d;
             audio['autobuffer'] = true;
             audio.setAttribute('src', path);
             audio.load();
-            console.log("Start to load: ", path);
             audios[name] = [audio];
-            var clone;
-            while (--channels > 0) {
-                clone = audio.cloneNode(true);
-                audios[name].push(clone);
-            }
+            console.log("Start to load: ", path);
         }
         Sound.load = load;
         /**
@@ -1232,6 +1232,8 @@ var canvas2d;
          * FPS value
          */
         Stage.fps = 30;
+        Stage.width;
+        Stage.height;
         /**
          * Game running state
          */
@@ -1249,6 +1251,22 @@ var canvas2d;
          */
         Stage.keyboardEnabled = false;
         /**
+         * Canvas element of this stage
+         */
+        Stage.canvas;
+        /**
+         * Canvas rendering context2d object
+         */
+        Stage.context;
+        /**
+         * Root sprite container of the stage
+         */
+        Stage.sprite;
+        /**
+         * Visible rectangle after adjusting for resolution design
+         */
+        Stage.visibleRect;
+        /**
          *  Scale mode for adjusting resolution design
          */
         (function (ScaleMode) {
@@ -1258,6 +1276,10 @@ var canvas2d;
             ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
         })(Stage.ScaleMode || (Stage.ScaleMode = {}));
         var ScaleMode = Stage.ScaleMode;
+        /**
+         * Scale value for adjusting the resolution design
+         */
+        Stage._scale;
         function adjustStageSize() {
             var style = Stage.canvas.style;
             var device = {
@@ -1325,23 +1347,6 @@ var canvas2d;
         function initScreenEvent() {
             window.addEventListener("resize", adjustStageSize);
         }
-        function getDeltaTime() {
-            var now = Date.now();
-            var delta = now - lastUpdate;
-            lastUpdate = now;
-            return delta / 1000;
-        }
-        function step(deltaTime) {
-            var width = Stage.canvas.width;
-            var height = Stage.canvas.height;
-            canvas2d.Action._update(deltaTime);
-            Stage.sprite._update(deltaTime);
-            bufferContext.clearRect(0, 0, width, height);
-            Stage.sprite._visit(bufferContext);
-            Stage.context.clearRect(0, 0, width, height);
-            Stage.context.drawImage(bufferCanvas, 0, 0, width, height);
-        }
-        Stage.step = step;
         /**
          * Initialize the stage
          * @param  canvas     Canvas element
@@ -1374,7 +1379,9 @@ var canvas2d;
                     return;
                 }
                 var deltaTime = getDeltaTime();
+                canvas2d.Action.step(deltaTime);
                 step(deltaTime);
+                render();
                 startTimer();
             }, 1000 / Stage.fps);
         }
@@ -1388,23 +1395,47 @@ var canvas2d;
                     lastUpdate = Date.now();
                     startTimer();
                 }
-                canvas2d.UIEvent.__register();
+                canvas2d.UIEvent.register();
                 Stage.isRunning = true;
             }
         }
         Stage.start = start;
+        function step(deltaTime) {
+            Stage.sprite._update(deltaTime);
+        }
+        Stage.step = step;
         /**
          * Stop the stage event loop
          */
-        function stop() {
+        function stop(unregisterUIEvent) {
             if (!Stage.isRunning) {
                 return;
             }
+            if (unregisterUIEvent) {
+                canvas2d.UIEvent.unregister();
+            }
             Stage.isRunning = false;
             clearTimeout(timerID);
-            canvas2d.UIEvent.__unregister();
         }
         Stage.stop = stop;
+        function getDeltaTime() {
+            var now = Date.now();
+            var delta = now - lastUpdate;
+            lastUpdate = now;
+            return delta / 1000;
+        }
+        function render() {
+            if (!Stage.isRunning) {
+                return;
+            }
+            var width = Stage.canvas.width;
+            var height = Stage.canvas.height;
+            bufferContext.clearRect(0, 0, width, height);
+            Stage.sprite._visit(bufferContext);
+            Stage.context.clearRect(0, 0, width, height);
+            Stage.context.drawImage(bufferCanvas, 0, 0, width, height);
+        }
+        Stage.render = render;
         /**
          * Add sprite to the stage
          */
@@ -1456,11 +1487,15 @@ var canvas2d;
         var ON_MOUSE_ENDED = "onmouseended";
         var touchMap = {};
         var mouseLoc;
+        var registered;
         UIEvent.supportTouch = "ontouchend" in window;
         /**
          * Register UI event, internal method
          */
-        function __register() {
+        function register() {
+            if (registered) {
+                return;
+            }
             if (canvas2d.Stage.touchEnabled && UIEvent.supportTouch) {
                 canvas2d.Stage.canvas.addEventListener(touchBegin, touchBeginHandler, false);
             }
@@ -1471,18 +1506,20 @@ var canvas2d;
                 document.addEventListener(keyDown, keyDownHandler, false);
                 document.addEventListener(keyUp, keyUpHandler, false);
             }
+            registered = true;
         }
-        UIEvent.__register = __register;
+        UIEvent.register = register;
         /**
          * Unregister UI event, internal method
          */
-        function __unregister() {
+        function unregister() {
             canvas2d.Stage.canvas.removeEventListener(touchBegin, touchBeginHandler, false);
             canvas2d.Stage.canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
             document.removeEventListener(keyDown, keyDownHandler, false);
             document.removeEventListener(keyUp, keyUpHandler, false);
+            registered = false;
         }
-        UIEvent.__unregister = __unregister;
+        UIEvent.unregister = unregister;
         function transformTouches(touches, justGet) {
             var ret = [];
             var pos = canvas2d.Stage.canvas.getBoundingClientRect();
@@ -1830,7 +1867,8 @@ var canvas2d;
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    __.prototype = b.prototype;
+    d.prototype = new __();
 };
 var canvas2d;
 (function (canvas2d) {

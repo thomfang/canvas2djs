@@ -117,7 +117,7 @@ namespace canvas2d {
         /**
          * Touch ended event hadndler
          */
-        ontouchended?(touch: UIEvent.IEventHelper, touches: UIEvent.IEventHelper[], event: TouchEvent): any;
+        ontouchended?(touches: UIEvent.IEventHelper[], event: TouchEvent): any;
     }
 
     export const RAD_PER_DEG: number = Math.PI / 180;

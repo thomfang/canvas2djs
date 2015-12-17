@@ -3,7 +3,7 @@
  */
 namespace canvas2d.Sound {
 
-    var audios: {[index: string]: Array<HTMLAudioElement>} = {};
+    var audios: { [index: string]: Array<HTMLAudioElement> } = {};
 
     /**
      * Could play sound
@@ -38,6 +38,13 @@ namespace canvas2d.Sound {
             if (onComplete) {
                 onComplete();
             }
+
+            var clone;
+            while (--channels > 0) {
+                clone = audio.cloneNode(true);
+                audios[name].push(clone);
+            }
+            
             console.log("Loaded: " + path);
         }
 
@@ -52,19 +59,10 @@ namespace canvas2d.Sound {
         audio['preload'] = "auto";
         audio['autobuffer'] = true;
         audio.setAttribute('src', path);
-
         audio.load();
-
-        console.log("Start to load: ", path);
-
         audios[name] = [audio];
 
-        var clone;
-
-        while (--channels > 0) {
-            clone = audio.cloneNode(true);
-            audios[name].push(clone);
-        }
+        console.log("Start to load: ", path);
     }
 
     /**

@@ -282,7 +282,7 @@ namespace canvas2d {
             return listener;
         }
 
-        static _update(deltaTime: number): void {
+        static step(deltaTime: number): void {
             var actionList: Array<Action> = Action._actionList;
             var i: number = 0;
             var action: Action;

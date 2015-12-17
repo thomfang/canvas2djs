@@ -43,13 +43,19 @@ namespace canvas2d.UIEvent {
 
     var touchMap: { [index: number]: IEventHelper } = {};
     var mouseLoc: IEventHelper;
-    
+
+    var registered: boolean;
+
     export var supportTouch: boolean = "ontouchend" in window;
 
     /**
      * Register UI event, internal method
      */
-    export function __register(): void {
+    export function register(): void {
+        if (registered) {
+            return;
+        }
+
         if (Stage.touchEnabled && supportTouch) {
             Stage.canvas.addEventListener(touchBegin, touchBeginHandler, false);
         }
@@ -60,17 +66,21 @@ namespace canvas2d.UIEvent {
             document.addEventListener(keyDown, keyDownHandler, false);
             document.addEventListener(keyUp, keyUpHandler, false);
         }
+
+        registered = true;
     }
 
     /**
      * Unregister UI event, internal method
      */
-    export function __unregister(): void {
+    export function unregister(): void {
         Stage.canvas.removeEventListener(touchBegin, touchBeginHandler, false);
         Stage.canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
 
         document.removeEventListener(keyDown, keyDownHandler, false);
         document.removeEventListener(keyUp, keyUpHandler, false);
+
+        registered = false;
     }
 
     function transformTouches(touches, justGet?: boolean): IEventHelper[] {
@@ -128,11 +138,11 @@ namespace canvas2d.UIEvent {
         return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
             rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
     }
-    
+
     function isMovedSmallRange(e: IEventHelper) {
         let x = Math.abs(e.beginX - e.localX);
         let y = Math.abs(e.beginY - e.localY);
-        
+
         return x <= 5 && y <= 5;
     }
 

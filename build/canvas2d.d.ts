@@ -1,4 +1,4 @@
-declare namespace canvas2d {
+declare module canvas2d {
     interface IRect {
         x: number;
         y: number;
@@ -39,7 +39,7 @@ declare namespace canvas2d {
         private _createByImage(image, rect?);
     }
 }
-declare namespace canvas2d {
+declare module canvas2d {
     enum AlignType {
         TOP = 0,
         RIGHT = 1,
@@ -137,7 +137,7 @@ declare namespace canvas2d {
         /**
          * Touch ended event hadndler
          */
-        ontouchended?(touch: UIEvent.IEventHelper, touches: UIEvent.IEventHelper[], event: TouchEvent): any;
+        ontouchended?(touches: UIEvent.IEventHelper[], event: TouchEvent): any;
     }
     const RAD_PER_DEG: number;
     /**
@@ -209,7 +209,7 @@ declare namespace canvas2d {
         update(deltaTime: number): any;
     }
 }
-declare namespace canvas2d {
+declare module canvas2d {
     var tween: {
         easeInQuad: (pos: any) => number;
         easeOutQuad: (pos: any) => number;
@@ -258,7 +258,7 @@ declare namespace canvas2d {
         full: (pos: any) => number;
     };
 }
-declare namespace canvas2d {
+declare module canvas2d {
     class Listener {
         private _actions;
         private _resolved;
@@ -290,7 +290,7 @@ declare namespace canvas2d {
          * Listen a action list, when all actions are done then publish to listener
          */
         static listen(actions: Array<Action>): Listener;
-        static _update(deltaTime: number): void;
+        static step(deltaTime: number): void;
         private _step(deltaTime);
         /**
          * Add a callback, it will exec after previous action is done.
@@ -328,7 +328,7 @@ declare namespace canvas2d {
 /**
  * Simple sound manager
  */
-declare namespace canvas2d.Sound {
+declare module canvas2d.Sound {
     /**
      * Could play sound
      */
@@ -372,7 +372,7 @@ declare namespace canvas2d.Sound {
      */
     function stopLoop(name: string): void;
 }
-declare namespace canvas2d.Stage {
+declare module canvas2d.Stage {
     /**
      * FPS value
      */
@@ -429,7 +429,6 @@ declare namespace canvas2d.Stage {
      * Scale value for adjusting the resolution design
      */
     var _scale: number;
-    function step(deltaTime: number): void;
     /**
      * Initialize the stage
      * @param  canvas     Canvas element
@@ -442,10 +441,12 @@ declare namespace canvas2d.Stage {
      * Start the stage event loop
      */
     function start(useOuterTimer?: boolean): void;
+    function step(deltaTime: number): void;
     /**
      * Stop the stage event loop
      */
-    function stop(): void;
+    function stop(unregisterUIEvent?: boolean): void;
+    function render(): void;
     /**
      * Add sprite to the stage
      */
@@ -463,7 +464,7 @@ declare namespace canvas2d.Stage {
 /**
  * Virtual UI event manager
  */
-declare namespace canvas2d.UIEvent {
+declare module canvas2d.UIEvent {
     interface IEventHelper {
         identifier?: number;
         beginX: number;
@@ -480,13 +481,13 @@ declare namespace canvas2d.UIEvent {
     /**
      * Register UI event, internal method
      */
-    function __register(): void;
+    function register(): void;
     /**
      * Unregister UI event, internal method
      */
-    function __unregister(): void;
+    function unregister(): void;
 }
-declare namespace canvas2d.UIEvent.Key {
+declare module canvas2d.UIEvent.Key {
     var MOUSE_LEFT: number;
     var MOUSE_MID: number;
     var MOUSE_RIGHT: number;
@@ -579,7 +580,7 @@ declare namespace canvas2d.UIEvent.Key {
     var F11: number;
     var F12: number;
 }
-declare namespace canvas2d {
+declare module canvas2d {
     interface ITextLabel extends ISprite {
         text?: string;
         fontName?: string;
@@ -611,7 +612,7 @@ declare namespace canvas2d {
         protected draw(context: CanvasRenderingContext2D): void;
     }
 }
-declare namespace canvas2d.Layout {
+declare module canvas2d.Layout {
     interface ILayoutNode {
         class: string | Function;
         attrs?: {
