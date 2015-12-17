@@ -194,8 +194,8 @@ declare module canvas2d {
         alignY: AlignType;
         _update(deltaTime: number): void;
         _visit(context: CanvasRenderingContext2D): void;
-        protected _adjustAlignX(): void;
-        protected _adjustAlignY(): void;
+        adjustAlignX(): void;
+        adjustAlignY(): void;
         protected _visitAllChild(context: CanvasRenderingContext2D): void;
         protected _clip(context: CanvasRenderingContext2D): void;
         protected _drawBgColor(context: CanvasRenderingContext2D): void;

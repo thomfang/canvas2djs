@@ -184,7 +184,7 @@ namespace canvas2d {
         set width(value: number) {
             this._width = value;
             this._originPixelX = this._width * this._originX;
-            this._adjustAlignX();
+            this.adjustAlignX();
         }
 
         get width(): number {
@@ -194,7 +194,7 @@ namespace canvas2d {
         set height(value: number) {
             this._height = value;
             this._originPixelY = this._height * this._originY;
-            this._adjustAlignY();
+            this.adjustAlignY();
         }
 
         get height(): number {
@@ -204,7 +204,7 @@ namespace canvas2d {
         set originX(value: number) {
             this._originX = value;
             this._originPixelX = this._originX * this._width;
-            this._adjustAlignX();
+            this.adjustAlignX();
         }
 
         get originX(): number {
@@ -214,7 +214,7 @@ namespace canvas2d {
         set originY(value: number) {
             this._originY = value;
             this._originPixelY = this._originY * this._height;
-            this._adjustAlignY();
+            this.adjustAlignY();
         }
 
         get originY(): number {
@@ -259,8 +259,8 @@ namespace canvas2d {
 
         set parent(sprite: Sprite) {
             this._parent = sprite;
-            this._adjustAlignX();
-            this._adjustAlignY();
+            this.adjustAlignX();
+            this.adjustAlignY();
         }
 
         get parent() {
@@ -272,7 +272,7 @@ namespace canvas2d {
                 return;
             }
             this._alignX = value;
-            this._adjustAlignX();
+            this.adjustAlignX();
         }
 
         get alignX() {
@@ -284,7 +284,7 @@ namespace canvas2d {
                 return;
             }
             this._alignY = value;
-            this._adjustAlignY();
+            this.adjustAlignY();
         }
 
         get alignY() {
@@ -347,7 +347,7 @@ namespace canvas2d {
             context.restore();
         }
 
-        protected _adjustAlignX() {
+        adjustAlignX() {
             if (!this.parent || this._alignX == null) {
                 return;
             }
@@ -360,7 +360,7 @@ namespace canvas2d {
                     x = ox;
                     break;
                 case AlignType.RIGHT:
-                    x = this.parent.width - ox;
+                    x = this.parent.width - (this.width - ox);
                     break;
                 case AlignType.CENTER:
                     x = this.parent.width * 0.5 + ox - this.width * 0.5;
@@ -372,7 +372,7 @@ namespace canvas2d {
             }
         }
 
-        protected _adjustAlignY() {
+        adjustAlignY() {
             if (!this.parent || this._alignY == null) {
                 return;
             }
@@ -385,7 +385,7 @@ namespace canvas2d {
                     y = oy;
                     break;
                 case AlignType.BOTTOM:
-                    y = this.parent.height - oy;
+                    y = this.parent.height - (this.height - oy);
                     break;
                 case AlignType.CENTER:
                     y = this.parent.height * 0.5 + oy - this.height * 0.5;

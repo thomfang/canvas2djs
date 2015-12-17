@@ -173,7 +173,7 @@ var canvas2d;
             set: function (value) {
                 this._width = value;
                 this._originPixelX = this._width * this._originX;
-                this._adjustAlignX();
+                this.adjustAlignX();
             },
             enumerable: true,
             configurable: true
@@ -185,7 +185,7 @@ var canvas2d;
             set: function (value) {
                 this._height = value;
                 this._originPixelY = this._height * this._originY;
-                this._adjustAlignY();
+                this.adjustAlignY();
             },
             enumerable: true,
             configurable: true
@@ -197,7 +197,7 @@ var canvas2d;
             set: function (value) {
                 this._originX = value;
                 this._originPixelX = this._originX * this._width;
-                this._adjustAlignX();
+                this.adjustAlignX();
             },
             enumerable: true,
             configurable: true
@@ -209,7 +209,7 @@ var canvas2d;
             set: function (value) {
                 this._originY = value;
                 this._originPixelY = this._originY * this._height;
-                this._adjustAlignY();
+                this.adjustAlignY();
             },
             enumerable: true,
             configurable: true
@@ -260,8 +260,8 @@ var canvas2d;
             },
             set: function (sprite) {
                 this._parent = sprite;
-                this._adjustAlignX();
-                this._adjustAlignY();
+                this.adjustAlignX();
+                this.adjustAlignY();
             },
             enumerable: true,
             configurable: true
@@ -275,7 +275,7 @@ var canvas2d;
                     return;
                 }
                 this._alignX = value;
-                this._adjustAlignX();
+                this.adjustAlignX();
             },
             enumerable: true,
             configurable: true
@@ -289,7 +289,7 @@ var canvas2d;
                     return;
                 }
                 this._alignY = value;
-                this._adjustAlignY();
+                this.adjustAlignY();
             },
             enumerable: true,
             configurable: true
@@ -339,7 +339,7 @@ var canvas2d;
             this._visitAllChild(context);
             context.restore();
         };
-        Sprite.prototype._adjustAlignX = function () {
+        Sprite.prototype.adjustAlignX = function () {
             if (!this.parent || this._alignX == null) {
                 return;
             }
@@ -350,7 +350,7 @@ var canvas2d;
                     x = ox;
                     break;
                 case AlignType.RIGHT:
-                    x = this.parent.width - ox;
+                    x = this.parent.width - (this.width - ox);
                     break;
                 case AlignType.CENTER:
                     x = this.parent.width * 0.5 + ox - this.width * 0.5;
@@ -360,7 +360,7 @@ var canvas2d;
                 this.x = x;
             }
         };
-        Sprite.prototype._adjustAlignY = function () {
+        Sprite.prototype.adjustAlignY = function () {
             if (!this.parent || this._alignY == null) {
                 return;
             }
@@ -371,7 +371,7 @@ var canvas2d;
                     y = oy;
                     break;
                 case AlignType.BOTTOM:
-                    y = this.parent.height - oy;
+                    y = this.parent.height - (this.height - oy);
                     break;
                 case AlignType.CENTER:
                     y = this.parent.height * 0.5 + oy - this.height * 0.5;
