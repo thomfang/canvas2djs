@@ -1,4 +1,4 @@
-declare module canvas2d {
+declare namespace canvas2d {
     interface IRect {
         x: number;
         y: number;
@@ -39,7 +39,7 @@ declare module canvas2d {
         private _createByImage(image, rect?);
     }
 }
-declare module canvas2d {
+declare namespace canvas2d {
     enum AlignType {
         TOP = 0,
         RIGHT = 1,
@@ -209,7 +209,7 @@ declare module canvas2d {
         update(deltaTime: number): any;
     }
 }
-declare module canvas2d {
+declare namespace canvas2d {
     var tween: {
         easeInQuad: (pos: any) => number;
         easeOutQuad: (pos: any) => number;
@@ -258,7 +258,7 @@ declare module canvas2d {
         full: (pos: any) => number;
     };
 }
-declare module canvas2d {
+declare namespace canvas2d {
     class Listener {
         private _actions;
         private _resolved;
@@ -328,7 +328,7 @@ declare module canvas2d {
 /**
  * Simple sound manager
  */
-declare module canvas2d.Sound {
+declare namespace canvas2d.Sound {
     /**
      * Could play sound
      */
@@ -372,7 +372,7 @@ declare module canvas2d.Sound {
      */
     function stopLoop(name: string): void;
 }
-declare module canvas2d.Stage {
+declare namespace canvas2d.Stage {
     /**
      * FPS value
      */
@@ -464,7 +464,7 @@ declare module canvas2d.Stage {
 /**
  * Virtual UI event manager
  */
-declare module canvas2d.UIEvent {
+declare namespace canvas2d.UIEvent {
     interface IEventHelper {
         identifier?: number;
         beginX: number;
@@ -487,7 +487,7 @@ declare module canvas2d.UIEvent {
      */
     function unregister(): void;
 }
-declare module canvas2d.UIEvent.Key {
+declare namespace canvas2d.UIEvent.Key {
     var MOUSE_LEFT: number;
     var MOUSE_MID: number;
     var MOUSE_RIGHT: number;
@@ -580,7 +580,7 @@ declare module canvas2d.UIEvent.Key {
     var F11: number;
     var F12: number;
 }
-declare module canvas2d {
+declare namespace canvas2d {
     interface ITextLabel extends ISprite {
         text?: string;
         fontName?: string;
@@ -612,7 +612,7 @@ declare module canvas2d {
         protected draw(context: CanvasRenderingContext2D): void;
     }
 }
-declare module canvas2d.Layout {
+declare namespace canvas2d.Layout {
     interface ILayoutNode {
         class: string | Function;
         attrs?: {

@@ -174,6 +174,7 @@ var canvas2d;
                 this._width = value;
                 this._originPixelX = this._width * this._originX;
                 this.adjustAlignX();
+                this.children && this.children.forEach(function (sprite) { return sprite.adjustAlignX(); });
             },
             enumerable: true,
             configurable: true
@@ -186,6 +187,7 @@ var canvas2d;
                 this._height = value;
                 this._originPixelY = this._height * this._originY;
                 this.adjustAlignY();
+                this.children && this.children.forEach(function (sprite) { return sprite.adjustAlignY(); });
             },
             enumerable: true,
             configurable: true
@@ -1232,8 +1234,6 @@ var canvas2d;
          * FPS value
          */
         Stage.fps = 30;
-        Stage.width;
-        Stage.height;
         /**
          * Game running state
          */
@@ -1251,22 +1251,6 @@ var canvas2d;
          */
         Stage.keyboardEnabled = false;
         /**
-         * Canvas element of this stage
-         */
-        Stage.canvas;
-        /**
-         * Canvas rendering context2d object
-         */
-        Stage.context;
-        /**
-         * Root sprite container of the stage
-         */
-        Stage.sprite;
-        /**
-         * Visible rectangle after adjusting for resolution design
-         */
-        Stage.visibleRect;
-        /**
          *  Scale mode for adjusting resolution design
          */
         (function (ScaleMode) {
@@ -1276,10 +1260,6 @@ var canvas2d;
             ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
         })(Stage.ScaleMode || (Stage.ScaleMode = {}));
         var ScaleMode = Stage.ScaleMode;
-        /**
-         * Scale value for adjusting the resolution design
-         */
-        Stage._scale;
         function adjustStageSize() {
             var style = Stage.canvas.style;
             var device = {
@@ -1867,8 +1847,7 @@ var canvas2d;
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var canvas2d;
 (function (canvas2d) {

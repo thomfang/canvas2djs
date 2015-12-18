@@ -185,6 +185,8 @@ namespace canvas2d {
             this._width = value;
             this._originPixelX = this._width * this._originX;
             this.adjustAlignX();
+            
+            this.children && this.children.forEach(sprite => sprite.adjustAlignX());
         }
 
         get width(): number {
@@ -195,6 +197,8 @@ namespace canvas2d {
             this._height = value;
             this._originPixelY = this._height * this._originY;
             this.adjustAlignY();
+            
+            this.children && this.children.forEach(sprite => sprite.adjustAlignY());
         }
 
         get height(): number {
