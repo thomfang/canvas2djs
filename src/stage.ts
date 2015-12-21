@@ -4,7 +4,7 @@
 
 namespace canvas2d.Stage {
 
-    var timerID: number;
+    var eventloopTimerID: number;
     var lastUpdate: number;
     var bufferCanvas: HTMLCanvasElement;
     var bufferContext: CanvasRenderingContext2D;
@@ -74,11 +74,15 @@ namespace canvas2d.Stage {
      */
     export var _scale: number;
 
-    function adjustStageSize(): void {
+    export function adjustCanvasSize(): void {
+        if (!canvas || !canvas.parentNode) {
+            return;
+        }
+        
         var style = canvas.style;
         var device = {
-            width: window.innerWidth,
-            height: window.innerHeight
+            width: canvas.parentElement.offsetWidth,
+            height: canvas.parentElement.offsetHeight
         };
         var scaleX: number = device.width / Stage.width;
         var scaleY: number = device.height / Stage.height;
@@ -144,7 +148,7 @@ namespace canvas2d.Stage {
     }
 
     function initScreenEvent(): void {
-        window.addEventListener("resize", adjustStageSize);
+        window.addEventListener("resize", adjustCanvasSize);
     }
 
     /**
@@ -176,12 +180,12 @@ namespace canvas2d.Stage {
 
         visibleRect = { left: 0, right: width, top: 0, bottom: height };
 
-        adjustStageSize();
+        adjustCanvasSize();
         initScreenEvent();
     }
 
     function startTimer() {
-        timerID = setTimeout(() => {
+        eventloopTimerID = setTimeout(() => {
             if (!isUseInnerTimer) {
                 return;
             }
@@ -222,13 +226,13 @@ namespace canvas2d.Stage {
         if (!isRunning) {
             return;
         }
-        
+
         if (unregisterUIEvent) {
             UIEvent.unregister();
         }
 
         isRunning = false;
-        clearTimeout(timerID);
+        clearTimeout(eventloopTimerID);
     }
 
     function getDeltaTime(): number {
@@ -243,7 +247,7 @@ namespace canvas2d.Stage {
         if (!isRunning) {
             return;
         }
-        
+
         var width: number = canvas.width;
         var height: number = canvas.height;
 

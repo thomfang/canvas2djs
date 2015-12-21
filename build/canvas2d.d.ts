@@ -429,6 +429,7 @@ declare namespace canvas2d.Stage {
      * Scale value for adjusting the resolution design
      */
     var _scale: number;
+    function adjustCanvasSize(): void;
     /**
      * Initialize the stage
      * @param  canvas     Canvas element
@@ -612,6 +613,25 @@ declare namespace canvas2d {
         protected draw(context: CanvasRenderingContext2D): void;
     }
 }
+declare namespace canvas2d {
+    interface IBMFontLabel extends ISprite {
+        textureMap: {
+            [word: string]: Texture;
+        };
+        text?: string;
+    }
+    /**
+     * BitMap font label
+     */
+    class BMFontLabel extends Sprite {
+        private _text;
+        private _words;
+        private _wordTextureMap;
+        constructor(attrs?: IBMFontLabel);
+        text: string;
+        setText(text: string): void;
+    }
+}
 declare namespace canvas2d.Layout {
     interface ILayoutNode {
         class: string | Function;
@@ -629,7 +649,7 @@ declare namespace canvas2d.Layout {
     /**
      * 根据layoutNode树创建sprite树
      */
-    function createByLayoutTree(layoutTree: ILayoutNode, context?: any): any;
+    function create(layoutTree: ILayoutNode, context?: any): any;
     /**
      * 注册标签名
      */

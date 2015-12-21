@@ -1,5 +1,6 @@
 /// <reference path="sprite" />
 /// <reference path="textlabel" />
+/// <reference path="bmfontlabel" />
 
 namespace canvas2d.Layout {
 
@@ -32,7 +33,7 @@ namespace canvas2d.Layout {
     /**
      * 根据layoutNode树创建sprite树
      */
-    export function createByLayoutTree(layoutTree: ILayoutNode, context?: any) {
+    export function create(layoutTree: ILayoutNode, context?: any) {
         return _createSpirte(layoutTree, context);
     }
     
@@ -112,5 +113,6 @@ namespace canvas2d.Layout {
 
     registerTag('c2d:sprite', Sprite);
     registerTag('c2d:textlabel', TextLabel);
+    registerTag('c2d:bmfontlabel', BMFontLabel);
 }
 

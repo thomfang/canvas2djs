@@ -1224,7 +1224,7 @@ var canvas2d;
 (function (canvas2d) {
     var Stage;
     (function (Stage) {
-        var timerID;
+        var eventloopTimerID;
         var lastUpdate;
         var bufferCanvas;
         var bufferContext;
@@ -1260,11 +1260,14 @@ var canvas2d;
             ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
         })(Stage.ScaleMode || (Stage.ScaleMode = {}));
         var ScaleMode = Stage.ScaleMode;
-        function adjustStageSize() {
+        function adjustCanvasSize() {
+            if (!Stage.canvas || !Stage.canvas.parentNode) {
+                return;
+            }
             var style = Stage.canvas.style;
             var device = {
-                width: window.innerWidth,
-                height: window.innerHeight
+                width: Stage.canvas.parentElement.offsetWidth,
+                height: Stage.canvas.parentElement.offsetHeight
             };
             var scaleX = device.width / Stage.width;
             var scaleY = device.height / Stage.height;
@@ -1324,8 +1327,9 @@ var canvas2d;
             Stage.visibleRect.bottom -= deltaHeight;
             Stage._scale = scale;
         }
+        Stage.adjustCanvasSize = adjustCanvasSize;
         function initScreenEvent() {
-            window.addEventListener("resize", adjustStageSize);
+            window.addEventListener("resize", adjustCanvasSize);
         }
         /**
          * Initialize the stage
@@ -1349,12 +1353,12 @@ var canvas2d;
             this.width = canvas.width = bufferCanvas.width = width;
             this.height = canvas.height = bufferCanvas.height = height;
             Stage.visibleRect = { left: 0, right: width, top: 0, bottom: height };
-            adjustStageSize();
+            adjustCanvasSize();
             initScreenEvent();
         }
         Stage.init = init;
         function startTimer() {
-            timerID = setTimeout(function () {
+            eventloopTimerID = setTimeout(function () {
                 if (!isUseInnerTimer) {
                     return;
                 }
@@ -1395,7 +1399,7 @@ var canvas2d;
                 canvas2d.UIEvent.unregister();
             }
             Stage.isRunning = false;
-            clearTimeout(timerID);
+            clearTimeout(eventloopTimerID);
         }
         Stage.stop = stop;
         function getDeltaTime() {
@@ -1941,8 +1945,64 @@ var canvas2d;
     })(canvas2d.Sprite);
     canvas2d.TextLabel = TextLabel;
 })(canvas2d || (canvas2d = {}));
+/// <reference path="sprite.ts" />
+/// <reference path="texture.ts" />
+var canvas2d;
+(function (canvas2d) {
+    /**
+     * BitMap font label
+     */
+    var BMFontLabel = (function (_super) {
+        __extends(BMFontLabel, _super);
+        function BMFontLabel(attrs) {
+            _super.call(this, attrs);
+        }
+        Object.defineProperty(BMFontLabel.prototype, "text", {
+            get: function () {
+                return this._text;
+            },
+            set: function (text) {
+                this.setText(text);
+            },
+            enumerable: true,
+            configurable: true
+        });
+        BMFontLabel.prototype.setText = function (text) {
+            var _this = this;
+            this._text = text || '';
+            var words = this._text.split('');
+            if (!words.length) {
+                this._words.length = 0;
+            }
+            else {
+                this._words = words.map(function (word) {
+                    if (!_this._wordTextureMap[word]) {
+                        throw new Error(word + ': the texture of this word not found');
+                    }
+                    return _this._wordTextureMap[word];
+                });
+            }
+            this.removeAllChild();
+            if (this._words && this._words.length) {
+                this._words.forEach(function (word, i) {
+                    _this.addChild(new canvas2d.Sprite({
+                        x: i * word.width,
+                        texture: word,
+                        originX: 0,
+                        originY: 0
+                    }));
+                });
+                this.width = this._words.length * this._words[0].width;
+                this.height = this._words[0].height;
+            }
+        };
+        return BMFontLabel;
+    })(canvas2d.Sprite);
+    canvas2d.BMFontLabel = BMFontLabel;
+})(canvas2d || (canvas2d = {}));
 /// <reference path="sprite" />
 /// <reference path="textlabel" />
+/// <reference path="bmfontlabel" />
 var canvas2d;
 (function (canvas2d) {
     var Layout;
@@ -1966,10 +2026,10 @@ var canvas2d;
         /**
          * 根据layoutNode树创建sprite树
          */
-        function createByLayoutTree(layoutTree, context) {
+        function create(layoutTree, context) {
             return _createSpirte(layoutTree, context);
         }
-        Layout.createByLayoutTree = createByLayoutTree;
+        Layout.create = create;
         /**
          * 注册标签名
          */
@@ -2031,6 +2091,7 @@ var canvas2d;
         }
         registerTag('c2d:sprite', canvas2d.Sprite);
         registerTag('c2d:textlabel', canvas2d.TextLabel);
+        registerTag('c2d:bmfontlabel', canvas2d.BMFontLabel);
     })(Layout = canvas2d.Layout || (canvas2d.Layout = {}));
 })(canvas2d || (canvas2d = {}));
 //# sourceMappingURL=canvas2d.js.map
