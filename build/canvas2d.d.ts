@@ -356,9 +356,19 @@ declare namespace canvas2d.Sound {
      */
     function loadList(basePath: string, resList: Array<ISoundResource>, callback?: Function): void;
     /**
-     * Get audio instance by resource name, when isGetList param is true, return all the instance list.
+     * Get paused audio instance by resource name.
      */
-    function getAudio(name: string, isGetList?: boolean): any;
+    function getPausedAudio(name: string): HTMLAudioElement;
+    function getPausedAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
+    /**
+     * Get playing audio instance by resource name.
+     */
+    function getPlayingAudio(name: string): HTMLAudioElement;
+    function getPlayingAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
+    /**
+     * Get audio list
+     */
+    function getAudioListByName(name: string): HTMLAudioElement[];
     /**
      * Play sound by name
      */
@@ -367,6 +377,18 @@ declare namespace canvas2d.Sound {
      * Pause sound by name
      */
     function pause(name: string, reset?: boolean): void;
+    /**
+     * Resume audio by name
+     */
+    function resume(name: string, reset?: boolean): void;
+    /**
+     * Pause all audios
+     */
+    function pauseAll(reset?: boolean): void;
+    /**
+     * Resume all played audio
+     */
+    function resumeAll(reset?: boolean): void;
     /**
      * Stop the looping sound by name
      */

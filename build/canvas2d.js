@@ -1128,37 +1128,59 @@ var canvas2d;
             });
         }
         Sound.loadList = loadList;
-        /**
-         * Get audio instance by resource name, when isGetList param is true, return all the instance list.
-         */
-        function getAudio(name, isGetList) {
-            if (isGetList === void 0) { isGetList = false; }
+        function getPausedAudio(name, isGetAll) {
             var list = audios[name];
-            if (isGetList) {
-                return list;
-            }
             if (!list || !list.length) {
                 return null;
             }
             var i = 0;
+            var all = [];
             var audio;
             for (; audio = list[i]; i++) {
                 if (audio.ended || audio.paused) {
-                    break;
+                    if (audio.ended) {
+                        audio.currentTime = 0;
+                    }
+                    if (!isGetAll) {
+                        return audio;
+                    }
+                    all.push(audio);
                 }
             }
-            audio = audio || list[0];
-            if (audio.ended) {
-                audio.currentTime = 0;
-            }
-            return audio;
+            return all;
         }
-        Sound.getAudio = getAudio;
+        Sound.getPausedAudio = getPausedAudio;
+        function getPlayingAudio(name, isGetAll) {
+            var list = audios[name];
+            if (!list || !list.length) {
+                return null;
+            }
+            var i = 0;
+            var all = [];
+            var audio;
+            for (; audio = list[i]; i++) {
+                if (!audio.paused) {
+                    if (!isGetAll) {
+                        return audio;
+                    }
+                    all.push(audio);
+                }
+            }
+            return all;
+        }
+        Sound.getPlayingAudio = getPlayingAudio;
+        /**
+         * Get audio list
+         */
+        function getAudioListByName(name) {
+            return audios[name];
+        }
+        Sound.getAudioListByName = getAudioListByName;
         /**
          * Play sound by name
          */
         function play(name, loop) {
-            var audio = Sound.enabled && getAudio(name);
+            var audio = Sound.enabled && getPausedAudio(name);
             if (audio) {
                 if (loop) {
                     audio.loop = true;
@@ -1177,23 +1199,62 @@ var canvas2d;
          * Pause sound by name
          */
         function pause(name, reset) {
-            var audio = getAudio(name);
-            if (audio) {
-                audio.pause();
-                if (reset) {
-                    audio.currentTime = 0;
-                }
+            var list = audios[name];
+            if (list) {
+                list.forEach(function (audio) {
+                    audio.pause();
+                    if (reset) {
+                        audio.currentTime = 0;
+                    }
+                });
             }
         }
         Sound.pause = pause;
         /**
+         * Resume audio by name
+         */
+        function resume(name, reset) {
+            var list = audios[name];
+            if (list) {
+                list.forEach(function (audio) {
+                    if (!audio.ended && audio.currentTime > 0) {
+                        if (reset) {
+                            audio.currentTime = 0;
+                        }
+                        audio.play();
+                    }
+                });
+            }
+        }
+        Sound.resume = resume;
+        /**
+         * Pause all audios
+         */
+        function pauseAll(reset) {
+            Object.keys(audios).forEach(function (name) {
+                pause(name, reset);
+            });
+        }
+        Sound.pauseAll = pauseAll;
+        /**
+         * Resume all played audio
+         */
+        function resumeAll(reset) {
+            Object.keys(audios).forEach(function (name) {
+                resume(name, reset);
+            });
+        }
+        Sound.resumeAll = resumeAll;
+        /**
          * Stop the looping sound by name
          */
         function stopLoop(name) {
-            var audio = getAudio(name);
-            if (audio) {
-                audio.removeEventListener("ended", replay, false);
-                audio.loop = false;
+            var list = getPlayingAudio(name, true);
+            if (list) {
+                list.forEach(function (audio) {
+                    audio.removeEventListener("ended", replay, false);
+                    audio.loop = false;
+                });
             }
         }
         Sound.stopLoop = stopLoop;
