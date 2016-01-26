@@ -15,7 +15,7 @@ namespace canvas2d {
 
         private _text: string;
         private _words: Texture[];
-        private _wordTextureMap: {[word: string]: Texture};
+        private _textureMap: {[word: string]: Texture};
         
         constructor(attrs?: IBMFontLabel) {
             super(attrs);
@@ -28,6 +28,14 @@ namespace canvas2d {
             return this._text;
         }
         
+        get textureMap() {
+            return this._textureMap;
+        }
+        
+        set textureMap(textureMap: { [word: string]: Texture }) {
+            this._textureMap = textureMap;
+        }
+        
         setText(text: string) {
             this._text = text || '';
 
@@ -38,10 +46,10 @@ namespace canvas2d {
             }
             else {
                 this._words = words.map(word => {
-                    if (!this._wordTextureMap[word]) {
+                    if (!this._textureMap[word]) {
                         throw new Error(word + ': the texture of this word not found');
                     }
-                    return this._wordTextureMap[word];
+                    return this._textureMap[word];
                 });
             }
 
@@ -49,7 +57,7 @@ namespace canvas2d {
 
             if (this._words && this._words.length) {
                 this._words.forEach((word, i) => {
-                    this.addChild(new Sprite({
+                    super.addChild(new Sprite({
                         x: i * word.width,
                         texture: word,
                         originX: 0,
@@ -60,6 +68,10 @@ namespace canvas2d {
                 this.width = this._words.length * this._words[0].width;
                 this.height = this._words[0].height;
             }
+        }
+        
+        addChild() {
+            throw new Error('BMFontLabel:addChild is not callable!');
         }
     }
 }
