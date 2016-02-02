@@ -1,6 +1,6 @@
-/// <reference path="sprite" />
-/// <reference path="textlabel" />
-/// <reference path="bmfontlabel" />
+/// <reference path="../src/sprite.ts" />
+/// <reference path="../src/textlabel.ts" />
+/// <reference path="../src/bmfontlabel.ts" />
 
 namespace canvas2d.Layout {
 
@@ -14,8 +14,7 @@ namespace canvas2d.Layout {
     }
 
     /**
-     * 解析节点生成layoutTree
-     * @param  node 自定义的html标签
+     * @param  node html tree
      */
     export function parseToLayoutTree(htmlNode: any) {
         let layoutNode: ILayoutNode = {
@@ -31,14 +30,14 @@ namespace canvas2d.Layout {
     }
 
     /**
-     * 根据layoutNode树创建sprite树
+     * create sprite tree by layout tree
      */
     export function create(layoutTree: ILayoutNode, context?: any) {
         return _createSpirte(layoutTree, context);
     }
     
     /**
-     * 注册标签名
+     * register tag name for class of sprite
      */
     export function registerTag(tagName: string, spriteClass: Function) {
         if (classMap[tagName]) {
@@ -105,14 +104,13 @@ namespace canvas2d.Layout {
             var fn = new Function('return (' + attrsValue + ')');
         }
         catch (e) {
-            console.error(`Could not parse attrs string "${attrsValue}"`);
-            throw e;
+            console.error(`Could not parse attrs string "${attrsValue}"`, e);
         }
         return fn();
     }
 
-    registerTag('c2d:sprite', Sprite);
-    registerTag('c2d:textlabel', TextLabel);
-    registerTag('c2d:bmfontlabel', BMFontLabel);
+    registerTag('sprite', Sprite);
+    registerTag('text', TextLabel);
+    registerTag('fontlabel', BMFontLabel);
 }
 

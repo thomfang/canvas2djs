@@ -17,7 +17,6 @@
         "src/texture.ts",
         "src/sprite.ts",
         "src/stage.ts",
-        "src/textlabel.ts",
-        "src/layout.ts"
+        "src/textlabel.ts"
     ]
 }
