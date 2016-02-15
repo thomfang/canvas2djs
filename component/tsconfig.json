@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "sourceMap": true,
+        "declaration": true,
+        "target": "es5",
+        "noEmitOnError": true,
+        "noImplicitAny": false,
+        "preserveConstEnums": true,
+        "out": "../build/canvas2d-template.js"
+    },
+    "files": [
+        "template.ts"
+    ]
+}

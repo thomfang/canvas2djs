@@ -2,7 +2,7 @@
     "compilerOptions": {
         "sourceMap": true,
         "declaration": true,
-        "target": "ES5",
+        "target": "es5",
         "noEmitOnError": true,
         "noImplicitAny": false,
         "preserveConstEnums": true,

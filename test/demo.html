@@ -5,29 +5,28 @@
     <meta charset="utf-8" />
     <title>Demo</title>
     <script src="../build/canvas2d.js"></script>
+    <script src="../build/canvas2d-template.js"></script>
     <style>
         html,
         body {
             width: 100%;
             height: 100%;
         }
+        body {
+            overflow: hidden;
+        }
     </style>
 </head>
 
 <body>
 
-    <sprite attrs="{alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER, width: 100, height: 100, clipOverflow: true, border: {color: 'red', width: 1}}">
-        <ball attrs="{alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER}"></ball>
-        <text attrs="{alignY: canvas2d.AlignType.BOTTOM, alignX: canvas2d.AlignType.CENTER, fontSize: 12, fontColor: 'red'}" id="greet">
-    </sprite>
-
-    <div style="width: calc(50%);height: calc(50%); overflow:hidden;position:relative;">
+    <!--<div style="width: calc(50%);height: calc(50%); overflow:hidden;position:relative;">-->
         <canvas id="cvs" style='background:#000'></canvas>
-    </div>
+    <!--</div>-->
     <script>
         var cvs = document.getElementById('cvs');
             
-            canvas2d.Stage.init(cvs, 320, 480, canvas2d.Stage.ScaleMode.FIX_WIDTH);
+            canvas2d.Stage.init(cvs, 320, 480, canvas2d.Stage.ScaleMode.SHOW_ALL);
             canvas2d.Stage.start();
             
             var Ball = function (attrs) {
@@ -38,14 +37,6 @@
             
             Ball.prototype = Object.create(canvas2d.Sprite.prototype);
             
-            canvas2d.Layout.registerTag('ball', Ball);
-            
-            var layout = canvas2d.Layout.parseToLayoutTree(document.body.firstElementChild);
-            var sprite = canvas2d.Layout.create(layout);
-            
-            sprite.greet.text = 'Hello, canvas2d.js!';
-            
-            canvas2d.Stage.addChild(sprite);
     </script>
 </body>
 
