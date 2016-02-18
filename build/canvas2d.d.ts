@@ -40,6 +40,27 @@ declare namespace canvas2d {
     }
 }
 declare namespace canvas2d {
+    interface IEventListener {
+        (...args: any[]): any;
+    }
+    /**
+     * EventEmitter
+     */
+    class EventEmitter {
+        protected _eventCache: {
+            [type: string]: IEventListener[];
+        };
+        protected _onceMarkKey: string;
+        constructor();
+        addListener(type: string, listener: IEventListener): this;
+        on(type: string, listener: IEventListener): this;
+        once(type: string, listener: IEventListener): this;
+        removeListener(type: string, listener: IEventListener): this;
+        removeAllListeners(type?: string): this;
+        emit(type: string, ...args: any[]): this;
+    }
+}
+declare namespace canvas2d {
     enum AlignType {
         TOP = 0,
         RIGHT = 1,
@@ -143,7 +164,7 @@ declare namespace canvas2d {
     /**
      * Sprite as the base element
      */
-    class Sprite implements ISprite {
+    class Sprite extends EventEmitter implements ISprite {
         protected _width: number;
         protected _height: number;
         protected _originX: number;
@@ -210,52 +231,11 @@ declare namespace canvas2d {
     }
 }
 declare namespace canvas2d {
+    interface IEasingFunction {
+        (percent: number, ...args: any[]): number;
+    }
     var tween: {
-        easeInQuad: (pos: any) => number;
-        easeOutQuad: (pos: any) => number;
-        easeInOutQuad: (pos: any) => number;
-        easeInCubic: (pos: any) => number;
-        easeOutCubic: (pos: any) => number;
-        easeInOutCubic: (pos: any) => number;
-        easeInQuart: (pos: any) => number;
-        easeOutQuart: (pos: any) => number;
-        easeInOutQuart: (pos: any) => number;
-        easeInQuint: (pos: any) => number;
-        easeOutQuint: (pos: any) => number;
-        easeInOutQuint: (pos: any) => number;
-        easeInSine: (pos: any) => number;
-        easeOutSine: (pos: any) => number;
-        easeInOutSine: (pos: any) => number;
-        easeInExpo: (pos: any) => number;
-        easeOutExpo: (pos: any) => number;
-        easeInOutExpo: (pos: any) => number;
-        easeInCirc: (pos: any) => number;
-        easeOutCirc: (pos: any) => number;
-        easeInOutCirc: (pos: any) => number;
-        easeOutBounce: (pos: any) => number;
-        easeInBack: (pos: any) => number;
-        easeOutBack: (pos: any) => number;
-        easeInOutBack: (pos: any) => number;
-        elastic: (pos: any) => number;
-        swingFromTo: (pos: any) => number;
-        swingFrom: (pos: any) => number;
-        swingTo: (pos: any) => number;
-        bounce: (pos: any) => number;
-        bouncePast: (pos: any) => number;
-        easeFromTo: (pos: any) => number;
-        easeFrom: (pos: any) => number;
-        easeTo: (pos: any) => number;
-        linear: (pos: any) => any;
-        sinusoidal: (pos: any) => number;
-        reverse: (pos: any) => number;
-        mirror: (pos: any, transition: any) => any;
-        flicker: (pos: any) => any;
-        wobble: (pos: any) => number;
-        pulse: (pos: any, pulses: any) => number;
-        blink: (pos: any, blinks: any) => number;
-        spring: (pos: any) => number;
-        none: (pos: any) => number;
-        full: (pos: any) => number;
+        [name: string]: IEasingFunction;
     };
 }
 declare namespace canvas2d {
@@ -305,14 +285,23 @@ declare namespace canvas2d {
          */
         animate(frameList: Array<Texture>, frameRate: number, repetitions?: number): Action;
         /**
-         * Transition action
+         * TransitionTo action
          * @param  attrs     Transition attributes map
          * @param  duration  Transition duration
          */
         to(attrs: {
-            [attr: string]: number | {
+            [name: string]: number | {
                 dest: number;
-                easing: string | Function;
+                easing: IEasingFunction;
+            };
+        }, duration: number): Action;
+        /**
+         * TransitionBy action
+         */
+        by(attrs: {
+            [name: string]: number | {
+                value: number;
+                easing: IEasingFunction;
             };
         }, duration: number): Action;
         /**
@@ -350,11 +339,11 @@ declare namespace canvas2d.Sound {
     /**
      * Load a sound resource
      */
-    function load(basePath: string, name: string, onComplete: Function, channels?: number): void;
+    function load(basePath: string, name: string, onComplete: () => any, channels?: number): void;
     /**
      * Load multiple sound resources
      */
-    function loadList(basePath: string, resList: Array<ISoundResource>, callback?: Function): void;
+    function loadList(basePath: string, resList: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
     /**
      * Get paused audio instance by resource name.
      */

@@ -29,13 +29,38 @@
             canvas2d.Stage.init(cvs, 320, 480, canvas2d.Stage.ScaleMode.SHOW_ALL);
             canvas2d.Stage.start();
             
-            var Ball = function (attrs) {
-                canvas2d.Sprite.call(this, attrs);
-                this.radius = 20;
-                this.bgColor = 'red';
-            };
+            // var container = new canvas2d.Sprite({
+            //     width: 80,
+            //     height: 20,
+            //     bgColor: 'red',
+            //     alignX: canvas2d.AlignType.CENTER,
+            //     y: 200
+            // });
+            // var label = new canvas2d.TextLabel({
+            //     text: 'Hello',
+            //     fontSize: 20,
+            //     fontColor: '#fff',
+            //     alignX: canvas2d.AlignType.CENTER,
+            //     alignY: canvas2d.AlignType.CENTER
+            // });
+            // container.addChild(label);
+            // canvas2d.Stage.addChild(container);
             
-            Ball.prototype = Object.create(canvas2d.Sprite.prototype);
+            // var ball = new canvas2d.Sprite({
+            //     bgColor: 'red',
+            //     x: canvas2d.Stage.width * 0.5,
+            //     y: canvas2d.Stage.height * 0.5,
+            //     radius: 20
+            // });
+            // canvas2d.Stage.addChild(ball);
+            // new canvas2d.Action(ball)
+            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
+            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
+            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
+            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
+            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
+            //     .to({y: ball.y - 100}, 0.5)
+            //     .by({x: 100}, 0.5).by({x: -100}, 0.5).start();
             
     </script>
 </body>

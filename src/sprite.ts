@@ -1,5 +1,6 @@
 /// <reference path="action.ts" />
 /// <reference path="texture.ts" />
+/// <reference path="eventemitter.ts" />
 
 namespace canvas2d {
 
@@ -10,7 +11,7 @@ namespace canvas2d {
         LEFT,
         CENTER
     }
-
+    
     /**
      * Sprite attributes
      */
@@ -125,7 +126,7 @@ namespace canvas2d {
     /**
      * Sprite as the base element
      */
-    export class Sprite implements ISprite {
+    export class Sprite extends EventEmitter implements ISprite {
         protected _width: number = 0;
         protected _height: number = 0;
         protected _originX: number = 0.5;
@@ -168,6 +169,7 @@ namespace canvas2d {
         keyboardEnabled: boolean = true;
 
         constructor(attrs?: ISprite) {
+            super();
             this._init(attrs);
         }
 
@@ -182,10 +184,14 @@ namespace canvas2d {
         }
 
         set width(value: number) {
+            if (this._width === value) {
+                return;
+            }
+
             this._width = value;
             this._originPixelX = this._width * this._originX;
             this.adjustAlignX();
-            
+
             this.children && this.children.forEach(sprite => sprite.adjustAlignX());
         }
 
@@ -194,10 +200,14 @@ namespace canvas2d {
         }
 
         set height(value: number) {
+            if (this._height === value) {
+                return;
+            }
+
             this._height = value;
             this._originPixelY = this._height * this._originY;
             this.adjustAlignY();
-            
+
             this.children && this.children.forEach(sprite => sprite.adjustAlignY());
         }
 
@@ -206,6 +216,10 @@ namespace canvas2d {
         }
 
         set originX(value: number) {
+            if (this._originX === value) {
+                return;
+            }
+
             this._originX = value;
             this._originPixelX = this._originX * this._width;
             this.adjustAlignX();
@@ -216,6 +230,10 @@ namespace canvas2d {
         }
 
         set originY(value: number) {
+            if (this._originY === value) {
+                return;
+            }
+
             this._originY = value;
             this._originPixelY = this._originY * this._height;
             this.adjustAlignY();
@@ -226,6 +244,10 @@ namespace canvas2d {
         }
 
         set rotation(value: number) {
+            if (this._rotation === value) {
+                return;
+            }
+
             this._rotation = value;
             this._rotationRad = this._rotation * RAD_PER_DEG;
         }
@@ -235,6 +257,10 @@ namespace canvas2d {
         }
 
         set texture(texture: Texture) {
+            if (texture === this._texture) {
+                return;
+            }
+
             this._texture = texture;
 
             if (this.autoResize) {
@@ -262,9 +288,16 @@ namespace canvas2d {
         }
 
         set parent(sprite: Sprite) {
+            if (sprite === this._parent) {
+                return;
+            }
+            
             this._parent = sprite;
-            this.adjustAlignX();
-            this.adjustAlignY();
+
+            if (sprite) {
+                this.adjustAlignX();
+                this.adjustAlignY();
+            }
         }
 
         get parent() {

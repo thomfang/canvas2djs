@@ -139,10 +139,10 @@ namespace canvas2d.Stage {
         style.left = ((device.width - width) * 0.5) + 'px';
         style.position = 'absolute';
 
-        visibleRect.left += deltaWidth;
-        visibleRect.right -= deltaWidth;
-        visibleRect.top += deltaHeight;
-        visibleRect.bottom -= deltaHeight;
+        visibleRect.left = deltaWidth;
+        visibleRect.right = Stage.width - deltaWidth;
+        visibleRect.top = deltaHeight;
+        visibleRect.bottom = Stage.height - deltaHeight;
 
         _scale = scale;
     }
@@ -169,14 +169,14 @@ namespace canvas2d.Stage {
 
         stageScaleMode = scaleMode;
 
-        this.canvas = canvas;
-        this.context = canvas.getContext('2d');
+        Stage.canvas = canvas;
+        Stage.context = canvas.getContext('2d');
 
         bufferCanvas = document.createElement("canvas");
         bufferContext = bufferCanvas.getContext("2d");
 
-        this.width = canvas.width = bufferCanvas.width = width;
-        this.height = canvas.height = bufferCanvas.height = height;
+        Stage.width = canvas.width = bufferCanvas.width = width;
+        Stage.height = canvas.height = bufferCanvas.height = height;
 
         visibleRect = { left: 0, right: width, top: 0, bottom: height };
 

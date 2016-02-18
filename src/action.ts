@@ -3,12 +3,6 @@
 
 namespace canvas2d {
 
-    interface IActionAttr {
-        name: string;
-        dest: number;
-        easing: Function;
-    }
-
     interface IActionDefinition {
         immediate?: boolean;
         done: boolean;
@@ -37,6 +31,7 @@ namespace canvas2d {
     }
 
     class Callback implements IActionDefinition {
+        
         done: boolean = false;
         immediate: boolean = true;
 
@@ -56,6 +51,7 @@ namespace canvas2d {
     }
 
     class Delay implements IActionDefinition {
+        
         done: boolean = false;
         elapsed: number = 0;
         immediate: boolean = true;
@@ -75,70 +71,109 @@ namespace canvas2d {
     }
 
     class Transition implements IActionDefinition {
+
+        private _defaultEasing = tween['easeInOutQuad'];
+
         done: boolean = false;
         immediate: boolean = false;
         elapsed: number = 0;
-        attrs: Array<IActionAttr> = [];
 
-        starts: { [index: string]: number } = {};
-        deltas: { [index: string]: number } = {};
+        options: Array<{ name: string; dest: number; easing: IEasingFunction; }>;
+        beginValue: { [name: string]: number };
+        deltaValue: { [name: string]: number };
 
-        constructor(attrs: {[attr: string]: number | { dest: number; easing: string | Function; }}, public duration: number) {
-            var name: string;
-            var value: any;
-            
-            Object.keys(attrs).forEach(name => {
-                let info = attrs[name];
-                let easing: Function;
+        constructor(options: any, public duration: number, public isTransitionBy?: boolean) {
+            this.options = [];
+            this.deltaValue = {};
+
+            if (isTransitionBy) {
+                this._initAsTransitionBy(options);
+            }
+            else {
+                this._initAsTransitionTo(options);
+            }
+        }
+
+        private _initAsTransitionTo(options: { [name: string]: number | { dest: number; easing: IEasingFunction } }) {
+            Object.keys(options).forEach(name => {
+                let info = options[name];
+                let easing: IEasingFunction;
                 let dest: number;
-                
+
                 if (typeof info === 'number') {
-                    easing = tween.easeInOutQuad;
                     dest = info;
                 }
                 else {
-                    easing = typeof info.easing === 'function' ? info.easing : tween[<string>info.easing || 'easeInOutQuad'];
+                    easing = info.easing;
                     dest = info.dest;
                 }
-                
-                this.attrs.push({ name, dest, easing});
+
+                this.options.push({ name, dest, easing });
             });
+        }
+
+        private _initAsTransitionBy(options: { [name: string]: number | { value: number; easing: IEasingFunction } }) {
+            let deltaValue = this.deltaValue;
+
+            Object.keys(options).forEach(name => {
+                let info = options[name];
+                let easing: IEasingFunction;
+                let dest: number;
+
+                if (typeof info === 'number') {
+                    deltaValue[name] = info;
+                }
+                else {
+                    easing = info.easing;
+                    deltaValue[name] = info.value;
+                }
+
+                this.options.push({ name, dest, easing });
+            });
+        }
+
+        private _initBeginValue(sprite: Sprite) {
+            let beginValue = this.beginValue = {};
+            let deltaValue = this.deltaValue;
+
+            if (this.isTransitionBy) {
+                this.options.forEach(option => {
+                    beginValue[option.name] = sprite[option.name];
+                    option.dest = sprite[option.name] + deltaValue[option.name];
+                });
+            }
+            else {
+                this.options.forEach(option => {
+                    beginValue[option.name] = sprite[option.name];
+                    deltaValue[option.name] = option.dest - sprite[option.name];
+                });
+            }
         }
 
         step(deltaTime: number, sprite: Sprite): void {
             this.elapsed += deltaTime;
+
+            if (this.beginValue == null) {
+                this._initBeginValue(sprite);
+            }
 
             if (this.elapsed >= this.duration) {
                 this.end(sprite);
             }
             else {
                 var percent = this.elapsed / this.duration;
-                var starts = this.starts;
-                var deltas = this.deltas;
+                var beginValue = this.beginValue;
+                var deltaValue = this.deltaValue;
 
-                var start: number;
-                var dest: number;
-                var delta: number;
-                var name: string;
-
-                this.attrs.forEach((attr) => {
-                    name = attr.name;
-                    dest = attr.dest;
-                    delta = attr.easing(percent);
-                    start = starts[name];
-
-                    if (start == null) {
-                        start = starts[name] = (<any>sprite)[name];
-                        deltas[name] = dest - start;
-                    }
-
-                    sprite[name] = start + (delta * deltas[name]);
+                this.options.forEach(({name, dest, easing}) => {
+                    easing = easing || this._defaultEasing;
+                    sprite[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
                 });
             }
         }
 
         end(sprite: Sprite): void {
-            this.attrs.forEach((attr) => {
+            this.options.forEach((attr) => {
                 (<any>sprite)[attr.name] = attr.dest;
             });
             this.done = true;
@@ -146,6 +181,7 @@ namespace canvas2d {
     }
 
     class Animation implements IActionDefinition {
+        
         done: boolean = false;
         immediate: boolean = false;
         elapsed: number = 0;
@@ -259,7 +295,7 @@ namespace canvas2d {
         running: boolean = false;
 
         constructor(public sprite: Sprite) {
-            
+
         }
 
         /**
@@ -350,12 +386,20 @@ namespace canvas2d {
         }
 
         /**
-         * Transition action
+         * TransitionTo action
          * @param  attrs     Transition attributes map
          * @param  duration  Transition duration
          */
-        to(attrs: {[attr: string]: number | { dest: number; easing: string | Function; }}, duration: number): Action {
+        to(attrs: { [name: string]: number | { dest: number; easing: IEasingFunction; } }, duration: number): Action {
             this._queue.push(new Transition(attrs, duration));
+            return this;
+        }
+        
+        /**
+         * TransitionBy action
+         */
+        by(attrs: { [name: string]: number | { value: number; easing: IEasingFunction; } }, duration: number): Action {
+            this._queue.push(new Transition(attrs, duration, true));
             return this;
         }
 

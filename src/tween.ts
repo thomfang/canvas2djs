@@ -1,6 +1,10 @@
 ﻿namespace canvas2d {
+    
+    export interface IEasingFunction {
+        (percent: number, ...args: any[]): number;
+    }
 
-    export var tween = {
+    export var tween: { [name: string]: IEasingFunction } = {
         easeInQuad: function (pos) {
             return Math.pow(pos, 2);
         },

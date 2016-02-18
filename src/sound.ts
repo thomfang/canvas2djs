@@ -28,7 +28,7 @@ namespace canvas2d.Sound {
     /**
      * Load a sound resource
      */
-    export function load(basePath: string, name: string, onComplete: Function, channels = 1) {
+    export function load(basePath: string, name: string, onComplete: () => any, channels = 1) {
         var path: string = basePath + name + extension;
         var audio: HTMLAudioElement = document.createElement("audio");
 
@@ -68,14 +68,19 @@ namespace canvas2d.Sound {
     /**
      * Load multiple sound resources
      */
-    export function loadList(basePath: string, resList: Array<ISoundResource>, callback?: Function) {
-        var counter = resList.length;
+    export function loadList(basePath: string, resList: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any) {
+        let allCount = resList.length;
+        let endedCount = 0;
 
-        function onCompleted() {
-            counter--;
+        let onCompleted = () => {
+            ++endedCount;
+            
+            if (onProgress) {
+                onProgress(endedCount / allCount);
+            }
 
-            if (counter === 0 && callback) {
-                callback();
+            if (endedCount === allCount && onAllCompleted) {
+                onAllCompleted();
             }
         }
 

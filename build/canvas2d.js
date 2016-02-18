@@ -112,8 +112,87 @@ var canvas2d;
     })();
     canvas2d.Texture = Texture;
 })(canvas2d || (canvas2d = {}));
+var canvas2d;
+(function (canvas2d) {
+    var counter = 0;
+    /**
+     * EventEmitter
+     */
+    var EventEmitter = (function () {
+        function EventEmitter() {
+            this._onceMarkKey = '__CANVAS2D_ONCE__' + counter++;
+        }
+        EventEmitter.prototype.addListener = function (type, listener) {
+            if (!this._eventCache) {
+                this._eventCache = {};
+            }
+            if (!this._eventCache[type]) {
+                this._eventCache[type] = [];
+            }
+            if (this._eventCache[type].indexOf(listener) === -1) {
+                this._eventCache[type].push(listener);
+            }
+            return this;
+        };
+        EventEmitter.prototype.on = function (type, listener) {
+            return this.addListener(type, listener);
+        };
+        EventEmitter.prototype.once = function (type, listener) {
+            listener[this._onceMarkKey] = true;
+            return this.addListener(type, listener);
+        };
+        EventEmitter.prototype.removeListener = function (type, listener) {
+            if (this._eventCache && this._eventCache[type]) {
+                var index = this._eventCache[type].indexOf(listener);
+                if (index > -1) {
+                    this._eventCache[type].splice(index, 1);
+                }
+                if (!this._eventCache[type].length) {
+                    delete this._eventCache[type];
+                }
+            }
+            return this;
+        };
+        EventEmitter.prototype.removeAllListeners = function (type) {
+            if (this._eventCache) {
+                if (type == null) {
+                    this._eventCache = null;
+                }
+                else {
+                    delete this._eventCache[type];
+                }
+            }
+            return this;
+        };
+        EventEmitter.prototype.emit = function (type) {
+            var _this = this;
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            if (this._eventCache && this._eventCache[type]) {
+                this._eventCache[type].slice().forEach(function (listener) {
+                    listener.apply(_this, args);
+                    if (listener[_this._onceMarkKey]) {
+                        _this.removeListener(type, listener);
+                        listener[_this._onceMarkKey] = null;
+                    }
+                });
+            }
+            return this;
+        };
+        return EventEmitter;
+    })();
+    canvas2d.EventEmitter = EventEmitter;
+})(canvas2d || (canvas2d = {}));
 /// <reference path="action.ts" />
 /// <reference path="texture.ts" />
+/// <reference path="eventemitter.ts" />
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var canvas2d;
 (function (canvas2d) {
     (function (AlignType) {
@@ -128,8 +207,10 @@ var canvas2d;
     /**
      * Sprite as the base element
      */
-    var Sprite = (function () {
+    var Sprite = (function (_super) {
+        __extends(Sprite, _super);
         function Sprite(attrs) {
+            _super.call(this);
             this._width = 0;
             this._height = 0;
             this._originX = 0.5;
@@ -171,6 +252,9 @@ var canvas2d;
                 return this._width;
             },
             set: function (value) {
+                if (this._width === value) {
+                    return;
+                }
                 this._width = value;
                 this._originPixelX = this._width * this._originX;
                 this.adjustAlignX();
@@ -184,6 +268,9 @@ var canvas2d;
                 return this._height;
             },
             set: function (value) {
+                if (this._height === value) {
+                    return;
+                }
                 this._height = value;
                 this._originPixelY = this._height * this._originY;
                 this.adjustAlignY();
@@ -197,6 +284,9 @@ var canvas2d;
                 return this._originX;
             },
             set: function (value) {
+                if (this._originX === value) {
+                    return;
+                }
                 this._originX = value;
                 this._originPixelX = this._originX * this._width;
                 this.adjustAlignX();
@@ -209,6 +299,9 @@ var canvas2d;
                 return this._originY;
             },
             set: function (value) {
+                if (this._originY === value) {
+                    return;
+                }
                 this._originY = value;
                 this._originPixelY = this._originY * this._height;
                 this.adjustAlignY();
@@ -221,6 +314,9 @@ var canvas2d;
                 return this._rotation;
             },
             set: function (value) {
+                if (this._rotation === value) {
+                    return;
+                }
                 this._rotation = value;
                 this._rotationRad = this._rotation * canvas2d.RAD_PER_DEG;
             },
@@ -233,6 +329,9 @@ var canvas2d;
             },
             set: function (texture) {
                 var _this = this;
+                if (texture === this._texture) {
+                    return;
+                }
                 this._texture = texture;
                 if (this.autoResize) {
                     if (texture) {
@@ -261,9 +360,14 @@ var canvas2d;
                 return this._parent;
             },
             set: function (sprite) {
+                if (sprite === this._parent) {
+                    return;
+                }
                 this._parent = sprite;
-                this.adjustAlignX();
-                this.adjustAlignY();
+                if (sprite) {
+                    this.adjustAlignX();
+                    this.adjustAlignY();
+                }
             },
             enumerable: true,
             configurable: true
@@ -512,7 +616,7 @@ var canvas2d;
         Sprite.prototype.update = function (deltaTime) {
         };
         return Sprite;
-    })();
+    })(canvas2d.EventEmitter);
     canvas2d.Sprite = Sprite;
     var list = [];
     var timerId;
@@ -795,60 +899,93 @@ var canvas2d;
         return Delay;
     })();
     var Transition = (function () {
-        function Transition(attrs, duration) {
-            var _this = this;
+        function Transition(options, duration, isTransitionBy) {
             this.duration = duration;
+            this.isTransitionBy = isTransitionBy;
+            this._defaultEasing = canvas2d.tween['easeInOutQuad'];
             this.done = false;
             this.immediate = false;
             this.elapsed = 0;
-            this.attrs = [];
-            this.starts = {};
-            this.deltas = {};
-            var name;
-            var value;
-            Object.keys(attrs).forEach(function (name) {
-                var info = attrs[name];
+            this.options = [];
+            this.deltaValue = {};
+            if (isTransitionBy) {
+                this._initAsTransitionBy(options);
+            }
+            else {
+                this._initAsTransitionTo(options);
+            }
+        }
+        Transition.prototype._initAsTransitionTo = function (options) {
+            var _this = this;
+            Object.keys(options).forEach(function (name) {
+                var info = options[name];
                 var easing;
                 var dest;
                 if (typeof info === 'number') {
-                    easing = canvas2d.tween.easeInOutQuad;
                     dest = info;
                 }
                 else {
-                    easing = typeof info.easing === 'function' ? info.easing : canvas2d.tween[info.easing || 'easeInOutQuad'];
+                    easing = info.easing;
                     dest = info.dest;
                 }
-                _this.attrs.push({ name: name, dest: dest, easing: easing });
+                _this.options.push({ name: name, dest: dest, easing: easing });
             });
-        }
+        };
+        Transition.prototype._initAsTransitionBy = function (options) {
+            var _this = this;
+            var deltaValue = this.deltaValue;
+            Object.keys(options).forEach(function (name) {
+                var info = options[name];
+                var easing;
+                var dest;
+                if (typeof info === 'number') {
+                    deltaValue[name] = info;
+                }
+                else {
+                    easing = info.easing;
+                    deltaValue[name] = info.value;
+                }
+                _this.options.push({ name: name, dest: dest, easing: easing });
+            });
+        };
+        Transition.prototype._initBeginValue = function (sprite) {
+            var beginValue = this.beginValue = {};
+            var deltaValue = this.deltaValue;
+            if (this.isTransitionBy) {
+                this.options.forEach(function (option) {
+                    beginValue[option.name] = sprite[option.name];
+                    option.dest = sprite[option.name] + deltaValue[option.name];
+                });
+            }
+            else {
+                this.options.forEach(function (option) {
+                    beginValue[option.name] = sprite[option.name];
+                    deltaValue[option.name] = option.dest - sprite[option.name];
+                });
+            }
+        };
         Transition.prototype.step = function (deltaTime, sprite) {
+            var _this = this;
             this.elapsed += deltaTime;
+            if (this.beginValue == null) {
+                this._initBeginValue(sprite);
+            }
             if (this.elapsed >= this.duration) {
                 this.end(sprite);
             }
             else {
                 var percent = this.elapsed / this.duration;
-                var starts = this.starts;
-                var deltas = this.deltas;
-                var start;
-                var dest;
-                var delta;
-                var name;
-                this.attrs.forEach(function (attr) {
-                    name = attr.name;
-                    dest = attr.dest;
-                    delta = attr.easing(percent);
-                    start = starts[name];
-                    if (start == null) {
-                        start = starts[name] = sprite[name];
-                        deltas[name] = dest - start;
-                    }
-                    sprite[name] = start + (delta * deltas[name]);
+                var beginValue = this.beginValue;
+                var deltaValue = this.deltaValue;
+                this.options.forEach(function (_a) {
+                    var name = _a.name, dest = _a.dest, easing = _a.easing;
+                    easing = easing || _this._defaultEasing;
+                    sprite[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
                 });
             }
         };
         Transition.prototype.end = function (sprite) {
-            this.attrs.forEach(function (attr) {
+            this.options.forEach(function (attr) {
                 sprite[attr.name] = attr.dest;
             });
             this.done = true;
@@ -1026,12 +1163,19 @@ var canvas2d;
             return this;
         };
         /**
-         * Transition action
+         * TransitionTo action
          * @param  attrs     Transition attributes map
          * @param  duration  Transition duration
          */
         Action.prototype.to = function (attrs, duration) {
             this._queue.push(new Transition(attrs, duration));
+            return this;
+        };
+        /**
+         * TransitionBy action
+         */
+        Action.prototype.by = function (attrs, duration) {
+            this._queue.push(new Transition(attrs, duration, true));
             return this;
         };
         /**
@@ -1115,14 +1259,18 @@ var canvas2d;
         /**
          * Load multiple sound resources
          */
-        function loadList(basePath, resList, callback) {
-            var counter = resList.length;
-            function onCompleted() {
-                counter--;
-                if (counter === 0 && callback) {
-                    callback();
+        function loadList(basePath, resList, onAllCompleted, onProgress) {
+            var allCount = resList.length;
+            var endedCount = 0;
+            var onCompleted = function () {
+                ++endedCount;
+                if (onProgress) {
+                    onProgress(endedCount / allCount);
                 }
-            }
+                if (endedCount === allCount && onAllCompleted) {
+                    onAllCompleted();
+                }
+            };
             resList.forEach(function (res) {
                 load(basePath, res.name, onCompleted, res.channels);
             });
@@ -1382,10 +1530,10 @@ var canvas2d;
             style.top = ((device.height - height) * 0.5) + 'px';
             style.left = ((device.width - width) * 0.5) + 'px';
             style.position = 'absolute';
-            Stage.visibleRect.left += deltaWidth;
-            Stage.visibleRect.right -= deltaWidth;
-            Stage.visibleRect.top += deltaHeight;
-            Stage.visibleRect.bottom -= deltaHeight;
+            Stage.visibleRect.left = deltaWidth;
+            Stage.visibleRect.right = Stage.width - deltaWidth;
+            Stage.visibleRect.top = deltaHeight;
+            Stage.visibleRect.bottom = Stage.height - deltaHeight;
             Stage._scale = scale;
         }
         Stage.adjustCanvasSize = adjustCanvasSize;
@@ -1407,12 +1555,12 @@ var canvas2d;
                 height: height
             });
             stageScaleMode = scaleMode;
-            this.canvas = canvas;
-            this.context = canvas.getContext('2d');
+            Stage.canvas = canvas;
+            Stage.context = canvas.getContext('2d');
             bufferCanvas = document.createElement("canvas");
             bufferContext = bufferCanvas.getContext("2d");
-            this.width = canvas.width = bufferCanvas.width = width;
-            this.height = canvas.height = bufferCanvas.height = height;
+            Stage.width = canvas.width = bufferCanvas.width = width;
+            Stage.height = canvas.height = bufferCanvas.height = height;
             Stage.visibleRect = { left: 0, right: width, top: 0, bottom: height };
             adjustCanvasSize();
             initScreenEvent();
@@ -1909,11 +2057,6 @@ var canvas2d;
     })(UIEvent = canvas2d.UIEvent || (canvas2d.UIEvent = {}));
 })(canvas2d || (canvas2d = {}));
 /// <reference path="sprite.ts" />
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
 var canvas2d;
 (function (canvas2d) {
     var measureContext = document.createElement("canvas").getContext("2d");
