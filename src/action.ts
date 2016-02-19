@@ -215,7 +215,7 @@ namespace canvas2d {
         constructor(private _actions: Array<Action>) {
         }
 
-        allDone(callback: Function): Listener {
+        all(callback: Function): Listener {
             if (this._resolved) {
                 callback();
             }
@@ -229,7 +229,7 @@ namespace canvas2d {
             return this;
         }
 
-        anyDone(callback: Function): Listener {
+        any(callback: Function): Listener {
             if (this._resolved) {
                 callback();
             }

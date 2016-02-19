@@ -1042,7 +1042,7 @@ var canvas2d;
             this._resolved = false;
             this._callbacks = {};
         }
-        Listener.prototype.allDone = function (callback) {
+        Listener.prototype.all = function (callback) {
             if (this._resolved) {
                 callback();
             }
@@ -1054,7 +1054,7 @@ var canvas2d;
             }
             return this;
         };
-        Listener.prototype.anyDone = function (callback) {
+        Listener.prototype.any = function (callback) {
             if (this._resolved) {
                 callback();
             }
@@ -1980,100 +1980,99 @@ var canvas2d;
 (function (canvas2d) {
     var UIEvent;
     (function (UIEvent) {
-        var Key;
-        (function (Key) {
-            Key.MOUSE_LEFT = 1;
-            Key.MOUSE_MID = 2;
-            Key.MOUSE_RIGHT = 3;
-            Key.BACKSPACE = 8;
-            Key.TAB = 9;
-            Key.NUM_CENTER = 12;
-            Key.ENTER = 13;
-            Key.RETURN = 13;
-            Key.SHIFT = 16;
-            Key.CTRL = 17;
-            Key.ALT = 18;
-            Key.PAUSE = 19;
-            Key.CAPS_LOCK = 20;
-            Key.ESC = 27;
-            Key.ESCAPE = 27;
-            Key.SPACE = 32;
-            Key.PAGE_UP = 33;
-            Key.PAGE_DOWN = 34;
-            Key.END = 35;
-            Key.HOME = 36;
-            Key.LEFT = 37;
-            Key.UP = 38;
-            Key.RIGHT = 39;
-            Key.DOWN = 40;
-            Key.PRINT_SCREEN = 44;
-            Key.INSERT = 45;
-            Key.DELETE = 46;
-            Key.ZERO = 48;
-            Key.ONE = 49;
-            Key.TWO = 50;
-            Key.THREE = 51;
-            Key.FOUR = 52;
-            Key.FIVE = 53;
-            Key.SIX = 54;
-            Key.SEVEN = 55;
-            Key.EIGHT = 56;
-            Key.NINE = 57;
-            Key.A = 65;
-            Key.B = 66;
-            Key.C = 67;
-            Key.D = 68;
-            Key.E = 69;
-            Key.F = 70;
-            Key.G = 71;
-            Key.H = 72;
-            Key.I = 73;
-            Key.J = 74;
-            Key.K = 75;
-            Key.L = 76;
-            Key.M = 77;
-            Key.N = 78;
-            Key.O = 79;
-            Key.P = 80;
-            Key.Q = 81;
-            Key.R = 82;
-            Key.S = 83;
-            Key.T = 84;
-            Key.U = 85;
-            Key.V = 86;
-            Key.W = 87;
-            Key.X = 88;
-            Key.Y = 89;
-            Key.Z = 90;
-            Key.CONTEXT_MENU = 93;
-            Key.NUM0 = 96;
-            Key.NUM1 = 97;
-            Key.NUM2 = 98;
-            Key.NUM3 = 99;
-            Key.NUM4 = 100;
-            Key.NUM5 = 101;
-            Key.NUM6 = 102;
-            Key.NUM7 = 103;
-            Key.NUM8 = 104;
-            Key.NUM9 = 105;
-            Key.NUM_MULTIPLY = 106;
-            Key.NUM_PLUS = 107;
-            Key.NUM_MINUS = 109;
-            Key.NUM_PERIOD = 110;
-            Key.NUM_DIVISION = 111;
-            Key.F1 = 112;
-            Key.F2 = 113;
-            Key.F3 = 114;
-            Key.F4 = 115;
-            Key.F5 = 116;
-            Key.F6 = 117;
-            Key.F7 = 118;
-            Key.F8 = 119;
-            Key.F9 = 120;
-            Key.F10 = 121;
-            Key.F11 = 122;
-            Key.F12 = 123;
-        })(Key = UIEvent.Key || (UIEvent.Key = {}));
+        UIEvent.Key = {
+            MOUSE_LEFT: 1,
+            MOUSE_MID: 2,
+            MOUSE_RIGHT: 3,
+            BACKSPACE: 8,
+            TAB: 9,
+            NUM_CENTER: 12,
+            ENTER: 13,
+            RETURN: 13,
+            SHIFT: 16,
+            CTRL: 17,
+            ALT: 18,
+            PAUSE: 19,
+            CAPS_LOCK: 20,
+            ESC: 27,
+            ESCAPE: 27,
+            SPACE: 32,
+            PAGE_UP: 33,
+            PAGE_DOWN: 34,
+            END: 35,
+            HOME: 36,
+            LEFT: 37,
+            UP: 38,
+            RIGHT: 39,
+            DOWN: 40,
+            PRINT_SCREEN: 44,
+            INSERT: 45,
+            DELETE: 46,
+            ZERO: 48,
+            ONE: 49,
+            TWO: 50,
+            THREE: 51,
+            FOUR: 52,
+            FIVE: 53,
+            SIX: 54,
+            SEVEN: 55,
+            EIGHT: 56,
+            NINE: 57,
+            A: 65,
+            B: 66,
+            C: 67,
+            D: 68,
+            E: 69,
+            F: 70,
+            G: 71,
+            H: 72,
+            I: 73,
+            J: 74,
+            K: 75,
+            L: 76,
+            M: 77,
+            N: 78,
+            O: 79,
+            P: 80,
+            Q: 81,
+            R: 82,
+            S: 83,
+            T: 84,
+            U: 85,
+            V: 86,
+            W: 87,
+            X: 88,
+            Y: 89,
+            Z: 90,
+            CONTEXT_MENU: 93,
+            NUM0: 96,
+            NUM1: 97,
+            NUM2: 98,
+            NUM3: 99,
+            NUM4: 100,
+            NUM5: 101,
+            NUM6: 102,
+            NUM7: 103,
+            NUM8: 104,
+            NUM9: 105,
+            NUM_MULTIPLY: 106,
+            NUM_PLUS: 107,
+            NUM_MINUS: 109,
+            NUM_PERIOD: 110,
+            NUM_DIVISION: 111,
+            F1: 112,
+            F2: 113,
+            F3: 114,
+            F4: 115,
+            F5: 116,
+            F6: 117,
+            F7: 118,
+            F8: 119,
+            F9: 120,
+            F10: 121,
+            F11: 122,
+            F12: 123
+        };
     })(UIEvent = canvas2d.UIEvent || (canvas2d.UIEvent = {}));
 })(canvas2d || (canvas2d = {}));
 /// <reference path="sprite.ts" />
