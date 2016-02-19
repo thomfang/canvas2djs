@@ -11,7 +11,10 @@ namespace canvas2d {
         lineSpace?: number;
         fontStyle?: string;
         fontWeight?: string;
-        strokeColor?: string;
+        stroke?: {
+            color: string;
+            width: number;
+        };
     }
 
     var measureContext = document.createElement("canvas").getContext("2d");
@@ -26,7 +29,10 @@ namespace canvas2d {
         fontWeight: string = 'normal';
         fontStyle: string = 'normal';
         lineSpace: number = 5;
-        strokeColor: string;
+        stroke: {
+            color: string;
+            width: number;
+        };
 
         private _lines: string[];
         private _text: string = '';
@@ -98,22 +104,20 @@ namespace canvas2d {
             context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
             context.fillStyle = this.fontColor;
             context.textAlign = this.textAlign;
-            // context.textBaseline = 'top';
             context.textBaseline = 'middle';
 
-            if (this.strokeColor) {
-                context.strokeStyle = this.strokeColor;
+            if (this.stroke) {
+                context.strokeStyle = this.stroke.color;
+                context.lineWidth = this.stroke.width;
             }
 
-            // var y = -this._originPixelY;
             var y = 0;
             var h = this.fontSize + this.lineSpace;
 
             this._lines.forEach((text) => {
                 if (text.length > 0) {
                     context.fillText(text, 0, y);
-                    
-                    if (this.strokeColor) {
+                    if (this.stroke) {
                         context.strokeText(text, 0, y);
                     }
                 }

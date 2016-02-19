@@ -22,6 +22,9 @@ namespace canvas2d {
         }
 
         set text(text: string) {
+            if (text === this._text) {
+                return;
+            }
             this.setText(text);
         }
         get text() {
@@ -34,10 +37,15 @@ namespace canvas2d {
         
         set textureMap(textureMap: { [word: string]: Texture }) {
             this._textureMap = textureMap;
+            this.setText(this._text);
         }
         
         setText(text: string) {
             this._text = text || '';
+            
+            if (!this.textureMap || !this._text) {
+                return;
+            }
 
             var words = this._text.split('');
 
@@ -47,16 +55,20 @@ namespace canvas2d {
             else {
                 this._words = words.map(word => {
                     if (!this._textureMap[word]) {
-                        throw new Error(word + ': the texture of this word not found');
+                        console.error(word + ': texture of the word not found');
                     }
                     return this._textureMap[word];
                 });
             }
 
-            this.removeAllChild();
+            this.removeAllChildren();
 
             if (this._words && this._words.length) {
                 this._words.forEach((word, i) => {
+                    if (!word) {
+                        return;
+                    }
+                    
                     super.addChild(new Sprite({
                         x: i * word.width,
                         texture: word,
@@ -68,6 +80,10 @@ namespace canvas2d {
                 this.width = this._words.length * this._words[0].width;
                 this.height = this._words[0].height;
             }
+        }
+        
+        private _updateWordTexture() {
+            
         }
         
         addChild() {

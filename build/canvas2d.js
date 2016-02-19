@@ -1,5 +1,33 @@
 var canvas2d;
 (function (canvas2d) {
+    var util;
+    (function (util) {
+        var uuidKey = '__CANVAS2D_UUID__';
+        var uuidCounter = 0;
+        function uuid(target) {
+            if (typeof target[uuidKey] === 'undefined') {
+                target[uuidKey] = uuidCounter++;
+            }
+            return target[uuidKey];
+        }
+        util.uuid = uuid;
+        function addArrayItem(array, item) {
+            if (array.indexOf(item) === -1) {
+                array.push(item);
+            }
+        }
+        util.addArrayItem = addArrayItem;
+        function removeArrayItem(array, item) {
+            var index = array.indexOf(item);
+            if (index > -1) {
+                array.splice(index, 1);
+            }
+        }
+        util.removeArrayItem = removeArrayItem;
+    })(util = canvas2d.util || (canvas2d.util = {}));
+})(canvas2d || (canvas2d = {}));
+var canvas2d;
+(function (canvas2d) {
     var cache = {};
     var loaded = {};
     var loading = {};
@@ -112,6 +140,7 @@ var canvas2d;
     })();
     canvas2d.Texture = Texture;
 })(canvas2d || (canvas2d = {}));
+/// <reference path="util.ts" />
 var canvas2d;
 (function (canvas2d) {
     var counter = 0;
@@ -129,9 +158,7 @@ var canvas2d;
             if (!this._eventCache[type]) {
                 this._eventCache[type] = [];
             }
-            if (this._eventCache[type].indexOf(listener) === -1) {
-                this._eventCache[type].push(listener);
-            }
+            canvas2d.util.addArrayItem(this._eventCache[type], listener);
             return this;
         };
         EventEmitter.prototype.on = function (type, listener) {
@@ -143,10 +170,7 @@ var canvas2d;
         };
         EventEmitter.prototype.removeListener = function (type, listener) {
             if (this._eventCache && this._eventCache[type]) {
-                var index = this._eventCache[type].indexOf(listener);
-                if (index > -1) {
-                    this._eventCache[type].splice(index, 1);
-                }
+                canvas2d.util.removeArrayItem(this._eventCache[type], listener);
                 if (!this._eventCache[type].length) {
                     delete this._eventCache[type];
                 }
@@ -236,6 +260,7 @@ var canvas2d;
             this.touchEnabled = true;
             this.mouseEnabled = true;
             this.keyboardEnabled = true;
+            this.id = canvas2d.util.uuid(this);
             this._init(attrs);
         }
         Sprite.prototype._init = function (attrs) {
@@ -243,9 +268,7 @@ var canvas2d;
             if (attrs) {
                 Object.keys(attrs).forEach(function (name) { return _this[name] = attrs[name]; });
             }
-            if (typeof this['init'] === 'function') {
-                this['init']();
-            }
+            this.init();
         };
         Object.defineProperty(Sprite.prototype, "width", {
             get: function () {
@@ -333,23 +356,24 @@ var canvas2d;
                     return;
                 }
                 this._texture = texture;
-                if (this.autoResize) {
-                    if (texture) {
-                        if (texture.ready) {
-                            this.width = texture.width;
-                            this.height = texture.height;
-                        }
-                        else {
-                            texture.onReady(function (size) {
-                                _this.width = size.width;
-                                _this.height = size.height;
-                            });
-                        }
+                if (!this.autoResize) {
+                    return;
+                }
+                if (texture) {
+                    if (texture.ready) {
+                        this.width = texture.width;
+                        this.height = texture.height;
                     }
                     else {
-                        this.width = 0;
-                        this.height = 0;
+                        texture.onReady(function (size) {
+                            _this.width = size.width;
+                            _this.height = size.height;
+                        });
                     }
+                }
+                else {
+                    this.width = 0;
+                    this.height = 0;
                 }
             },
             enumerable: true,
@@ -401,9 +425,7 @@ var canvas2d;
             configurable: true
         });
         Sprite.prototype._update = function (deltaTime) {
-            if (typeof this['update'] === 'function') {
-                this['update'](deltaTime);
-            }
+            this.update(deltaTime);
             if (this.children && this.children.length) {
                 this.children.slice().forEach(function (child) {
                     child._update(deltaTime);
@@ -442,7 +464,7 @@ var canvas2d;
             if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
                 this.draw(context);
             }
-            this._visitAllChild(context);
+            this._visitAllChildren(context);
             context.restore();
         };
         Sprite.prototype.adjustAlignX = function () {
@@ -487,7 +509,7 @@ var canvas2d;
                 this.y = y;
             }
         };
-        Sprite.prototype._visitAllChild = function (context) {
+        Sprite.prototype._visitAllChildren = function (context) {
             if (!this.children || !this.children.length) {
                 return;
             }
@@ -582,14 +604,14 @@ var canvas2d;
                 target.parent = null;
             }
         };
-        Sprite.prototype.removeAllChild = function (recusive) {
+        Sprite.prototype.removeAllChildren = function (recusive) {
             if (!this.children || !this.children.length) {
                 return;
             }
             while (this.children.length) {
                 var sprite = this.children[0];
                 if (recusive) {
-                    sprite.removeAllChild(true);
+                    sprite.removeAllChildren(true);
                     canvas2d.Action.stop(sprite);
                 }
                 this.removeChild(sprite);
@@ -604,12 +626,12 @@ var canvas2d;
                 }
             }
             else {
-                this.removeAllChild();
+                this.removeAllChildren();
             }
             if (this.parent) {
                 this.parent.removeChild(this);
             }
-            addReleaseSprite(this);
+            addToReleasePool(this);
         };
         Sprite.prototype.init = function () {
         };
@@ -618,27 +640,27 @@ var canvas2d;
         return Sprite;
     })(canvas2d.EventEmitter);
     canvas2d.Sprite = Sprite;
-    var list = [];
+    var releaseSpritePool = [];
     var timerId;
-    function addReleaseSprite(sprite) {
-        list.push(sprite);
+    function addToReleasePool(sprite) {
+        releaseSpritePool.push(sprite);
         if (timerId != null) {
             return;
         }
         setTimeout(function () {
-            list.forEach(function (e) {
+            releaseSpritePool.forEach(function (e) {
                 for (var i in e) {
                     delete e[i];
                 }
             });
             timerId = null;
-            list.length = 0;
+            releaseSpritePool.length = 0;
         }, 0);
     }
 })(canvas2d || (canvas2d = {}));
 var canvas2d;
 (function (canvas2d) {
-    canvas2d.tween = {
+    canvas2d.Tween = {
         easeInQuad: function (pos) {
             return Math.pow(pos, 2);
         },
@@ -844,21 +866,11 @@ var canvas2d;
         }
     };
 })(canvas2d || (canvas2d = {}));
+/// <reference path="util.ts" />
 /// <reference path="sprite.ts" />
 /// <reference path="tween.ts" />
 var canvas2d;
 (function (canvas2d) {
-    function addArrayItem(array, item) {
-        if (array.indexOf(item) < 0) {
-            array.push(item);
-        }
-    }
-    function removeArrayItem(array, item) {
-        var index = array.indexOf(item);
-        if (index > -1) {
-            array.splice(index, 1);
-        }
-    }
     function publish(callbackList) {
         callbackList.forEach(function (callback) {
             callback();
@@ -902,7 +914,7 @@ var canvas2d;
         function Transition(options, duration, isTransitionBy) {
             this.duration = duration;
             this.isTransitionBy = isTransitionBy;
-            this._defaultEasing = canvas2d.tween['easeInOutQuad'];
+            this._defaultEasing = canvas2d.Tween.easeInOutQuad;
             this.done = false;
             this.immediate = false;
             this.elapsed = 0;
@@ -1036,7 +1048,7 @@ var canvas2d;
                 if (!this._callback.all) {
                     this._callback.all = [];
                 }
-                addArrayItem(this._callback.all, callback);
+                canvas2d.util.addArrayItem(this._callback.all, callback);
             }
             return this;
         };
@@ -1048,7 +1060,7 @@ var canvas2d;
                 if (!this._callback.any) {
                     this._callback.any = [];
                 }
-                addArrayItem(this._callback.any, callback);
+                canvas2d.util.addArrayItem(this._callback.any, callback);
             }
             return this;
         };
@@ -1069,7 +1081,7 @@ var canvas2d;
             }
             if (allDone && this._callback.all) {
                 publish(this._callback.all);
-                removeArrayItem(Action._listenerList, this);
+                canvas2d.util.removeArrayItem(Action._listenerList, this);
                 this._resolved = true;
             }
         };
@@ -1114,7 +1126,7 @@ var canvas2d;
             for (; action = actionList[i]; i++) {
                 action._step(deltaTime);
                 if (action._done) {
-                    removeArrayItem(actionList, action);
+                    canvas2d.util.removeArrayItem(actionList, action);
                 }
             }
             Action._listenerList.slice().forEach(function (listener) {
@@ -1183,7 +1195,7 @@ var canvas2d;
          */
         Action.prototype.start = function () {
             if (!this.running) {
-                addArrayItem(Action._actionList, this);
+                canvas2d.util.addArrayItem(Action._actionList, this);
                 this.running = true;
             }
             return this;
@@ -1195,7 +1207,7 @@ var canvas2d;
             this._done = true;
             this.running = false;
             this._queue.length = 0;
-            removeArrayItem(Action._actionList, this);
+            canvas2d.util.removeArrayItem(Action._actionList, this);
         };
         Action._actionList = [];
         Action._listenerList = [];
@@ -1469,6 +1481,7 @@ var canvas2d;
             ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
         })(Stage.ScaleMode || (Stage.ScaleMode = {}));
         var ScaleMode = Stage.ScaleMode;
+        Stage.autoAdjustCanvasSize = false;
         function adjustCanvasSize() {
             if (!Stage.canvas || !Stage.canvas.parentNode) {
                 return;
@@ -1537,9 +1550,6 @@ var canvas2d;
             Stage._scale = scale;
         }
         Stage.adjustCanvasSize = adjustCanvasSize;
-        function initScreenEvent() {
-            window.addEventListener("resize", adjustCanvasSize);
-        }
         /**
          * Initialize the stage
          * @param  canvas     Canvas element
@@ -1547,7 +1557,7 @@ var canvas2d;
          * @param  height     Resolution design height
          * @param  scaleMode  Adjust resolution design scale mode
          */
-        function init(canvas, width, height, scaleMode) {
+        function init(canvas, width, height, scaleMode, autoAdjustCanvasSize) {
             Stage.sprite = new canvas2d.Sprite({
                 x: width * 0.5,
                 y: height * 0.5,
@@ -1562,10 +1572,21 @@ var canvas2d;
             Stage.width = canvas.width = bufferCanvas.width = width;
             Stage.height = canvas.height = bufferCanvas.height = height;
             Stage.visibleRect = { left: 0, right: width, top: 0, bottom: height };
-            adjustCanvasSize();
-            initScreenEvent();
+            setAutoAdjustCanvasSize(autoAdjustCanvasSize);
         }
         Stage.init = init;
+        function setAutoAdjustCanvasSize(value) {
+            if (value && !Stage.autoAdjustCanvasSize) {
+                Stage.autoAdjustCanvasSize = true;
+                adjustCanvasSize();
+                window.addEventListener("resize", adjustCanvasSize);
+            }
+            else if (!value && Stage.autoAdjustCanvasSize) {
+                Stage.autoAdjustCanvasSize = false;
+                window.removeEventListener("resize", adjustCanvasSize);
+            }
+        }
+        Stage.setAutoAdjustCanvasSize = setAutoAdjustCanvasSize;
         function startTimer() {
             eventloopTimerID = setTimeout(function () {
                 if (!isUseInnerTimer) {
@@ -1648,7 +1669,7 @@ var canvas2d;
          * @param  recusive  Recusize remove all the children
          */
         function removeAllChild(recusive) {
-            Stage.sprite.removeAllChild(recusive);
+            Stage.sprite.removeAllChildren(recusive);
         }
         Stage.removeAllChild = removeAllChild;
     })(Stage = canvas2d.Stage || (canvas2d.Stage = {}));
@@ -2127,18 +2148,17 @@ var canvas2d;
             context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
             context.fillStyle = this.fontColor;
             context.textAlign = this.textAlign;
-            // context.textBaseline = 'top';
             context.textBaseline = 'middle';
-            if (this.strokeColor) {
-                context.strokeStyle = this.strokeColor;
+            if (this.stroke) {
+                context.strokeStyle = this.stroke.color;
+                context.lineWidth = this.stroke.width;
             }
-            // var y = -this._originPixelY;
             var y = 0;
             var h = this.fontSize + this.lineSpace;
             this._lines.forEach(function (text) {
                 if (text.length > 0) {
                     context.fillText(text, 0, y);
-                    if (_this.strokeColor) {
+                    if (_this.stroke) {
                         context.strokeText(text, 0, y);
                     }
                 }

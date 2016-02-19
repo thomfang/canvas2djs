@@ -74,11 +74,13 @@ namespace canvas2d.Stage {
      */
     export var _scale: number;
 
+    export var autoAdjustCanvasSize = false;
+
     export function adjustCanvasSize(): void {
         if (!canvas || !canvas.parentNode) {
             return;
         }
-        
+
         var style = canvas.style;
         var device = {
             width: canvas.parentElement.offsetWidth,
@@ -147,10 +149,6 @@ namespace canvas2d.Stage {
         _scale = scale;
     }
 
-    function initScreenEvent(): void {
-        window.addEventListener("resize", adjustCanvasSize);
-    }
-
     /**
      * Initialize the stage
      * @param  canvas     Canvas element
@@ -158,14 +156,13 @@ namespace canvas2d.Stage {
      * @param  height     Resolution design height
      * @param  scaleMode  Adjust resolution design scale mode 
      */
-    export function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode): void {
+    export function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean): void {
         sprite = new Sprite({
             x: width * 0.5,
             y: height * 0.5,
             width: width,
             height: height
         });
-
 
         stageScaleMode = scaleMode;
 
@@ -179,9 +176,20 @@ namespace canvas2d.Stage {
         Stage.height = canvas.height = bufferCanvas.height = height;
 
         visibleRect = { left: 0, right: width, top: 0, bottom: height };
+        
+        setAutoAdjustCanvasSize(autoAdjustCanvasSize);
+    }
 
-        adjustCanvasSize();
-        initScreenEvent();
+    export function setAutoAdjustCanvasSize(value: boolean) {
+        if (value && !autoAdjustCanvasSize) {
+            autoAdjustCanvasSize = true;
+            adjustCanvasSize();
+            window.addEventListener("resize", adjustCanvasSize);
+        }
+        else if (!value && autoAdjustCanvasSize) {
+            autoAdjustCanvasSize = false;
+            window.removeEventListener("resize", adjustCanvasSize);
+        }
     }
 
     function startTimer() {
@@ -278,6 +286,6 @@ namespace canvas2d.Stage {
      * @param  recusive  Recusize remove all the children
      */
     export function removeAllChild(recusive?: boolean): void {
-        sprite.removeAllChild(recusive);
+        sprite.removeAllChildren(recusive);
     }
 }

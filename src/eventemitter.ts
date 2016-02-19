@@ -1,3 +1,5 @@
+/// <reference path="util.ts" />
+
 namespace canvas2d {
 
     export interface IEventListener {
@@ -25,9 +27,8 @@ namespace canvas2d {
             if (!this._eventCache[type]) {
                 this._eventCache[type] = [];
             }
-            if (this._eventCache[type].indexOf(listener) === -1) {
-                this._eventCache[type].push(listener);
-            }
+            
+            util.addArrayItem(this._eventCache[type], listener);
             return this;
         }
         
@@ -42,10 +43,7 @@ namespace canvas2d {
 
         removeListener(type: string, listener: IEventListener) {
             if (this._eventCache && this._eventCache[type]) {
-                let index = this._eventCache[type].indexOf(listener);
-                if (index > -1) {
-                    this._eventCache[type].splice(index, 1);
-                }
+                util.removeArrayItem(this._eventCache[type], listener);
                 if (!this._eventCache[type].length) {
                     delete this._eventCache[type];
                 }

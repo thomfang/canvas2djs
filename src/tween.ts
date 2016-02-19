@@ -4,7 +4,7 @@
         (percent: number, ...args: any[]): number;
     }
 
-    export var tween: { [name: string]: IEasingFunction } = {
+    export var Tween = {
         easeInQuad: function (pos) {
             return Math.pow(pos, 2);
         },

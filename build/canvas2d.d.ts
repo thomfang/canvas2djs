@@ -1,3 +1,8 @@
+declare namespace canvas2d.util {
+    function uuid(target: any): any;
+    function addArrayItem(array: any[], item: any): void;
+    function removeArrayItem(array: any[], item: any): void;
+}
 declare namespace canvas2d {
     interface IRect {
         x: number;
@@ -177,6 +182,7 @@ declare namespace canvas2d {
         protected _parent: Sprite;
         _originPixelX: number;
         _originPixelY: number;
+        id: number;
         x: number;
         y: number;
         scaleX: number;
@@ -217,14 +223,14 @@ declare namespace canvas2d {
         _visit(context: CanvasRenderingContext2D): void;
         adjustAlignX(): void;
         adjustAlignY(): void;
-        protected _visitAllChild(context: CanvasRenderingContext2D): void;
+        protected _visitAllChildren(context: CanvasRenderingContext2D): void;
         protected _clip(context: CanvasRenderingContext2D): void;
         protected _drawBgColor(context: CanvasRenderingContext2D): void;
         protected _drawBorder(context: CanvasRenderingContext2D): void;
         protected draw(context: CanvasRenderingContext2D): void;
         addChild(target: Sprite, position?: number): void;
         removeChild(target: Sprite): void;
-        removeAllChild(recusive?: boolean): void;
+        removeAllChildren(recusive?: boolean): void;
         release(recusive?: boolean): void;
         init(): any;
         update(deltaTime: number): any;
@@ -234,8 +240,52 @@ declare namespace canvas2d {
     interface IEasingFunction {
         (percent: number, ...args: any[]): number;
     }
-    var tween: {
-        [name: string]: IEasingFunction;
+    var Tween: {
+        easeInQuad: (pos: any) => number;
+        easeOutQuad: (pos: any) => number;
+        easeInOutQuad: (pos: any) => number;
+        easeInCubic: (pos: any) => number;
+        easeOutCubic: (pos: any) => number;
+        easeInOutCubic: (pos: any) => number;
+        easeInQuart: (pos: any) => number;
+        easeOutQuart: (pos: any) => number;
+        easeInOutQuart: (pos: any) => number;
+        easeInQuint: (pos: any) => number;
+        easeOutQuint: (pos: any) => number;
+        easeInOutQuint: (pos: any) => number;
+        easeInSine: (pos: any) => number;
+        easeOutSine: (pos: any) => number;
+        easeInOutSine: (pos: any) => number;
+        easeInExpo: (pos: any) => number;
+        easeOutExpo: (pos: any) => number;
+        easeInOutExpo: (pos: any) => number;
+        easeInCirc: (pos: any) => number;
+        easeOutCirc: (pos: any) => number;
+        easeInOutCirc: (pos: any) => number;
+        easeOutBounce: (pos: any) => number;
+        easeInBack: (pos: any) => number;
+        easeOutBack: (pos: any) => number;
+        easeInOutBack: (pos: any) => number;
+        elastic: (pos: any) => number;
+        swingFromTo: (pos: any) => number;
+        swingFrom: (pos: any) => number;
+        swingTo: (pos: any) => number;
+        bounce: (pos: any) => number;
+        bouncePast: (pos: any) => number;
+        easeFromTo: (pos: any) => number;
+        easeFrom: (pos: any) => number;
+        easeTo: (pos: any) => number;
+        linear: (pos: any) => any;
+        sinusoidal: (pos: any) => number;
+        reverse: (pos: any) => number;
+        mirror: (pos: any, transition: any) => any;
+        flicker: (pos: any) => any;
+        wobble: (pos: any) => number;
+        pulse: (pos: any, pulses: any) => number;
+        blink: (pos: any, blinks: any) => number;
+        spring: (pos: any) => number;
+        none: (pos: any) => number;
+        full: (pos: any) => number;
     };
 }
 declare namespace canvas2d {
@@ -440,6 +490,7 @@ declare namespace canvas2d.Stage {
      * Scale value for adjusting the resolution design
      */
     var _scale: number;
+    var autoAdjustCanvasSize: boolean;
     function adjustCanvasSize(): void;
     /**
      * Initialize the stage
@@ -448,7 +499,8 @@ declare namespace canvas2d.Stage {
      * @param  height     Resolution design height
      * @param  scaleMode  Adjust resolution design scale mode
      */
-    function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode): void;
+    function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean): void;
+    function setAutoAdjustCanvasSize(value: boolean): void;
     /**
      * Start the stage event loop
      */
@@ -602,7 +654,10 @@ declare namespace canvas2d {
         lineSpace?: number;
         fontStyle?: string;
         fontWeight?: string;
-        strokeColor?: string;
+        stroke?: {
+            color: string;
+            width: number;
+        };
     }
     class TextLabel extends Sprite {
         fontName: string;
@@ -612,7 +667,10 @@ declare namespace canvas2d {
         fontWeight: string;
         fontStyle: string;
         lineSpace: number;
-        strokeColor: string;
+        stroke: {
+            color: string;
+            width: number;
+        };
         private _lines;
         private _text;
         constructor(attrs?: ITextLabel);

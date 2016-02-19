@@ -141,6 +141,8 @@ namespace canvas2d {
         _originPixelX: number = 0;
         _originPixelY: number = 0;
 
+        id: number;
+
         x: number = 0;
         y: number = 0;
         scaleX: number = 1;
@@ -170,6 +172,7 @@ namespace canvas2d {
 
         constructor(attrs?: ISprite) {
             super();
+            this.id = util.uuid(this);
             this._init(attrs);
         }
 
@@ -177,10 +180,7 @@ namespace canvas2d {
             if (attrs) {
                 Object.keys(attrs).forEach(name => this[name] = attrs[name]);
             }
-
-            if (typeof this['init'] === 'function') {
-                this['init']();
-            }
+            this.init();
         }
 
         set width(value: number) {
@@ -263,23 +263,25 @@ namespace canvas2d {
 
             this._texture = texture;
 
-            if (this.autoResize) {
-                if (texture) {
-                    if (texture.ready) {
-                        this.width = texture.width;
-                        this.height = texture.height;
-                    }
-                    else {
-                        texture.onReady((size) => {
-                            this.width = size.width;
-                            this.height = size.height;
-                        });
-                    }
+            if (!this.autoResize) {
+                return;
+            }
+            
+            if (texture) {
+                if (texture.ready) {
+                    this.width = texture.width;
+                    this.height = texture.height;
                 }
                 else {
-                    this.width = 0;
-                    this.height = 0;
+                    texture.onReady((size) => {
+                        this.width = size.width;
+                        this.height = size.height;
+                    });
                 }
+            }
+            else {
+                this.width = 0;
+                this.height = 0;
             }
         }
 
@@ -291,7 +293,7 @@ namespace canvas2d {
             if (sprite === this._parent) {
                 return;
             }
-            
+
             this._parent = sprite;
 
             if (sprite) {
@@ -329,9 +331,7 @@ namespace canvas2d {
         }
 
         _update(deltaTime: number): void {
-            if (typeof this['update'] === 'function') {
-                this['update'](deltaTime);
-            }
+            this.update(deltaTime);
 
             if (this.children && this.children.length) {
                 this.children.slice().forEach((child) => {
@@ -379,7 +379,7 @@ namespace canvas2d {
                 this.draw(context);
             }
 
-            this._visitAllChild(context);
+            this._visitAllChildren(context);
 
             context.restore();
         }
@@ -434,7 +434,7 @@ namespace canvas2d {
             }
         }
 
-        protected _visitAllChild(context: CanvasRenderingContext2D): void {
+        protected _visitAllChildren(context: CanvasRenderingContext2D): void {
             if (!this.children || !this.children.length) {
                 return;
             }
@@ -546,7 +546,7 @@ namespace canvas2d {
             }
         }
 
-        removeAllChild(recusive?: boolean): void {
+        removeAllChildren(recusive?: boolean): void {
             if (!this.children || !this.children.length) {
                 return;
             }
@@ -555,7 +555,7 @@ namespace canvas2d {
                 var sprite: Sprite = this.children[0];
 
                 if (recusive) {
-                    sprite.removeAllChild(true);
+                    sprite.removeAllChildren(true);
                     Action.stop(sprite);
                 }
                 this.removeChild(sprite);
@@ -573,14 +573,14 @@ namespace canvas2d {
                 }
             }
             else {
-                this.removeAllChild();
+                this.removeAllChildren();
             }
 
             if (this.parent) {
                 this.parent.removeChild(this);
             }
 
-            addReleaseSprite(this);
+            addToReleasePool(this);
         }
 
         init(): any {
@@ -592,25 +592,25 @@ namespace canvas2d {
         }
     }
 
-    let list: Sprite[] = [];
+    let releaseSpritePool: Sprite[] = [];
     let timerId: number;
 
-    function addReleaseSprite(sprite: Sprite) {
-        list.push(sprite);
+    function addToReleasePool(sprite: Sprite) {
+        releaseSpritePool.push(sprite);
 
         if (timerId != null) {
             return;
         }
 
         setTimeout(() => {
-            list.forEach(e => {
+            releaseSpritePool.forEach(e => {
                 for (let i in e) {
                     delete e[i];
                 }
             });
 
             timerId = null;
-            list.length = 0;
+            releaseSpritePool.length = 0;
         }, 0);
     }
 }

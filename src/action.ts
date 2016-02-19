@@ -1,27 +1,15 @@
-﻿/// <reference path="sprite.ts" />
+﻿/// <reference path="util.ts" />
+/// <reference path="sprite.ts" />
 /// <reference path="tween.ts" />
 
 namespace canvas2d {
 
-    interface IActionDefinition {
+    interface IAction {
         immediate?: boolean;
         done: boolean;
 
         step(deltaTime: number, sprite: Sprite): void;
         end(sprite: Sprite): void;
-    }
-
-    function addArrayItem(array: Array<any>, item: any): void {
-        if (array.indexOf(item) < 0) {
-            array.push(item);
-        }
-    }
-
-    function removeArrayItem(array: Array<any>, item: any): void {
-        var index = array.indexOf(item);
-        if (index > -1) {
-            array.splice(index, 1);
-        }
     }
 
     function publish(callbackList: Array<Function>): void {
@@ -30,7 +18,7 @@ namespace canvas2d {
         });
     }
 
-    class Callback implements IActionDefinition {
+    class Callback implements IAction {
         
         done: boolean = false;
         immediate: boolean = true;
@@ -50,7 +38,7 @@ namespace canvas2d {
         }
     }
 
-    class Delay implements IActionDefinition {
+    class Delay implements IAction {
         
         done: boolean = false;
         elapsed: number = 0;
@@ -70,9 +58,9 @@ namespace canvas2d {
         }
     }
 
-    class Transition implements IActionDefinition {
+    class Transition implements IAction {
 
-        private _defaultEasing = tween['easeInOutQuad'];
+        private _defaultEasing: IEasingFunction = Tween.easeInOutQuad;
 
         done: boolean = false;
         immediate: boolean = false;
@@ -180,7 +168,7 @@ namespace canvas2d {
         }
     }
 
-    class Animation implements IActionDefinition {
+    class Animation implements IAction {
         
         done: boolean = false;
         immediate: boolean = false;
@@ -231,7 +219,7 @@ namespace canvas2d {
                 if (!this._callback.all) {
                     this._callback.all = [];
                 }
-                addArrayItem(this._callback.all, callback);
+                util.addArrayItem(this._callback.all, callback);
             }
 
             return this;
@@ -245,7 +233,7 @@ namespace canvas2d {
                 if (!this._callback.any) {
                     this._callback.any = [];
                 }
-                addArrayItem(this._callback.any, callback);
+                util.addArrayItem(this._callback.any, callback);
             }
 
             return this;
@@ -271,7 +259,7 @@ namespace canvas2d {
 
             if (allDone && this._callback.all) {
                 publish(this._callback.all);
-                removeArrayItem(Action._listenerList, this);
+                util.removeArrayItem(Action._listenerList, this);
                 this._resolved = true;
             }
         }
@@ -285,7 +273,7 @@ namespace canvas2d {
         static _actionList: Array<Action> = [];
         static _listenerList: Array<Listener> = [];
 
-        private _queue: Array<IActionDefinition> = [];
+        private _queue: Array<IAction> = [];
 
         _done: boolean = false;
         
@@ -327,7 +315,7 @@ namespace canvas2d {
                 action._step(deltaTime);
 
                 if (action._done) {
-                    removeArrayItem(actionList, action);
+                    util.removeArrayItem(actionList, action);
                 }
             }
 
@@ -408,7 +396,7 @@ namespace canvas2d {
          */
         start(): Action {
             if (!this.running) {
-                addArrayItem(Action._actionList, this);
+                util.addArrayItem(Action._actionList, this);
                 this.running = true;
             }
             return this;
@@ -422,7 +410,7 @@ namespace canvas2d {
             this.running = false;
             this._queue.length = 0;
 
-            removeArrayItem(Action._actionList, this);
+            util.removeArrayItem(Action._actionList, this);
         }
     }
 }
