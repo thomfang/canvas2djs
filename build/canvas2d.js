@@ -883,13 +883,12 @@ var canvas2d;
             this.immediate = true;
         }
         Callback.prototype.step = function () {
-            if (!this.done) {
-                this.func.call(null);
-                this.done = true;
-            }
+            this.func.call(null);
+            this.end();
         };
         Callback.prototype.end = function () {
-            this.step();
+            this.func = null;
+            this.done = true;
         };
         return Callback;
     })();
@@ -983,23 +982,24 @@ var canvas2d;
                 this._initBeginValue(sprite);
             }
             if (this.elapsed >= this.duration) {
-                this.end(sprite);
+                return this.end(sprite);
             }
-            else {
-                var percent = this.elapsed / this.duration;
-                var beginValue = this.beginValue;
-                var deltaValue = this.deltaValue;
-                this.options.forEach(function (_a) {
-                    var name = _a.name, dest = _a.dest, easing = _a.easing;
-                    easing = easing || _this._defaultEasing;
-                    sprite[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
-                });
-            }
+            var percent = this.elapsed / this.duration;
+            var beginValue = this.beginValue;
+            var deltaValue = this.deltaValue;
+            this.options.forEach(function (_a) {
+                var name = _a.name, dest = _a.dest, easing = _a.easing;
+                easing = easing || _this._defaultEasing;
+                sprite[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
+            });
         };
         Transition.prototype.end = function (sprite) {
             this.options.forEach(function (attr) {
                 sprite[attr.name] = attr.dest;
             });
+            this.beginValue = null;
+            this.deltaValue = null;
+            this.options = null;
             this.done = true;
         };
         return Transition;
@@ -1024,13 +1024,15 @@ var canvas2d;
                         this.frameIndex = 0;
                     }
                     else {
-                        this.done = true;
+                        this.end();
                     }
                 }
                 this.elapsed = 0;
             }
         };
         Animation.prototype.end = function () {
+            this.frameList = null;
+            this.done = true;
         };
         return Animation;
     })();
@@ -1038,17 +1040,17 @@ var canvas2d;
         function Listener(_actions) {
             this._actions = _actions;
             this._resolved = false;
-            this._callback = {};
+            this._callbacks = {};
         }
         Listener.prototype.allDone = function (callback) {
             if (this._resolved) {
                 callback();
             }
             else {
-                if (!this._callback.all) {
-                    this._callback.all = [];
+                if (!this._callbacks.all) {
+                    this._callbacks.all = [];
                 }
-                canvas2d.util.addArrayItem(this._callback.all, callback);
+                canvas2d.util.addArrayItem(this._callbacks.all, callback);
             }
             return this;
         };
@@ -1057,10 +1059,10 @@ var canvas2d;
                 callback();
             }
             else {
-                if (!this._callback.any) {
-                    this._callback.any = [];
+                if (!this._callbacks.any) {
+                    this._callbacks.any = [];
                 }
-                canvas2d.util.addArrayItem(this._callback.any, callback);
+                canvas2d.util.addArrayItem(this._callbacks.any, callback);
             }
             return this;
         };
@@ -1075,12 +1077,12 @@ var canvas2d;
                     allDone = false;
                 }
             });
-            if (anyDone && this._callback.any) {
-                publish(this._callback.any);
-                this._callback.any = null;
+            if (anyDone && this._callbacks.any) {
+                publish(this._callbacks.any);
+                this._callbacks.any = null;
             }
-            if (allDone && this._callback.all) {
-                publish(this._callback.all);
+            if (allDone && this._callbacks.all) {
+                publish(this._callbacks.all);
                 canvas2d.util.removeArrayItem(Action._listenerList, this);
                 this._resolved = true;
             }
@@ -1120,15 +1122,12 @@ var canvas2d;
             return listener;
         };
         Action.step = function (deltaTime) {
-            var actionList = Action._actionList;
-            var i = 0;
-            var action;
-            for (; action = actionList[i]; i++) {
+            Action._actionList.slice().forEach(function (action) {
                 action._step(deltaTime);
                 if (action._done) {
-                    canvas2d.util.removeArrayItem(actionList, action);
+                    canvas2d.util.removeArrayItem(Action._actionList, action);
                 }
-            }
+            });
             Action._listenerList.slice().forEach(function (listener) {
                 listener._step();
             });

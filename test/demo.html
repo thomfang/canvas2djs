@@ -51,21 +51,24 @@
             // container.addChild(label);
             // canvas2d.Stage.addChild(container);
             
-            // var ball = new canvas2d.Sprite({
-            //     bgColor: 'red',
-            //     x: canvas2d.Stage.width * 0.5,
-            //     y: canvas2d.Stage.height * 0.5,
-            //     radius: 20
-            // });
-            // canvas2d.Stage.addChild(ball);
-            // new canvas2d.Action(ball)
-            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
-            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
-            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
-            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
-            //     .by({x: 100}, 0.5).by({x: -100}, 0.5)
-            //     .to({y: ball.y - 100}, 0.5)
-            //     .by({x: 100}, 0.5).by({x: -100}, 0.5).start();
+            var ball = new canvas2d.Sprite({
+                bgColor: 'red',
+                x: canvas2d.Stage.width * 0.5,
+                y: canvas2d.Stage.height * 0.5,
+                radius: 20
+            });
+            canvas2d.Stage.addChild(ball);
+            new canvas2d.Action(ball)
+                .by({x: 100}, 0.5).by({x: -100}, 0.5)
+                .by({x: 100}, 0.5).by({x: -100}, 0.5)
+                .by({x: 100}, 0.5).by({x: -100}, 0.5)
+                .by({x: 100}, 0.5).by({x: -100}, 0.5)
+                .then(() => {
+                    console.log('this is a callback action')
+                })
+                .by({x: 100}, 0.5).by({x: -100}, 0.5)
+                .to({y: ball.y - 100}, 0.5)
+                .by({x: 100}, 0.5).by({x: -100}, 0.5).start();
             
     </script>
 </body>

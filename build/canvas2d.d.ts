@@ -292,7 +292,7 @@ declare namespace canvas2d {
     class Listener {
         private _actions;
         private _resolved;
-        private _callback;
+        private _callbacks;
         constructor(_actions: Array<Action>);
         allDone(callback: Function): Listener;
         anyDone(callback: Function): Listener;
