@@ -158,7 +158,7 @@ namespace canvas2d.Sound {
     /**
      * Play sound by name
      */
-    export function play(name: string, loop?: boolean): any {
+    export function play(name: string, loop?: boolean): HTMLAudioElement {
         var audio = enabled && getPausedAudio(name);
 
         if (audio) {
