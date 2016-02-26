@@ -11,6 +11,7 @@ namespace canvas2d {
         lineSpace?: number;
         fontStyle?: string;
         fontWeight?: string;
+        maxWidth?: number;
         stroke?: {
             color: string;
             width: number;
@@ -22,7 +23,8 @@ namespace canvas2d {
 
     export class TextLabel extends Sprite {
 
-        fontName: string = 'Arial';
+        maxWidth: number;        
+        fontName: string = 'sans-serif';
         textAlign: string = 'center';
         fontColor: string = '#000';
         fontSize: number = 20;
@@ -105,10 +107,11 @@ namespace canvas2d {
             context.fillStyle = this.fontColor;
             context.textAlign = this.textAlign;
             context.textBaseline = 'middle';
+            context.lineJoin = 'round';
 
             if (this.stroke) {
                 context.strokeStyle = this.stroke.color;
-                context.lineWidth = this.stroke.width;
+                context.lineWidth = this.stroke.width * 2;
             }
 
             var y = 0;
@@ -116,10 +119,10 @@ namespace canvas2d {
 
             this._lines.forEach((text) => {
                 if (text.length > 0) {
-                    context.fillText(text, 0, y);
                     if (this.stroke) {
-                        context.strokeText(text, 0, y);
+                        context.strokeText(text, 0, y, 0xffff);
                     }
+                    context.fillText(text, 0, y, 0xffff);
                 }
                 y += h;
             });

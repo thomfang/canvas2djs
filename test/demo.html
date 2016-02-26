@@ -26,30 +26,30 @@
     <script>
         var cvs = document.getElementById('cvs');
             
-            canvas2d.Stage.init(cvs, 320, 480, canvas2d.Stage.ScaleMode.SHOW_ALL, true);
+            canvas2d.Stage.init(cvs, 320, 480, canvas2d.Stage.ScaleMode.SHOW_ALL, false);
             canvas2d.Stage.start();
             
-            // var container = new canvas2d.Sprite({
-            //     width: 80,
-            //     height: 20,
-            //     bgColor: 'red',
-            //     alignX: canvas2d.AlignType.CENTER,
-            //     y: 200
-            // });
-            // var label = new canvas2d.TextLabel({
-            //     text: 'Hello',
-            //     fontName:'serif',
-            //     fontSize: 48,
-            //     fontColor: '#fff',
-            //     stroke: {
-            //         color: 'green',
-            //         width: 1
-            //     },
-            //     alignX: canvas2d.AlignType.CENTER,
-            //     alignY: canvas2d.AlignType.CENTER
-            // });
-            // container.addChild(label);
-            // canvas2d.Stage.addChild(container);
+            var container = new canvas2d.Sprite({
+                width: 80,
+                height: 20,
+                bgColor: 'red',
+                alignX: canvas2d.AlignType.CENTER,
+                y: 200
+            });
+            var label = new canvas2d.TextLabel({
+                text: '+20攻击力',
+                fontName:'arial',
+                fontSize: 12,
+                fontColor: '#0f0',
+                stroke: {
+                    color: '#000',
+                    width: 1
+                },
+                alignX: canvas2d.AlignType.CENTER,
+                alignY: canvas2d.AlignType.CENTER
+            });
+            container.addChild(label);
+            canvas2d.Stage.addChild(container);
             
             var ball = new canvas2d.Sprite({
                 bgColor: 'red',

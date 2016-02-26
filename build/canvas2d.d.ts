@@ -656,12 +656,14 @@ declare namespace canvas2d {
         lineSpace?: number;
         fontStyle?: string;
         fontWeight?: string;
+        maxWidth?: number;
         stroke?: {
             color: string;
             width: number;
         };
     }
     class TextLabel extends Sprite {
+        maxWidth: number;
         fontName: string;
         textAlign: string;
         fontColor: string;

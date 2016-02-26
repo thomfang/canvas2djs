@@ -2084,7 +2084,7 @@ var canvas2d;
         __extends(TextLabel, _super);
         function TextLabel(attrs) {
             _super.call(this);
-            this.fontName = 'Arial';
+            this.fontName = 'sans-serif';
             this.textAlign = 'center';
             this.fontColor = '#000';
             this.fontSize = 20;
@@ -2147,18 +2147,19 @@ var canvas2d;
             context.fillStyle = this.fontColor;
             context.textAlign = this.textAlign;
             context.textBaseline = 'middle';
+            context.lineJoin = 'round';
             if (this.stroke) {
                 context.strokeStyle = this.stroke.color;
-                context.lineWidth = this.stroke.width;
+                context.lineWidth = this.stroke.width * 2;
             }
             var y = 0;
             var h = this.fontSize + this.lineSpace;
             this._lines.forEach(function (text) {
                 if (text.length > 0) {
-                    context.fillText(text, 0, y);
                     if (_this.stroke) {
-                        context.strokeText(text, 0, y);
+                        context.strokeText(text, 0, y, 0xffff);
                     }
+                    context.fillText(text, 0, y, 0xffff);
                 }
                 y += h;
             });
