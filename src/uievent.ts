@@ -55,12 +55,18 @@ namespace canvas2d.UIEvent {
         if (registered) {
             return;
         }
+        
+        var canvas = Stage.canvas;
 
         if (Stage.touchEnabled && supportTouch) {
-            Stage.canvas.addEventListener(touchBegin, touchBeginHandler, false);
+            canvas.addEventListener(touchBegin, touchBeginHandler, false);
+            canvas.addEventListener(touchMoved, touchMovedHandler, false);
+            canvas.addEventListener(touchEnded, touchEndedHandler, false);
         }
-        if (Stage.mouseEnabled && !supportTouch) {
-            Stage.canvas.addEventListener(mouseBegin, mouseBeginHandler, false);
+        if (Stage.mouseEnabled) {
+            canvas.addEventListener(mouseBegin, mouseBeginHandler, false);
+            canvas.addEventListener(mouseMoved, mouseMovedHandler, false);
+            canvas.addEventListener(mouseEnded, mouseEndedHandler, false);
         }
         if (Stage.keyboardEnabled) {
             document.addEventListener(keyDown, keyDownHandler, false);
@@ -74,8 +80,13 @@ namespace canvas2d.UIEvent {
      * Unregister UI event, internal method
      */
     export function unregister(): void {
-        Stage.canvas.removeEventListener(touchBegin, touchBeginHandler, false);
-        Stage.canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
+        var canvas = Stage.canvas;
+        canvas.removeEventListener(touchBegin, touchBeginHandler, false);
+        canvas.removeEventListener(touchMoved, touchMovedHandler, false);
+        canvas.removeEventListener(touchEnded, touchEndedHandler, false);
+        canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
+        canvas.removeEventListener(mouseMoved, mouseMovedHandler, false);
+        canvas.removeEventListener(mouseEnded, mouseEndedHandler, false);
 
         document.removeEventListener(keyDown, keyDownHandler, false);
         document.removeEventListener(keyUp, keyUpHandler, false);
@@ -146,7 +157,7 @@ namespace canvas2d.UIEvent {
         return x <= 5 && y <= 5;
     }
 
-    function touchBeginHandler(event) {
+    function touchBeginHandler(event: TouchEvent) {
         if (!Stage.isRunning || !Stage.touchEnabled) {
             return;
         }
@@ -157,15 +168,12 @@ namespace canvas2d.UIEvent {
             touches.forEach((touch) => {
                 touch.beginTarget = touch.target;
             });
-
-            Stage.canvas.addEventListener(touchMoved, touchMovedHandler, false);
-            Stage.canvas.addEventListener(touchEnded, touchEndedHandler, false);
         }
 
         event.preventDefault();
     }
 
-    function touchMovedHandler(event) {
+    function touchMovedHandler(event: TouchEvent) {
         if (!Stage.isRunning || !Stage.touchEnabled) {
             return;
         }
@@ -177,10 +185,7 @@ namespace canvas2d.UIEvent {
         event.preventDefault();
     }
 
-    function touchEndedHandler(event) {
-        Stage.canvas.removeEventListener(touchEnded, touchEndedHandler, false);
-        Stage.canvas.removeEventListener(touchMoved, touchMovedHandler, false);
-
+    function touchEndedHandler(event: TouchEvent) {
         var touches = transformTouches(event.changedTouches, true);
         var target;
 
@@ -205,7 +210,7 @@ namespace canvas2d.UIEvent {
         touches = null;
     }
 
-    function mouseBeginHandler(event) {
+    function mouseBeginHandler(event: MouseEvent) {
         if (!Stage.isRunning || !Stage.mouseEnabled) {
             return;
         }
@@ -214,14 +219,12 @@ namespace canvas2d.UIEvent {
 
         if (dispatchMouse(Stage.sprite, 0, 0, location, event, ON_MOUSE_BEGIN)) {
             location.beginTarget = location.target;
-            Stage.canvas.addEventListener(mouseMoved, mouseMovedHandler, false);
-            Stage.canvas.addEventListener(mouseEnded, mouseEndedHandler, false);
         }
 
         event.preventDefault();
     }
 
-    function mouseMovedHandler(event) {
+    function mouseMovedHandler(event: MouseEvent) {
         if (!Stage.isRunning || !Stage.mouseEnabled) {
             return;
         }
@@ -232,10 +235,7 @@ namespace canvas2d.UIEvent {
         event.preventDefault();
     }
 
-    function mouseEndedHandler(event) {
-        Stage.canvas.removeEventListener(mouseEnded, mouseEndedHandler, false);
-        Stage.canvas.removeEventListener(mouseMoved, mouseMovedHandler, false);
-
+    function mouseEndedHandler(event: MouseEvent) {
         var location = transformLocation(event);
         var target;
 

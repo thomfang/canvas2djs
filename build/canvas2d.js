@@ -1709,11 +1709,16 @@ var canvas2d;
             if (registered) {
                 return;
             }
+            var canvas = canvas2d.Stage.canvas;
             if (canvas2d.Stage.touchEnabled && UIEvent.supportTouch) {
-                canvas2d.Stage.canvas.addEventListener(touchBegin, touchBeginHandler, false);
+                canvas.addEventListener(touchBegin, touchBeginHandler, false);
+                canvas.addEventListener(touchMoved, touchMovedHandler, false);
+                canvas.addEventListener(touchEnded, touchEndedHandler, false);
             }
-            if (canvas2d.Stage.mouseEnabled && !UIEvent.supportTouch) {
-                canvas2d.Stage.canvas.addEventListener(mouseBegin, mouseBeginHandler, false);
+            if (canvas2d.Stage.mouseEnabled) {
+                canvas.addEventListener(mouseBegin, mouseBeginHandler, false);
+                canvas.addEventListener(mouseMoved, mouseMovedHandler, false);
+                canvas.addEventListener(mouseEnded, mouseEndedHandler, false);
             }
             if (canvas2d.Stage.keyboardEnabled) {
                 document.addEventListener(keyDown, keyDownHandler, false);
@@ -1726,8 +1731,13 @@ var canvas2d;
          * Unregister UI event, internal method
          */
         function unregister() {
-            canvas2d.Stage.canvas.removeEventListener(touchBegin, touchBeginHandler, false);
-            canvas2d.Stage.canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
+            var canvas = canvas2d.Stage.canvas;
+            canvas.removeEventListener(touchBegin, touchBeginHandler, false);
+            canvas.removeEventListener(touchMoved, touchMovedHandler, false);
+            canvas.removeEventListener(touchEnded, touchEndedHandler, false);
+            canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
+            canvas.removeEventListener(mouseMoved, mouseMovedHandler, false);
+            canvas.removeEventListener(mouseEnded, mouseEndedHandler, false);
             document.removeEventListener(keyDown, keyDownHandler, false);
             document.removeEventListener(keyUp, keyUpHandler, false);
             registered = false;
@@ -1792,8 +1802,6 @@ var canvas2d;
                 touches.forEach(function (touch) {
                     touch.beginTarget = touch.target;
                 });
-                canvas2d.Stage.canvas.addEventListener(touchMoved, touchMovedHandler, false);
-                canvas2d.Stage.canvas.addEventListener(touchEnded, touchEndedHandler, false);
             }
             event.preventDefault();
         }
@@ -1806,8 +1814,6 @@ var canvas2d;
             event.preventDefault();
         }
         function touchEndedHandler(event) {
-            canvas2d.Stage.canvas.removeEventListener(touchEnded, touchEndedHandler, false);
-            canvas2d.Stage.canvas.removeEventListener(touchMoved, touchMovedHandler, false);
             var touches = transformTouches(event.changedTouches, true);
             var target;
             touches.forEach(function (touch) {
@@ -1833,8 +1839,6 @@ var canvas2d;
             var location = transformLocation(event);
             if (dispatchMouse(canvas2d.Stage.sprite, 0, 0, location, event, ON_MOUSE_BEGIN)) {
                 location.beginTarget = location.target;
-                canvas2d.Stage.canvas.addEventListener(mouseMoved, mouseMovedHandler, false);
-                canvas2d.Stage.canvas.addEventListener(mouseEnded, mouseEndedHandler, false);
             }
             event.preventDefault();
         }
@@ -1847,8 +1851,6 @@ var canvas2d;
             event.preventDefault();
         }
         function mouseEndedHandler(event) {
-            canvas2d.Stage.canvas.removeEventListener(mouseEnded, mouseEndedHandler, false);
-            canvas2d.Stage.canvas.removeEventListener(mouseMoved, mouseMovedHandler, false);
             var location = transformLocation(event);
             var target;
             if (canvas2d.Stage.mouseEnabled) {

@@ -139,7 +139,7 @@ declare namespace canvas2d {
         /**
          * Click event handler
          */
-        onclick?(e: UIEvent.IEventHelper): any;
+        onclick?(e: UIEvent.IEventHelper, event: MouseEvent): any;
         /**
          * Mouse begin event handler
          */
@@ -208,6 +208,31 @@ declare namespace canvas2d {
         touchEnabled: boolean;
         mouseEnabled: boolean;
         keyboardEnabled: boolean;
+        onclick: (e: UIEvent.IEventHelper, event: MouseEvent) => any;
+        /**
+         * Mouse begin event handler
+         */
+        onmousebegin: (e: UIEvent.IEventHelper, event: MouseEvent) => any;
+        /**
+         * Mouse moved event handler
+         */
+        onmousemoved: (e: UIEvent.IEventHelper, event: MouseEvent) => any;
+        /**
+         * Mouse ended event handler
+         */
+        onmouseended: (e: UIEvent.IEventHelper, event: MouseEvent) => any;
+        /**
+         * Touch begin event handler
+         */
+        ontouchbegin: (touches: UIEvent.IEventHelper[], event: TouchEvent) => any;
+        /**
+         * Touch moved event handler
+         */
+        ontouchmoved: (touches: UIEvent.IEventHelper[], event: TouchEvent) => any;
+        /**
+         * Touch ended event hadndler
+         */
+        ontouchended: (touches: UIEvent.IEventHelper[], event: TouchEvent) => any;
         constructor(attrs?: ISprite);
         protected _init(attrs?: ISprite): void;
         width: number;
@@ -411,7 +436,7 @@ declare namespace canvas2d.Sound {
     /**
      * Play sound by name
      */
-    function play(name: string, loop?: boolean): any;
+    function play(name: string, loop?: boolean): HTMLAudioElement;
     /**
      * Pause sound by name
      */

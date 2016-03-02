@@ -88,7 +88,7 @@ namespace canvas2d {
         /**
          * Click event handler
          */
-        onclick?(e: UIEvent.IEventHelper): any;
+        onclick?(e: UIEvent.IEventHelper, event: MouseEvent): any;
 
         /**
          * Mouse begin event handler
@@ -169,6 +169,38 @@ namespace canvas2d {
         touchEnabled: boolean = true;
         mouseEnabled: boolean = true;
         keyboardEnabled: boolean = true;
+        
+        onclick: (e: UIEvent.IEventHelper, event: MouseEvent) => any;
+
+        /**
+         * Mouse begin event handler
+         */
+        onmousebegin: (e: UIEvent.IEventHelper, event: MouseEvent) => any;
+        
+        /**
+         * Mouse moved event handler
+         */
+        onmousemoved: (e: UIEvent.IEventHelper, event: MouseEvent) => any;
+        
+        /**
+         * Mouse ended event handler
+         */
+        onmouseended: (e: UIEvent.IEventHelper, event: MouseEvent) => any;
+
+        /**
+         * Touch begin event handler
+         */
+        ontouchbegin: (touches: UIEvent.IEventHelper[], event: TouchEvent) => any;
+        
+        /**
+         * Touch moved event handler
+         */
+        ontouchmoved: (touches: UIEvent.IEventHelper[], event: TouchEvent) => any;
+        
+        /**
+         * Touch ended event hadndler
+         */
+        ontouchended: (touches: UIEvent.IEventHelper[], event: TouchEvent) => any;
 
         constructor(attrs?: ISprite) {
             super();
