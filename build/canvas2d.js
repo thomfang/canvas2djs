@@ -28,6 +28,779 @@ var canvas2d;
 })(canvas2d || (canvas2d = {}));
 var canvas2d;
 (function (canvas2d) {
+    canvas2d.Tween = {
+        easeInQuad: function (pos) {
+            return Math.pow(pos, 2);
+        },
+        easeOutQuad: function (pos) {
+            return -(Math.pow((pos - 1), 2) - 1);
+        },
+        easeInOutQuad: function (pos) {
+            if ((pos /= 0.5) < 1) {
+                return 0.5 * Math.pow(pos, 2);
+            }
+            return -0.5 * ((pos -= 2) * pos - 2);
+        },
+        easeInCubic: function (pos) {
+            return Math.pow(pos, 3);
+        },
+        easeOutCubic: function (pos) {
+            return (Math.pow((pos - 1), 3) + 1);
+        },
+        easeInOutCubic: function (pos) {
+            if ((pos /= 0.5) < 1) {
+                return 0.5 * Math.pow(pos, 3);
+            }
+            return 0.5 * (Math.pow((pos - 2), 3) + 2);
+        },
+        easeInQuart: function (pos) {
+            return Math.pow(pos, 4);
+        },
+        easeOutQuart: function (pos) {
+            return -(Math.pow((pos - 1), 4) - 1);
+        },
+        easeInOutQuart: function (pos) {
+            if ((pos /= 0.5) < 1)
+                return 0.5 * Math.pow(pos, 4);
+            return -0.5 * ((pos -= 2) * Math.pow(pos, 3) - 2);
+        },
+        easeInQuint: function (pos) {
+            return Math.pow(pos, 5);
+        },
+        easeOutQuint: function (pos) {
+            return (Math.pow((pos - 1), 5) + 1);
+        },
+        easeInOutQuint: function (pos) {
+            if ((pos /= 0.5) < 1) {
+                return 0.5 * Math.pow(pos, 5);
+            }
+            return 0.5 * (Math.pow((pos - 2), 5) + 2);
+        },
+        easeInSine: function (pos) {
+            return -Math.cos(pos * (Math.PI / 2)) + 1;
+        },
+        easeOutSine: function (pos) {
+            return Math.sin(pos * (Math.PI / 2));
+        },
+        easeInOutSine: function (pos) {
+            return (-.5 * (Math.cos(Math.PI * pos) - 1));
+        },
+        easeInExpo: function (pos) {
+            return (pos == 0) ? 0 : Math.pow(2, 10 * (pos - 1));
+        },
+        easeOutExpo: function (pos) {
+            return (pos == 1) ? 1 : -Math.pow(2, -10 * pos) + 1;
+        },
+        easeInOutExpo: function (pos) {
+            if (pos == 0)
+                return 0;
+            if (pos == 1)
+                return 1;
+            if ((pos /= 0.5) < 1)
+                return 0.5 * Math.pow(2, 10 * (pos - 1));
+            return 0.5 * (-Math.pow(2, -10 * --pos) + 2);
+        },
+        easeInCirc: function (pos) {
+            return -(Math.sqrt(1 - (pos * pos)) - 1);
+        },
+        easeOutCirc: function (pos) {
+            return Math.sqrt(1 - Math.pow((pos - 1), 2));
+        },
+        easeInOutCirc: function (pos) {
+            if ((pos /= 0.5) < 1)
+                return -0.5 * (Math.sqrt(1 - pos * pos) - 1);
+            return 0.5 * (Math.sqrt(1 - (pos -= 2) * pos) + 1);
+        },
+        easeOutBounce: function (pos) {
+            if ((pos) < (1 / 2.75)) {
+                return (7.5625 * pos * pos);
+            }
+            else if (pos < (2 / 2.75)) {
+                return (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
+            }
+            else if (pos < (2.5 / 2.75)) {
+                return (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
+            }
+            else {
+                return (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
+            }
+        },
+        easeInBack: function (pos) {
+            var s = 1.70158;
+            return (pos) * pos * ((s + 1) * pos - s);
+        },
+        easeOutBack: function (pos) {
+            var s = 1.70158;
+            return (pos = pos - 1) * pos * ((s + 1) * pos + s) + 1;
+        },
+        easeInOutBack: function (pos) {
+            var s = 1.70158;
+            if ((pos /= 0.5) < 1)
+                return 0.5 * (pos * pos * (((s *= (1.525)) + 1) * pos - s));
+            return 0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2);
+        },
+        elastic: function (pos) {
+            return -1 * Math.pow(4, -8 * pos) * Math.sin((pos * 6 - 1) * (2 * Math.PI) / 2) + 1;
+        },
+        swingFromTo: function (pos) {
+            var s = 1.70158;
+            return ((pos /= 0.5) < 1) ? 0.5 * (pos * pos * (((s *= (1.525)) + 1) * pos - s)) :
+                0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2);
+        },
+        swingFrom: function (pos) {
+            var s = 1.70158;
+            return pos * pos * ((s + 1) * pos - s);
+        },
+        swingTo: function (pos) {
+            var s = 1.70158;
+            return (pos -= 1) * pos * ((s + 1) * pos + s) + 1;
+        },
+        bounce: function (pos) {
+            if (pos < (1 / 2.75)) {
+                return (7.5625 * pos * pos);
+            }
+            else if (pos < (2 / 2.75)) {
+                return (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
+            }
+            else if (pos < (2.5 / 2.75)) {
+                return (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
+            }
+            else {
+                return (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
+            }
+        },
+        bouncePast: function (pos) {
+            if (pos < (1 / 2.75)) {
+                return (7.5625 * pos * pos);
+            }
+            else if (pos < (2 / 2.75)) {
+                return 2 - (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
+            }
+            else if (pos < (2.5 / 2.75)) {
+                return 2 - (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
+            }
+            else {
+                return 2 - (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
+            }
+        },
+        easeFromTo: function (pos) {
+            if ((pos /= 0.5) < 1)
+                return 0.5 * Math.pow(pos, 4);
+            return -0.5 * ((pos -= 2) * Math.pow(pos, 3) - 2);
+        },
+        easeFrom: function (pos) {
+            return Math.pow(pos, 4);
+        },
+        easeTo: function (pos) {
+            return Math.pow(pos, 0.25);
+        },
+        linear: function (pos) {
+            return pos;
+        },
+        sinusoidal: function (pos) {
+            return (-Math.cos(pos * Math.PI) / 2) + 0.5;
+        },
+        reverse: function (pos) {
+            return 1 - pos;
+        },
+        mirror: function (pos, transition) {
+            transition = transition || this.sinusoidal;
+            if (pos < 0.5)
+                return transition(pos * 2);
+            else
+                return transition(1 - (pos - 0.5) * 2);
+        },
+        flicker: function (pos) {
+            var pos = pos + (Math.random() - 0.5) / 5;
+            return this.sinusoidal(pos < 0 ? 0 : pos > 1 ? 1 : pos);
+        },
+        wobble: function (pos) {
+            return (-Math.cos(pos * Math.PI * (9 * pos)) / 2) + 0.5;
+        },
+        pulse: function (pos, pulses) {
+            return (-Math.cos((pos * ((pulses || 5) - .5) * 2) * Math.PI) / 2) + .5;
+        },
+        blink: function (pos, blinks) {
+            return Math.round(pos * (blinks || 5)) % 2;
+        },
+        spring: function (pos) {
+            return 1 - (Math.cos(pos * 4.5 * Math.PI) * Math.exp(-pos * 6));
+        },
+        none: function (pos) {
+            return 0;
+        },
+        full: function (pos) {
+            return 1;
+        }
+    };
+})(canvas2d || (canvas2d = {}));
+/// <reference path="util.ts" />
+/// <reference path="tween.ts" />
+var canvas2d;
+(function (canvas2d) {
+    var Callback = (function () {
+        function Callback(func) {
+            this.func = func;
+            this.done = false;
+            this.immediate = true;
+        }
+        Callback.prototype.step = function () {
+            this.func.call(null);
+            this.end();
+        };
+        Callback.prototype.end = function () {
+            this.func = null;
+            this.done = true;
+        };
+        return Callback;
+    })();
+    var Delay = (function () {
+        function Delay(duration) {
+            this.duration = duration;
+            this.done = false;
+            this.elapsed = 0;
+            this.immediate = true;
+        }
+        Delay.prototype.step = function (deltaTime) {
+            this.elapsed += deltaTime;
+            if (this.elapsed >= this.duration) {
+                this.done = true;
+            }
+        };
+        Delay.prototype.end = function () {
+        };
+        return Delay;
+    })();
+    var Transition = (function () {
+        function Transition(options, duration, isTransitionBy) {
+            this.duration = duration;
+            this.isTransitionBy = isTransitionBy;
+            this._defaultEasing = canvas2d.Tween.easeInOutQuad;
+            this.done = false;
+            this.immediate = false;
+            this.elapsed = 0;
+            this.options = [];
+            this.deltaValue = {};
+            if (isTransitionBy) {
+                this._initAsTransitionBy(options);
+            }
+            else {
+                this._initAsTransitionTo(options);
+            }
+        }
+        Transition.prototype._initAsTransitionTo = function (options) {
+            var _this = this;
+            Object.keys(options).forEach(function (name) {
+                var info = options[name];
+                var easing;
+                var dest;
+                if (typeof info === 'number') {
+                    dest = info;
+                }
+                else {
+                    easing = info.easing;
+                    dest = info.dest;
+                }
+                _this.options.push({ name: name, dest: dest, easing: easing });
+            });
+        };
+        Transition.prototype._initAsTransitionBy = function (options) {
+            var _this = this;
+            var deltaValue = this.deltaValue;
+            Object.keys(options).forEach(function (name) {
+                var info = options[name];
+                var easing;
+                var dest;
+                if (typeof info === 'number') {
+                    deltaValue[name] = info;
+                }
+                else {
+                    easing = info.easing;
+                    deltaValue[name] = info.value;
+                }
+                _this.options.push({ name: name, dest: dest, easing: easing });
+            });
+        };
+        Transition.prototype._initBeginValue = function (target) {
+            var beginValue = this.beginValue = {};
+            var deltaValue = this.deltaValue;
+            if (this.isTransitionBy) {
+                this.options.forEach(function (option) {
+                    beginValue[option.name] = target[option.name];
+                    option.dest = target[option.name] + deltaValue[option.name];
+                });
+            }
+            else {
+                this.options.forEach(function (option) {
+                    beginValue[option.name] = target[option.name];
+                    deltaValue[option.name] = option.dest - target[option.name];
+                });
+            }
+        };
+        Transition.prototype.step = function (deltaTime, target) {
+            var _this = this;
+            this.elapsed += deltaTime;
+            if (this.beginValue == null) {
+                this._initBeginValue(target);
+            }
+            if (this.elapsed >= this.duration) {
+                return this.end(target);
+            }
+            var percent = this.elapsed / this.duration;
+            var beginValue = this.beginValue;
+            var deltaValue = this.deltaValue;
+            this.options.forEach(function (_a) {
+                var name = _a.name, dest = _a.dest, easing = _a.easing;
+                easing = easing || _this._defaultEasing;
+                target[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
+            });
+        };
+        Transition.prototype.end = function (target) {
+            this.options.forEach(function (attr) {
+                target[attr.name] = attr.dest;
+            });
+            this.beginValue = null;
+            this.deltaValue = null;
+            this.options = null;
+            this.done = true;
+        };
+        return Transition;
+    })();
+    var Animation = (function () {
+        function Animation(frameList, frameRate, repetitions) {
+            this.frameList = frameList;
+            this.repetitions = repetitions;
+            this.done = false;
+            this.immediate = false;
+            this.elapsed = 0;
+            this.count = 0;
+            this.frameIndex = 0;
+            this.interval = 1 / frameRate;
+        }
+        Animation.prototype.step = function (deltaTime, target) {
+            this.elapsed += deltaTime;
+            if (this.elapsed >= this.interval) {
+                target.texture = this.frameList[this.frameIndex++];
+                if (this.frameIndex === this.frameList.length) {
+                    if (this.repetitions == null || ++this.count < this.repetitions) {
+                        this.frameIndex = 0;
+                    }
+                    else {
+                        this.end();
+                    }
+                }
+                this.elapsed = 0;
+            }
+        };
+        Animation.prototype.end = function () {
+            this.frameList = null;
+            this.done = true;
+        };
+        return Animation;
+    })();
+    var Listener = (function () {
+        function Listener(_actions) {
+            this._actions = _actions;
+            this._resolved = false;
+            this._callbacks = {};
+        }
+        Listener.prototype.all = function (callback) {
+            if (this._resolved) {
+                callback();
+            }
+            else {
+                if (!this._callbacks.all) {
+                    this._callbacks.all = [];
+                }
+                canvas2d.util.addArrayItem(this._callbacks.all, callback);
+            }
+            return this;
+        };
+        Listener.prototype.any = function (callback) {
+            if (this._resolved) {
+                callback();
+            }
+            else {
+                if (!this._callbacks.any) {
+                    this._callbacks.any = [];
+                }
+                canvas2d.util.addArrayItem(this._callbacks.any, callback);
+            }
+            return this;
+        };
+        Listener.prototype._step = function () {
+            var allDone = true;
+            var anyDone = false;
+            this._actions.forEach(function (action) {
+                if (action._done) {
+                    anyDone = true;
+                }
+                else {
+                    allDone = false;
+                }
+            });
+            if (anyDone && this._callbacks.any) {
+                this._callbacks.any.forEach(function (callback) { return callback(); });
+                this._callbacks.any = null;
+            }
+            if (allDone && this._callbacks.all) {
+                this._callbacks.all.forEach(function (callback) { return callback(); });
+                canvas2d.util.removeArrayItem(Action._listenerList, this);
+                this._resolved = true;
+            }
+        };
+        return Listener;
+    })();
+    canvas2d.Listener = Listener;
+    /**
+     * Action manager
+     */
+    var Action = (function () {
+        function Action(target) {
+            this.target = target;
+            this._queue = [];
+            this._done = false;
+            /**
+             * Action running state
+             */
+            this.running = false;
+        }
+        /**
+         * Stop action by target
+         */
+        Action.stop = function (target) {
+            Action._actionList.slice().forEach(function (action) {
+                if (action.target === target) {
+                    action.stop();
+                }
+            });
+        };
+        /**
+         * Listen a action list, when all actions are done then publish to listener
+         */
+        Action.listen = function (actions) {
+            var listener = new Listener(actions);
+            Action._listenerList.push(listener);
+            return listener;
+        };
+        Action.step = function (deltaTime) {
+            Action._actionList.slice().forEach(function (action) {
+                action._step(deltaTime);
+                if (action._done) {
+                    canvas2d.util.removeArrayItem(Action._actionList, action);
+                }
+            });
+            Action._listenerList.slice().forEach(function (listener) {
+                listener._step();
+            });
+        };
+        Action.prototype._step = function (deltaTime) {
+            if (!this._queue.length) {
+                return;
+            }
+            var action = this._queue[0];
+            action.step(deltaTime, this.target);
+            if (action.done) {
+                this._queue.shift();
+                if (!this._queue.length) {
+                    this._done = true;
+                    this.running = false;
+                    this.target = null;
+                }
+                else if (action.immediate) {
+                    this._step(deltaTime);
+                }
+            }
+        };
+        /**
+         * Add a callback, it will exec after previous action is done.
+         */
+        Action.prototype.then = function (callback) {
+            this._queue.push(new Callback(callback));
+            return this;
+        };
+        /**
+         * Add a delay action.
+         */
+        Action.prototype.wait = function (time) {
+            this._queue.push(new Delay(time));
+            return this;
+        };
+        /**
+         * Add a animation action
+         */
+        Action.prototype.animate = function (frameList, frameRate, repetitions) {
+            var anim = new Animation(frameList, frameRate, repetitions);
+            this._queue.push(anim);
+            anim.step(anim.interval, this.target);
+            return this;
+        };
+        /**
+         * TransitionTo action
+         * @param  attrs     Transition attributes map
+         * @param  duration  Transition duration
+         */
+        Action.prototype.to = function (attrs, duration) {
+            this._queue.push(new Transition(attrs, duration));
+            return this;
+        };
+        /**
+         * TransitionBy action
+         */
+        Action.prototype.by = function (attrs, duration) {
+            this._queue.push(new Transition(attrs, duration, true));
+            return this;
+        };
+        /**
+         * Start the action
+         */
+        Action.prototype.start = function () {
+            if (!this.running) {
+                canvas2d.util.addArrayItem(Action._actionList, this);
+                this.running = true;
+            }
+            return this;
+        };
+        /**
+         * Stop the action
+         */
+        Action.prototype.stop = function () {
+            this._done = true;
+            this.running = false;
+            this._queue.length = 0;
+            canvas2d.util.removeArrayItem(Action._actionList, this);
+        };
+        Action._actionList = [];
+        Action._listenerList = [];
+        return Action;
+    })();
+    canvas2d.Action = Action;
+})(canvas2d || (canvas2d = {}));
+/**
+ * Simple sound manager
+ */
+var canvas2d;
+(function (canvas2d) {
+    var Sound;
+    (function (Sound) {
+        var audios = {};
+        /**
+         * Could play sound
+         */
+        Sound.enabled = true;
+        /**
+         * Extension for media type
+         */
+        Sound.extension = ".mp3";
+        /**
+         *  Supported types of the browser
+         */
+        Sound.supportedType = {};
+        /**
+         * Load a sound resource
+         */
+        function load(basePath, name, onComplete, channels) {
+            if (channels === void 0) { channels = 1; }
+            var path = basePath + name + Sound.extension;
+            var audio = document.createElement("audio");
+            function onCanPlayThrough() {
+                this.removeEventListener('canplaythrough', onCanPlayThrough, false);
+                if (onComplete) {
+                    onComplete();
+                }
+                var clone;
+                while (--channels > 0) {
+                    clone = audio.cloneNode(true);
+                    audios[name].push(clone);
+                }
+                console.log("Loaded: " + path);
+            }
+            function onError(e) {
+                console.warn("Error: " + path + " could not be loaded.");
+                audios[name] = null;
+            }
+            audio.addEventListener('canplaythrough', onCanPlayThrough, false);
+            audio.addEventListener('error', onError, false);
+            audio['preload'] = "auto";
+            audio['autobuffer'] = true;
+            audio.setAttribute('src', path);
+            audio.load();
+            audios[name] = [audio];
+            console.log("Start to load: ", path);
+        }
+        Sound.load = load;
+        /**
+         * Load multiple sound resources
+         */
+        function loadList(basePath, resList, onAllCompleted, onProgress) {
+            var allCount = resList.length;
+            var endedCount = 0;
+            var onCompleted = function () {
+                ++endedCount;
+                if (onProgress) {
+                    onProgress(endedCount / allCount);
+                }
+                if (endedCount === allCount && onAllCompleted) {
+                    onAllCompleted();
+                }
+            };
+            resList.forEach(function (res) {
+                load(basePath, res.name, onCompleted, res.channels);
+            });
+        }
+        Sound.loadList = loadList;
+        function getPausedAudio(name, isGetAll) {
+            var list = audios[name];
+            if (!list || !list.length) {
+                return null;
+            }
+            var i = 0;
+            var all = [];
+            var audio;
+            for (; audio = list[i]; i++) {
+                if (audio.ended || audio.paused) {
+                    if (audio.ended) {
+                        audio.currentTime = 0;
+                    }
+                    if (!isGetAll) {
+                        return audio;
+                    }
+                    all.push(audio);
+                }
+            }
+            return all;
+        }
+        Sound.getPausedAudio = getPausedAudio;
+        function getPlayingAudio(name, isGetAll) {
+            var list = audios[name];
+            if (!list || !list.length) {
+                return null;
+            }
+            var i = 0;
+            var all = [];
+            var audio;
+            for (; audio = list[i]; i++) {
+                if (!audio.paused) {
+                    if (!isGetAll) {
+                        return audio;
+                    }
+                    all.push(audio);
+                }
+            }
+            return all;
+        }
+        Sound.getPlayingAudio = getPlayingAudio;
+        /**
+         * Get audio list
+         */
+        function getAudioListByName(name) {
+            return audios[name];
+        }
+        Sound.getAudioListByName = getAudioListByName;
+        /**
+         * Play sound by name
+         */
+        function play(name, loop) {
+            var audio = Sound.enabled && getPausedAudio(name);
+            if (audio) {
+                if (loop) {
+                    audio.loop = true;
+                    audio.addEventListener("ended", replay, false);
+                }
+                else {
+                    audio.loop = false;
+                    audio.removeEventListener("ended", replay, false);
+                }
+                audio.play();
+            }
+            return audio;
+        }
+        Sound.play = play;
+        /**
+         * Pause sound by name
+         */
+        function pause(name, reset) {
+            var list = audios[name];
+            if (list) {
+                list.forEach(function (audio) {
+                    audio.pause();
+                    if (reset) {
+                        audio.currentTime = 0;
+                    }
+                });
+            }
+        }
+        Sound.pause = pause;
+        /**
+         * Resume audio by name
+         */
+        function resume(name, reset) {
+            var list = audios[name];
+            if (list) {
+                list.forEach(function (audio) {
+                    if (!audio.ended && audio.currentTime > 0) {
+                        if (reset) {
+                            audio.currentTime = 0;
+                        }
+                        audio.play();
+                    }
+                });
+            }
+        }
+        Sound.resume = resume;
+        /**
+         * Pause all audios
+         */
+        function pauseAll(reset) {
+            Object.keys(audios).forEach(function (name) {
+                pause(name, reset);
+            });
+        }
+        Sound.pauseAll = pauseAll;
+        /**
+         * Resume all played audio
+         */
+        function resumeAll(reset) {
+            Object.keys(audios).forEach(function (name) {
+                resume(name, reset);
+            });
+        }
+        Sound.resumeAll = resumeAll;
+        /**
+         * Stop the looping sound by name
+         */
+        function stopLoop(name) {
+            var list = getPlayingAudio(name, true);
+            if (list) {
+                list.forEach(function (audio) {
+                    audio.removeEventListener("ended", replay, false);
+                    audio.loop = false;
+                });
+            }
+        }
+        Sound.stopLoop = stopLoop;
+        function replay() {
+            this.play();
+        }
+        function detectSupportedType() {
+            var aud = new Audio();
+            var reg = /maybe|probably/i;
+            var mts = {
+                mp3: 'audio/mpeg',
+                mp4: 'audio/mp4; codecs="mp4a.40.5"',
+                wav: 'audio/x-wav',
+                ogg: 'audio/ogg; codecs="vorbis"'
+            };
+            for (var name in mts) {
+                Sound.supportedType[name] = reg.test(aud.canPlayType(mts[name]));
+            }
+            aud = null;
+        }
+        detectSupportedType();
+    })(Sound = canvas2d.Sound || (canvas2d.Sound = {}));
+})(canvas2d || (canvas2d = {}));
+var canvas2d;
+(function (canvas2d) {
     var cache = {};
     var loaded = {};
     var loading = {};
@@ -144,46 +917,50 @@ var canvas2d;
 var canvas2d;
 (function (canvas2d) {
     var counter = 0;
+    var prefix = '__CANVAS2D_ONCE__';
     /**
      * EventEmitter
      */
     var EventEmitter = (function () {
         function EventEmitter() {
-            this._onceMarkKey = '__CANVAS2D_ONCE__' + counter++;
         }
         EventEmitter.prototype.addListener = function (type, listener) {
-            if (!this._eventCache) {
-                this._eventCache = {};
+            var id = canvas2d.util.uuid(this);
+            if (!EventEmitter._cache[id]) {
+                EventEmitter._cache[id] = {};
             }
-            if (!this._eventCache[type]) {
-                this._eventCache[type] = [];
+            if (!EventEmitter._cache[id][type]) {
+                EventEmitter._cache[id][type] = [];
             }
-            canvas2d.util.addArrayItem(this._eventCache[type], listener);
+            canvas2d.util.addArrayItem(EventEmitter._cache[id][type], listener);
             return this;
         };
         EventEmitter.prototype.on = function (type, listener) {
             return this.addListener(type, listener);
         };
         EventEmitter.prototype.once = function (type, listener) {
-            listener[this._onceMarkKey] = true;
+            listener[prefix + canvas2d.util.uuid(this)] = true;
             return this.addListener(type, listener);
         };
         EventEmitter.prototype.removeListener = function (type, listener) {
-            if (this._eventCache && this._eventCache[type]) {
-                canvas2d.util.removeArrayItem(this._eventCache[type], listener);
-                if (!this._eventCache[type].length) {
-                    delete this._eventCache[type];
+            var cache = EventEmitter._cache[canvas2d.util.uuid(this)];
+            if (cache && cache[type]) {
+                canvas2d.util.removeArrayItem(cache[type], listener);
+                if (!cache[type].length) {
+                    delete cache[type];
                 }
             }
             return this;
         };
         EventEmitter.prototype.removeAllListeners = function (type) {
-            if (this._eventCache) {
+            var id = canvas2d.util.uuid(this);
+            var cache = EventEmitter._cache[id];
+            if (cache) {
                 if (type == null) {
-                    this._eventCache = null;
+                    EventEmitter[id] = null;
                 }
                 else {
-                    delete this._eventCache[type];
+                    delete cache[type];
                 }
             }
             return this;
@@ -194,17 +971,21 @@ var canvas2d;
             for (var _i = 1; _i < arguments.length; _i++) {
                 args[_i - 1] = arguments[_i];
             }
-            if (this._eventCache && this._eventCache[type]) {
-                this._eventCache[type].slice().forEach(function (listener) {
+            var id = canvas2d.util.uuid(this);
+            var cache = EventEmitter._cache[id];
+            var onceKey = prefix + id;
+            if (cache && cache[type]) {
+                cache[type].slice().forEach(function (listener) {
                     listener.apply(_this, args);
-                    if (listener[_this._onceMarkKey]) {
+                    if (listener[onceKey]) {
                         _this.removeListener(type, listener);
-                        listener[_this._onceMarkKey] = null;
+                        listener[onceKey] = null;
                     }
                 });
             }
             return this;
         };
+        EventEmitter._cache = {};
         return EventEmitter;
     })();
     canvas2d.EventEmitter = EventEmitter;
@@ -657,785 +1438,6 @@ var canvas2d;
             releaseSpritePool.length = 0;
         }, 0);
     }
-})(canvas2d || (canvas2d = {}));
-var canvas2d;
-(function (canvas2d) {
-    canvas2d.Tween = {
-        easeInQuad: function (pos) {
-            return Math.pow(pos, 2);
-        },
-        easeOutQuad: function (pos) {
-            return -(Math.pow((pos - 1), 2) - 1);
-        },
-        easeInOutQuad: function (pos) {
-            if ((pos /= 0.5) < 1) {
-                return 0.5 * Math.pow(pos, 2);
-            }
-            return -0.5 * ((pos -= 2) * pos - 2);
-        },
-        easeInCubic: function (pos) {
-            return Math.pow(pos, 3);
-        },
-        easeOutCubic: function (pos) {
-            return (Math.pow((pos - 1), 3) + 1);
-        },
-        easeInOutCubic: function (pos) {
-            if ((pos /= 0.5) < 1) {
-                return 0.5 * Math.pow(pos, 3);
-            }
-            return 0.5 * (Math.pow((pos - 2), 3) + 2);
-        },
-        easeInQuart: function (pos) {
-            return Math.pow(pos, 4);
-        },
-        easeOutQuart: function (pos) {
-            return -(Math.pow((pos - 1), 4) - 1);
-        },
-        easeInOutQuart: function (pos) {
-            if ((pos /= 0.5) < 1)
-                return 0.5 * Math.pow(pos, 4);
-            return -0.5 * ((pos -= 2) * Math.pow(pos, 3) - 2);
-        },
-        easeInQuint: function (pos) {
-            return Math.pow(pos, 5);
-        },
-        easeOutQuint: function (pos) {
-            return (Math.pow((pos - 1), 5) + 1);
-        },
-        easeInOutQuint: function (pos) {
-            if ((pos /= 0.5) < 1) {
-                return 0.5 * Math.pow(pos, 5);
-            }
-            return 0.5 * (Math.pow((pos - 2), 5) + 2);
-        },
-        easeInSine: function (pos) {
-            return -Math.cos(pos * (Math.PI / 2)) + 1;
-        },
-        easeOutSine: function (pos) {
-            return Math.sin(pos * (Math.PI / 2));
-        },
-        easeInOutSine: function (pos) {
-            return (-.5 * (Math.cos(Math.PI * pos) - 1));
-        },
-        easeInExpo: function (pos) {
-            return (pos == 0) ? 0 : Math.pow(2, 10 * (pos - 1));
-        },
-        easeOutExpo: function (pos) {
-            return (pos == 1) ? 1 : -Math.pow(2, -10 * pos) + 1;
-        },
-        easeInOutExpo: function (pos) {
-            if (pos == 0)
-                return 0;
-            if (pos == 1)
-                return 1;
-            if ((pos /= 0.5) < 1)
-                return 0.5 * Math.pow(2, 10 * (pos - 1));
-            return 0.5 * (-Math.pow(2, -10 * --pos) + 2);
-        },
-        easeInCirc: function (pos) {
-            return -(Math.sqrt(1 - (pos * pos)) - 1);
-        },
-        easeOutCirc: function (pos) {
-            return Math.sqrt(1 - Math.pow((pos - 1), 2));
-        },
-        easeInOutCirc: function (pos) {
-            if ((pos /= 0.5) < 1)
-                return -0.5 * (Math.sqrt(1 - pos * pos) - 1);
-            return 0.5 * (Math.sqrt(1 - (pos -= 2) * pos) + 1);
-        },
-        easeOutBounce: function (pos) {
-            if ((pos) < (1 / 2.75)) {
-                return (7.5625 * pos * pos);
-            }
-            else if (pos < (2 / 2.75)) {
-                return (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
-            }
-            else if (pos < (2.5 / 2.75)) {
-                return (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
-            }
-            else {
-                return (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
-            }
-        },
-        easeInBack: function (pos) {
-            var s = 1.70158;
-            return (pos) * pos * ((s + 1) * pos - s);
-        },
-        easeOutBack: function (pos) {
-            var s = 1.70158;
-            return (pos = pos - 1) * pos * ((s + 1) * pos + s) + 1;
-        },
-        easeInOutBack: function (pos) {
-            var s = 1.70158;
-            if ((pos /= 0.5) < 1)
-                return 0.5 * (pos * pos * (((s *= (1.525)) + 1) * pos - s));
-            return 0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2);
-        },
-        elastic: function (pos) {
-            return -1 * Math.pow(4, -8 * pos) * Math.sin((pos * 6 - 1) * (2 * Math.PI) / 2) + 1;
-        },
-        swingFromTo: function (pos) {
-            var s = 1.70158;
-            return ((pos /= 0.5) < 1) ? 0.5 * (pos * pos * (((s *= (1.525)) + 1) * pos - s)) :
-                0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2);
-        },
-        swingFrom: function (pos) {
-            var s = 1.70158;
-            return pos * pos * ((s + 1) * pos - s);
-        },
-        swingTo: function (pos) {
-            var s = 1.70158;
-            return (pos -= 1) * pos * ((s + 1) * pos + s) + 1;
-        },
-        bounce: function (pos) {
-            if (pos < (1 / 2.75)) {
-                return (7.5625 * pos * pos);
-            }
-            else if (pos < (2 / 2.75)) {
-                return (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
-            }
-            else if (pos < (2.5 / 2.75)) {
-                return (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
-            }
-            else {
-                return (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
-            }
-        },
-        bouncePast: function (pos) {
-            if (pos < (1 / 2.75)) {
-                return (7.5625 * pos * pos);
-            }
-            else if (pos < (2 / 2.75)) {
-                return 2 - (7.5625 * (pos -= (1.5 / 2.75)) * pos + .75);
-            }
-            else if (pos < (2.5 / 2.75)) {
-                return 2 - (7.5625 * (pos -= (2.25 / 2.75)) * pos + .9375);
-            }
-            else {
-                return 2 - (7.5625 * (pos -= (2.625 / 2.75)) * pos + .984375);
-            }
-        },
-        easeFromTo: function (pos) {
-            if ((pos /= 0.5) < 1)
-                return 0.5 * Math.pow(pos, 4);
-            return -0.5 * ((pos -= 2) * Math.pow(pos, 3) - 2);
-        },
-        easeFrom: function (pos) {
-            return Math.pow(pos, 4);
-        },
-        easeTo: function (pos) {
-            return Math.pow(pos, 0.25);
-        },
-        linear: function (pos) {
-            return pos;
-        },
-        sinusoidal: function (pos) {
-            return (-Math.cos(pos * Math.PI) / 2) + 0.5;
-        },
-        reverse: function (pos) {
-            return 1 - pos;
-        },
-        mirror: function (pos, transition) {
-            transition = transition || this.sinusoidal;
-            if (pos < 0.5)
-                return transition(pos * 2);
-            else
-                return transition(1 - (pos - 0.5) * 2);
-        },
-        flicker: function (pos) {
-            var pos = pos + (Math.random() - 0.5) / 5;
-            return this.sinusoidal(pos < 0 ? 0 : pos > 1 ? 1 : pos);
-        },
-        wobble: function (pos) {
-            return (-Math.cos(pos * Math.PI * (9 * pos)) / 2) + 0.5;
-        },
-        pulse: function (pos, pulses) {
-            return (-Math.cos((pos * ((pulses || 5) - .5) * 2) * Math.PI) / 2) + .5;
-        },
-        blink: function (pos, blinks) {
-            return Math.round(pos * (blinks || 5)) % 2;
-        },
-        spring: function (pos) {
-            return 1 - (Math.cos(pos * 4.5 * Math.PI) * Math.exp(-pos * 6));
-        },
-        none: function (pos) {
-            return 0;
-        },
-        full: function (pos) {
-            return 1;
-        }
-    };
-})(canvas2d || (canvas2d = {}));
-/// <reference path="util.ts" />
-/// <reference path="sprite.ts" />
-/// <reference path="tween.ts" />
-var canvas2d;
-(function (canvas2d) {
-    function publish(callbackList) {
-        callbackList.forEach(function (callback) {
-            callback();
-        });
-    }
-    var Callback = (function () {
-        function Callback(func) {
-            this.func = func;
-            this.done = false;
-            this.immediate = true;
-        }
-        Callback.prototype.step = function () {
-            this.func.call(null);
-            this.end();
-        };
-        Callback.prototype.end = function () {
-            this.func = null;
-            this.done = true;
-        };
-        return Callback;
-    })();
-    var Delay = (function () {
-        function Delay(duration) {
-            this.duration = duration;
-            this.done = false;
-            this.elapsed = 0;
-            this.immediate = true;
-        }
-        Delay.prototype.step = function (deltaTime) {
-            this.elapsed += deltaTime;
-            if (this.elapsed >= this.duration) {
-                this.done = true;
-            }
-        };
-        Delay.prototype.end = function () {
-        };
-        return Delay;
-    })();
-    var Transition = (function () {
-        function Transition(options, duration, isTransitionBy) {
-            this.duration = duration;
-            this.isTransitionBy = isTransitionBy;
-            this._defaultEasing = canvas2d.Tween.easeInOutQuad;
-            this.done = false;
-            this.immediate = false;
-            this.elapsed = 0;
-            this.options = [];
-            this.deltaValue = {};
-            if (isTransitionBy) {
-                this._initAsTransitionBy(options);
-            }
-            else {
-                this._initAsTransitionTo(options);
-            }
-        }
-        Transition.prototype._initAsTransitionTo = function (options) {
-            var _this = this;
-            Object.keys(options).forEach(function (name) {
-                var info = options[name];
-                var easing;
-                var dest;
-                if (typeof info === 'number') {
-                    dest = info;
-                }
-                else {
-                    easing = info.easing;
-                    dest = info.dest;
-                }
-                _this.options.push({ name: name, dest: dest, easing: easing });
-            });
-        };
-        Transition.prototype._initAsTransitionBy = function (options) {
-            var _this = this;
-            var deltaValue = this.deltaValue;
-            Object.keys(options).forEach(function (name) {
-                var info = options[name];
-                var easing;
-                var dest;
-                if (typeof info === 'number') {
-                    deltaValue[name] = info;
-                }
-                else {
-                    easing = info.easing;
-                    deltaValue[name] = info.value;
-                }
-                _this.options.push({ name: name, dest: dest, easing: easing });
-            });
-        };
-        Transition.prototype._initBeginValue = function (sprite) {
-            var beginValue = this.beginValue = {};
-            var deltaValue = this.deltaValue;
-            if (this.isTransitionBy) {
-                this.options.forEach(function (option) {
-                    beginValue[option.name] = sprite[option.name];
-                    option.dest = sprite[option.name] + deltaValue[option.name];
-                });
-            }
-            else {
-                this.options.forEach(function (option) {
-                    beginValue[option.name] = sprite[option.name];
-                    deltaValue[option.name] = option.dest - sprite[option.name];
-                });
-            }
-        };
-        Transition.prototype.step = function (deltaTime, sprite) {
-            var _this = this;
-            this.elapsed += deltaTime;
-            if (this.beginValue == null) {
-                this._initBeginValue(sprite);
-            }
-            if (this.elapsed >= this.duration) {
-                return this.end(sprite);
-            }
-            var percent = this.elapsed / this.duration;
-            var beginValue = this.beginValue;
-            var deltaValue = this.deltaValue;
-            this.options.forEach(function (_a) {
-                var name = _a.name, dest = _a.dest, easing = _a.easing;
-                easing = easing || _this._defaultEasing;
-                sprite[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
-            });
-        };
-        Transition.prototype.end = function (sprite) {
-            this.options.forEach(function (attr) {
-                sprite[attr.name] = attr.dest;
-            });
-            this.beginValue = null;
-            this.deltaValue = null;
-            this.options = null;
-            this.done = true;
-        };
-        return Transition;
-    })();
-    var Animation = (function () {
-        function Animation(frameList, frameRate, repetitions) {
-            this.frameList = frameList;
-            this.repetitions = repetitions;
-            this.done = false;
-            this.immediate = false;
-            this.elapsed = 0;
-            this.count = 0;
-            this.frameIndex = 0;
-            this.interval = 1 / frameRate;
-        }
-        Animation.prototype.step = function (deltaTime, sprite) {
-            this.elapsed += deltaTime;
-            if (this.elapsed >= this.interval) {
-                sprite.texture = this.frameList[this.frameIndex++];
-                if (this.frameIndex === this.frameList.length) {
-                    if (this.repetitions == null || ++this.count < this.repetitions) {
-                        this.frameIndex = 0;
-                    }
-                    else {
-                        this.end();
-                    }
-                }
-                this.elapsed = 0;
-            }
-        };
-        Animation.prototype.end = function () {
-            this.frameList = null;
-            this.done = true;
-        };
-        return Animation;
-    })();
-    var Listener = (function () {
-        function Listener(_actions) {
-            this._actions = _actions;
-            this._resolved = false;
-            this._callbacks = {};
-        }
-        Listener.prototype.all = function (callback) {
-            if (this._resolved) {
-                callback();
-            }
-            else {
-                if (!this._callbacks.all) {
-                    this._callbacks.all = [];
-                }
-                canvas2d.util.addArrayItem(this._callbacks.all, callback);
-            }
-            return this;
-        };
-        Listener.prototype.any = function (callback) {
-            if (this._resolved) {
-                callback();
-            }
-            else {
-                if (!this._callbacks.any) {
-                    this._callbacks.any = [];
-                }
-                canvas2d.util.addArrayItem(this._callbacks.any, callback);
-            }
-            return this;
-        };
-        Listener.prototype._step = function () {
-            var allDone = true;
-            var anyDone = false;
-            this._actions.forEach(function (action) {
-                if (action._done) {
-                    anyDone = true;
-                }
-                else {
-                    allDone = false;
-                }
-            });
-            if (anyDone && this._callbacks.any) {
-                publish(this._callbacks.any);
-                this._callbacks.any = null;
-            }
-            if (allDone && this._callbacks.all) {
-                publish(this._callbacks.all);
-                canvas2d.util.removeArrayItem(Action._listenerList, this);
-                this._resolved = true;
-            }
-        };
-        return Listener;
-    })();
-    canvas2d.Listener = Listener;
-    /**
-     * Action manager
-     */
-    var Action = (function () {
-        function Action(sprite) {
-            this.sprite = sprite;
-            this._queue = [];
-            this._done = false;
-            /**
-             * Action running state
-             */
-            this.running = false;
-        }
-        /**
-         * Stop action by sprite
-         */
-        Action.stop = function (sprite) {
-            Action._actionList.slice().forEach(function (action) {
-                if (action.sprite === sprite) {
-                    action.stop();
-                }
-            });
-        };
-        /**
-         * Listen a action list, when all actions are done then publish to listener
-         */
-        Action.listen = function (actions) {
-            var listener = new Listener(actions);
-            Action._listenerList.push(listener);
-            return listener;
-        };
-        Action.step = function (deltaTime) {
-            Action._actionList.slice().forEach(function (action) {
-                action._step(deltaTime);
-                if (action._done) {
-                    canvas2d.util.removeArrayItem(Action._actionList, action);
-                }
-            });
-            Action._listenerList.slice().forEach(function (listener) {
-                listener._step();
-            });
-        };
-        Action.prototype._step = function (deltaTime) {
-            if (!this._queue.length) {
-                return;
-            }
-            var action = this._queue[0];
-            action.step(deltaTime, this.sprite);
-            if (action.done) {
-                this._queue.shift();
-                if (!this._queue.length) {
-                    this._done = true;
-                    this.running = false;
-                    this.sprite = null;
-                }
-                else if (action.immediate) {
-                    this._step(deltaTime);
-                }
-            }
-        };
-        /**
-         * Add a callback, it will exec after previous action is done.
-         */
-        Action.prototype.then = function (func) {
-            this._queue.push(new Callback(func));
-            return this;
-        };
-        /**
-         * Add a delay action.
-         */
-        Action.prototype.wait = function (time) {
-            this._queue.push(new Delay(time));
-            return this;
-        };
-        /**
-         * Add a animation action
-         */
-        Action.prototype.animate = function (frameList, frameRate, repetitions) {
-            var anim = new Animation(frameList, frameRate, repetitions);
-            this._queue.push(anim);
-            anim.step(anim.interval, this.sprite);
-            return this;
-        };
-        /**
-         * TransitionTo action
-         * @param  attrs     Transition attributes map
-         * @param  duration  Transition duration
-         */
-        Action.prototype.to = function (attrs, duration) {
-            this._queue.push(new Transition(attrs, duration));
-            return this;
-        };
-        /**
-         * TransitionBy action
-         */
-        Action.prototype.by = function (attrs, duration) {
-            this._queue.push(new Transition(attrs, duration, true));
-            return this;
-        };
-        /**
-         * Start the action
-         */
-        Action.prototype.start = function () {
-            if (!this.running) {
-                canvas2d.util.addArrayItem(Action._actionList, this);
-                this.running = true;
-            }
-            return this;
-        };
-        /**
-         * Stop the action
-         */
-        Action.prototype.stop = function () {
-            this._done = true;
-            this.running = false;
-            this._queue.length = 0;
-            canvas2d.util.removeArrayItem(Action._actionList, this);
-        };
-        Action._actionList = [];
-        Action._listenerList = [];
-        return Action;
-    })();
-    canvas2d.Action = Action;
-})(canvas2d || (canvas2d = {}));
-/**
- * Simple sound manager
- */
-var canvas2d;
-(function (canvas2d) {
-    var Sound;
-    (function (Sound) {
-        var audios = {};
-        /**
-         * Could play sound
-         */
-        Sound.enabled = true;
-        /**
-         * Extension for media type
-         */
-        Sound.extension = ".mp3";
-        /**
-         *  Supported types of the browser
-         */
-        Sound.supportedType = {};
-        /**
-         * Load a sound resource
-         */
-        function load(basePath, name, onComplete, channels) {
-            if (channels === void 0) { channels = 1; }
-            var path = basePath + name + Sound.extension;
-            var audio = document.createElement("audio");
-            function onCanPlayThrough() {
-                this.removeEventListener('canplaythrough', onCanPlayThrough, false);
-                if (onComplete) {
-                    onComplete();
-                }
-                var clone;
-                while (--channels > 0) {
-                    clone = audio.cloneNode(true);
-                    audios[name].push(clone);
-                }
-                console.log("Loaded: " + path);
-            }
-            function onError(e) {
-                console.warn("Error: " + path + " could not be loaded.");
-                audios[name] = null;
-            }
-            audio.addEventListener('canplaythrough', onCanPlayThrough, false);
-            audio.addEventListener('error', onError, false);
-            audio['preload'] = "auto";
-            audio['autobuffer'] = true;
-            audio.setAttribute('src', path);
-            audio.load();
-            audios[name] = [audio];
-            console.log("Start to load: ", path);
-        }
-        Sound.load = load;
-        /**
-         * Load multiple sound resources
-         */
-        function loadList(basePath, resList, onAllCompleted, onProgress) {
-            var allCount = resList.length;
-            var endedCount = 0;
-            var onCompleted = function () {
-                ++endedCount;
-                if (onProgress) {
-                    onProgress(endedCount / allCount);
-                }
-                if (endedCount === allCount && onAllCompleted) {
-                    onAllCompleted();
-                }
-            };
-            resList.forEach(function (res) {
-                load(basePath, res.name, onCompleted, res.channels);
-            });
-        }
-        Sound.loadList = loadList;
-        function getPausedAudio(name, isGetAll) {
-            var list = audios[name];
-            if (!list || !list.length) {
-                return null;
-            }
-            var i = 0;
-            var all = [];
-            var audio;
-            for (; audio = list[i]; i++) {
-                if (audio.ended || audio.paused) {
-                    if (audio.ended) {
-                        audio.currentTime = 0;
-                    }
-                    if (!isGetAll) {
-                        return audio;
-                    }
-                    all.push(audio);
-                }
-            }
-            return all;
-        }
-        Sound.getPausedAudio = getPausedAudio;
-        function getPlayingAudio(name, isGetAll) {
-            var list = audios[name];
-            if (!list || !list.length) {
-                return null;
-            }
-            var i = 0;
-            var all = [];
-            var audio;
-            for (; audio = list[i]; i++) {
-                if (!audio.paused) {
-                    if (!isGetAll) {
-                        return audio;
-                    }
-                    all.push(audio);
-                }
-            }
-            return all;
-        }
-        Sound.getPlayingAudio = getPlayingAudio;
-        /**
-         * Get audio list
-         */
-        function getAudioListByName(name) {
-            return audios[name];
-        }
-        Sound.getAudioListByName = getAudioListByName;
-        /**
-         * Play sound by name
-         */
-        function play(name, loop) {
-            var audio = Sound.enabled && getPausedAudio(name);
-            if (audio) {
-                if (loop) {
-                    audio.loop = true;
-                    audio.addEventListener("ended", replay, false);
-                }
-                else {
-                    audio.loop = false;
-                    audio.removeEventListener("ended", replay, false);
-                }
-                audio.play();
-            }
-            return audio;
-        }
-        Sound.play = play;
-        /**
-         * Pause sound by name
-         */
-        function pause(name, reset) {
-            var list = audios[name];
-            if (list) {
-                list.forEach(function (audio) {
-                    audio.pause();
-                    if (reset) {
-                        audio.currentTime = 0;
-                    }
-                });
-            }
-        }
-        Sound.pause = pause;
-        /**
-         * Resume audio by name
-         */
-        function resume(name, reset) {
-            var list = audios[name];
-            if (list) {
-                list.forEach(function (audio) {
-                    if (!audio.ended && audio.currentTime > 0) {
-                        if (reset) {
-                            audio.currentTime = 0;
-                        }
-                        audio.play();
-                    }
-                });
-            }
-        }
-        Sound.resume = resume;
-        /**
-         * Pause all audios
-         */
-        function pauseAll(reset) {
-            Object.keys(audios).forEach(function (name) {
-                pause(name, reset);
-            });
-        }
-        Sound.pauseAll = pauseAll;
-        /**
-         * Resume all played audio
-         */
-        function resumeAll(reset) {
-            Object.keys(audios).forEach(function (name) {
-                resume(name, reset);
-            });
-        }
-        Sound.resumeAll = resumeAll;
-        /**
-         * Stop the looping sound by name
-         */
-        function stopLoop(name) {
-            var list = getPlayingAudio(name, true);
-            if (list) {
-                list.forEach(function (audio) {
-                    audio.removeEventListener("ended", replay, false);
-                    audio.loop = false;
-                });
-            }
-        }
-        Sound.stopLoop = stopLoop;
-        function replay() {
-            this.play();
-        }
-        function detectSupportedType() {
-            var aud = new Audio();
-            var reg = /maybe|probably/i;
-            var mts = {
-                mp3: 'audio/mpeg',
-                mp4: 'audio/mp4; codecs="mp4a.40.5"',
-                wav: 'audio/x-wav',
-                ogg: 'audio/ogg; codecs="vorbis"'
-            };
-            for (var name in mts) {
-                Sound.supportedType[name] = reg.test(aud.canPlayType(mts[name]));
-            }
-            aud = null;
-        }
-        detectSupportedType();
-    })(Sound = canvas2d.Sound || (canvas2d.Sound = {}));
 })(canvas2d || (canvas2d = {}));
 /// <reference path="action.ts" />
 /// <reference path="uievent.ts" />

@@ -1,5 +1,4 @@
 ﻿/// <reference path="util.ts" />
-/// <reference path="sprite.ts" />
 /// <reference path="tween.ts" />
 
 namespace canvas2d {
@@ -8,14 +7,8 @@ namespace canvas2d {
         immediate?: boolean;
         done: boolean;
 
-        step(deltaTime: number, sprite: Sprite): void;
-        end(sprite: Sprite): void;
-    }
-
-    function publish(callbackList: Array<Function>): void {
-        callbackList.forEach((callback) => {
-            callback();
-        });
+        step(deltaTime: number, target: any): void;
+        end(target: any): void;
     }
 
     class Callback implements IAction {
@@ -119,33 +112,33 @@ namespace canvas2d {
             });
         }
 
-        private _initBeginValue(sprite: Sprite) {
+        private _initBeginValue(target: any) {
             let beginValue = this.beginValue = {};
             let deltaValue = this.deltaValue;
 
             if (this.isTransitionBy) {
                 this.options.forEach(option => {
-                    beginValue[option.name] = sprite[option.name];
-                    option.dest = sprite[option.name] + deltaValue[option.name];
+                    beginValue[option.name] = target[option.name];
+                    option.dest = target[option.name] + deltaValue[option.name];
                 });
             }
             else {
                 this.options.forEach(option => {
-                    beginValue[option.name] = sprite[option.name];
-                    deltaValue[option.name] = option.dest - sprite[option.name];
+                    beginValue[option.name] = target[option.name];
+                    deltaValue[option.name] = option.dest - target[option.name];
                 });
             }
         }
 
-        step(deltaTime: number, sprite: Sprite): void {
+        step(deltaTime: number, target: any): void {
             this.elapsed += deltaTime;
 
             if (this.beginValue == null) {
-                this._initBeginValue(sprite);
+                this._initBeginValue(target);
             }
 
             if (this.elapsed >= this.duration) {
-                return this.end(sprite);
+                return this.end(target);
             }
 
             var percent = this.elapsed / this.duration;
@@ -154,13 +147,13 @@ namespace canvas2d {
 
             this.options.forEach(({name, dest, easing}) => {
                 easing = easing || this._defaultEasing;
-                sprite[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
+                target[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
             });
         }
 
-        end(sprite: Sprite): void {
+        end(target: any): void {
             this.options.forEach((attr) => {
-                (<any>sprite)[attr.name] = attr.dest;
+                (<any>target)[attr.name] = attr.dest;
             });
             this.beginValue = null;
             this.deltaValue = null;
@@ -182,11 +175,11 @@ namespace canvas2d {
             this.interval = 1 / frameRate;
         }
 
-        step(deltaTime: number, sprite: Sprite) {
+        step(deltaTime: number, target: any) {
             this.elapsed += deltaTime;
 
             if (this.elapsed >= this.interval) {
-                sprite.texture = this.frameList[this.frameIndex++];
+                target.texture = this.frameList[this.frameIndex++];
 
                 if (this.frameIndex === this.frameList.length) {
                     if (this.repetitions == null || ++this.count < this.repetitions) {
@@ -257,12 +250,12 @@ namespace canvas2d {
             });
 
             if (anyDone && this._callbacks.any) {
-                publish(this._callbacks.any);
+                this._callbacks.any.forEach(callback => callback());
                 this._callbacks.any = null;
             }
 
             if (allDone && this._callbacks.all) {
-                publish(this._callbacks.all);
+                this._callbacks.all.forEach(callback => callback());
                 util.removeArrayItem(Action._listenerList, this);
                 this._resolved = true;
             }
@@ -286,16 +279,16 @@ namespace canvas2d {
          */
         running: boolean = false;
 
-        constructor(public sprite: Sprite) {
+        constructor(public target: any) {
 
         }
 
         /**
-         * Stop action by sprite
+         * Stop action by target
          */
-        static stop(sprite: Sprite) {
+        static stop(target: any) {
             Action._actionList.slice().forEach((action) => {
-                if (action.sprite === sprite) {
+                if (action.target === target) {
                     action.stop();
                 }
             });
@@ -331,7 +324,7 @@ namespace canvas2d {
 
             var action = this._queue[0];
 
-            action.step(deltaTime, this.sprite);
+            action.step(deltaTime, this.target);
 
             if (action.done) {
                 this._queue.shift();
@@ -339,7 +332,7 @@ namespace canvas2d {
                 if (!this._queue.length) {
                     this._done = true;
                     this.running = false;
-                    this.sprite = null;
+                    this.target = null;
                 }
                 else if (action.immediate) {
                     this._step(deltaTime);
@@ -350,8 +343,8 @@ namespace canvas2d {
         /**
          * Add a callback, it will exec after previous action is done.
          */
-        then(func: Function): Action {
-            this._queue.push(new Callback(func));
+        then(callback: Function): Action {
+            this._queue.push(new Callback(callback));
             return this;
         }
 
@@ -369,7 +362,7 @@ namespace canvas2d {
         animate(frameList: Array<Texture>, frameRate: number, repetitions?: number): Action {
             var anim = new Animation(frameList, frameRate, repetitions);
             this._queue.push(anim);
-            anim.step(anim.interval, this.sprite);
+            anim.step(anim.interval, this.target);
             return this;
         }
 

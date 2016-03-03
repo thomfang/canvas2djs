@@ -4,6 +4,203 @@ declare namespace canvas2d.util {
     function removeArrayItem(array: any[], item: any): void;
 }
 declare namespace canvas2d {
+    interface IEasingFunction {
+        (percent: number, ...args: any[]): number;
+    }
+    var Tween: {
+        easeInQuad: (pos: any) => number;
+        easeOutQuad: (pos: any) => number;
+        easeInOutQuad: (pos: any) => number;
+        easeInCubic: (pos: any) => number;
+        easeOutCubic: (pos: any) => number;
+        easeInOutCubic: (pos: any) => number;
+        easeInQuart: (pos: any) => number;
+        easeOutQuart: (pos: any) => number;
+        easeInOutQuart: (pos: any) => number;
+        easeInQuint: (pos: any) => number;
+        easeOutQuint: (pos: any) => number;
+        easeInOutQuint: (pos: any) => number;
+        easeInSine: (pos: any) => number;
+        easeOutSine: (pos: any) => number;
+        easeInOutSine: (pos: any) => number;
+        easeInExpo: (pos: any) => number;
+        easeOutExpo: (pos: any) => number;
+        easeInOutExpo: (pos: any) => number;
+        easeInCirc: (pos: any) => number;
+        easeOutCirc: (pos: any) => number;
+        easeInOutCirc: (pos: any) => number;
+        easeOutBounce: (pos: any) => number;
+        easeInBack: (pos: any) => number;
+        easeOutBack: (pos: any) => number;
+        easeInOutBack: (pos: any) => number;
+        elastic: (pos: any) => number;
+        swingFromTo: (pos: any) => number;
+        swingFrom: (pos: any) => number;
+        swingTo: (pos: any) => number;
+        bounce: (pos: any) => number;
+        bouncePast: (pos: any) => number;
+        easeFromTo: (pos: any) => number;
+        easeFrom: (pos: any) => number;
+        easeTo: (pos: any) => number;
+        linear: (pos: any) => any;
+        sinusoidal: (pos: any) => number;
+        reverse: (pos: any) => number;
+        mirror: (pos: any, transition: any) => any;
+        flicker: (pos: any) => any;
+        wobble: (pos: any) => number;
+        pulse: (pos: any, pulses: any) => number;
+        blink: (pos: any, blinks: any) => number;
+        spring: (pos: any) => number;
+        none: (pos: any) => number;
+        full: (pos: any) => number;
+    };
+}
+declare namespace canvas2d {
+    class Listener {
+        private _actions;
+        private _resolved;
+        private _callbacks;
+        constructor(_actions: Array<Action>);
+        all(callback: Function): Listener;
+        any(callback: Function): Listener;
+        _step(): void;
+    }
+    /**
+     * Action manager
+     */
+    class Action {
+        target: any;
+        static _actionList: Array<Action>;
+        static _listenerList: Array<Listener>;
+        private _queue;
+        _done: boolean;
+        /**
+         * Action running state
+         */
+        running: boolean;
+        constructor(target: any);
+        /**
+         * Stop action by target
+         */
+        static stop(target: any): void;
+        /**
+         * Listen a action list, when all actions are done then publish to listener
+         */
+        static listen(actions: Array<Action>): Listener;
+        static step(deltaTime: number): void;
+        private _step(deltaTime);
+        /**
+         * Add a callback, it will exec after previous action is done.
+         */
+        then(callback: Function): Action;
+        /**
+         * Add a delay action.
+         */
+        wait(time: number): Action;
+        /**
+         * Add a animation action
+         */
+        animate(frameList: Array<Texture>, frameRate: number, repetitions?: number): Action;
+        /**
+         * TransitionTo action
+         * @param  attrs     Transition attributes map
+         * @param  duration  Transition duration
+         */
+        to(attrs: {
+            [name: string]: number | {
+                dest: number;
+                easing: IEasingFunction;
+            };
+        }, duration: number): Action;
+        /**
+         * TransitionBy action
+         */
+        by(attrs: {
+            [name: string]: number | {
+                value: number;
+                easing: IEasingFunction;
+            };
+        }, duration: number): Action;
+        /**
+         * Start the action
+         */
+        start(): Action;
+        /**
+         * Stop the action
+         */
+        stop(): void;
+    }
+}
+/**
+ * Simple sound manager
+ */
+declare namespace canvas2d.Sound {
+    /**
+     * Could play sound
+     */
+    var enabled: boolean;
+    /**
+     * Extension for media type
+     */
+    var extension: string;
+    /**
+     *  Supported types of the browser
+     */
+    var supportedType: {
+        [index: string]: boolean;
+    };
+    interface ISoundResource {
+        name: string;
+        channels?: number;
+    }
+    /**
+     * Load a sound resource
+     */
+    function load(basePath: string, name: string, onComplete: () => any, channels?: number): void;
+    /**
+     * Load multiple sound resources
+     */
+    function loadList(basePath: string, resList: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
+    /**
+     * Get paused audio instance by resource name.
+     */
+    function getPausedAudio(name: string): HTMLAudioElement;
+    function getPausedAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
+    /**
+     * Get playing audio instance by resource name.
+     */
+    function getPlayingAudio(name: string): HTMLAudioElement;
+    function getPlayingAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
+    /**
+     * Get audio list
+     */
+    function getAudioListByName(name: string): HTMLAudioElement[];
+    /**
+     * Play sound by name
+     */
+    function play(name: string, loop?: boolean): HTMLAudioElement;
+    /**
+     * Pause sound by name
+     */
+    function pause(name: string, reset?: boolean): void;
+    /**
+     * Resume audio by name
+     */
+    function resume(name: string, reset?: boolean): void;
+    /**
+     * Pause all audios
+     */
+    function pauseAll(reset?: boolean): void;
+    /**
+     * Resume all played audio
+     */
+    function resumeAll(reset?: boolean): void;
+    /**
+     * Stop the looping sound by name
+     */
+    function stopLoop(name: string): void;
+}
+declare namespace canvas2d {
     interface IRect {
         x: number;
         y: number;
@@ -52,11 +249,7 @@ declare namespace canvas2d {
      * EventEmitter
      */
     class EventEmitter {
-        protected _eventCache: {
-            [type: string]: IEventListener[];
-        };
-        protected _onceMarkKey: string;
-        constructor();
+        private static _cache;
         addListener(type: string, listener: IEventListener): this;
         on(type: string, listener: IEventListener): this;
         once(type: string, listener: IEventListener): this;
@@ -260,203 +453,6 @@ declare namespace canvas2d {
         init(): any;
         update(deltaTime: number): any;
     }
-}
-declare namespace canvas2d {
-    interface IEasingFunction {
-        (percent: number, ...args: any[]): number;
-    }
-    var Tween: {
-        easeInQuad: (pos: any) => number;
-        easeOutQuad: (pos: any) => number;
-        easeInOutQuad: (pos: any) => number;
-        easeInCubic: (pos: any) => number;
-        easeOutCubic: (pos: any) => number;
-        easeInOutCubic: (pos: any) => number;
-        easeInQuart: (pos: any) => number;
-        easeOutQuart: (pos: any) => number;
-        easeInOutQuart: (pos: any) => number;
-        easeInQuint: (pos: any) => number;
-        easeOutQuint: (pos: any) => number;
-        easeInOutQuint: (pos: any) => number;
-        easeInSine: (pos: any) => number;
-        easeOutSine: (pos: any) => number;
-        easeInOutSine: (pos: any) => number;
-        easeInExpo: (pos: any) => number;
-        easeOutExpo: (pos: any) => number;
-        easeInOutExpo: (pos: any) => number;
-        easeInCirc: (pos: any) => number;
-        easeOutCirc: (pos: any) => number;
-        easeInOutCirc: (pos: any) => number;
-        easeOutBounce: (pos: any) => number;
-        easeInBack: (pos: any) => number;
-        easeOutBack: (pos: any) => number;
-        easeInOutBack: (pos: any) => number;
-        elastic: (pos: any) => number;
-        swingFromTo: (pos: any) => number;
-        swingFrom: (pos: any) => number;
-        swingTo: (pos: any) => number;
-        bounce: (pos: any) => number;
-        bouncePast: (pos: any) => number;
-        easeFromTo: (pos: any) => number;
-        easeFrom: (pos: any) => number;
-        easeTo: (pos: any) => number;
-        linear: (pos: any) => any;
-        sinusoidal: (pos: any) => number;
-        reverse: (pos: any) => number;
-        mirror: (pos: any, transition: any) => any;
-        flicker: (pos: any) => any;
-        wobble: (pos: any) => number;
-        pulse: (pos: any, pulses: any) => number;
-        blink: (pos: any, blinks: any) => number;
-        spring: (pos: any) => number;
-        none: (pos: any) => number;
-        full: (pos: any) => number;
-    };
-}
-declare namespace canvas2d {
-    class Listener {
-        private _actions;
-        private _resolved;
-        private _callbacks;
-        constructor(_actions: Array<Action>);
-        all(callback: Function): Listener;
-        any(callback: Function): Listener;
-        _step(): void;
-    }
-    /**
-     * Action manager
-     */
-    class Action {
-        sprite: Sprite;
-        static _actionList: Array<Action>;
-        static _listenerList: Array<Listener>;
-        private _queue;
-        _done: boolean;
-        /**
-         * Action running state
-         */
-        running: boolean;
-        constructor(sprite: Sprite);
-        /**
-         * Stop action by sprite
-         */
-        static stop(sprite: Sprite): void;
-        /**
-         * Listen a action list, when all actions are done then publish to listener
-         */
-        static listen(actions: Array<Action>): Listener;
-        static step(deltaTime: number): void;
-        private _step(deltaTime);
-        /**
-         * Add a callback, it will exec after previous action is done.
-         */
-        then(func: Function): Action;
-        /**
-         * Add a delay action.
-         */
-        wait(time: number): Action;
-        /**
-         * Add a animation action
-         */
-        animate(frameList: Array<Texture>, frameRate: number, repetitions?: number): Action;
-        /**
-         * TransitionTo action
-         * @param  attrs     Transition attributes map
-         * @param  duration  Transition duration
-         */
-        to(attrs: {
-            [name: string]: number | {
-                dest: number;
-                easing: IEasingFunction;
-            };
-        }, duration: number): Action;
-        /**
-         * TransitionBy action
-         */
-        by(attrs: {
-            [name: string]: number | {
-                value: number;
-                easing: IEasingFunction;
-            };
-        }, duration: number): Action;
-        /**
-         * Start the action
-         */
-        start(): Action;
-        /**
-         * Stop the action
-         */
-        stop(): void;
-    }
-}
-/**
- * Simple sound manager
- */
-declare namespace canvas2d.Sound {
-    /**
-     * Could play sound
-     */
-    var enabled: boolean;
-    /**
-     * Extension for media type
-     */
-    var extension: string;
-    /**
-     *  Supported types of the browser
-     */
-    var supportedType: {
-        [index: string]: boolean;
-    };
-    interface ISoundResource {
-        name: string;
-        channels?: number;
-    }
-    /**
-     * Load a sound resource
-     */
-    function load(basePath: string, name: string, onComplete: () => any, channels?: number): void;
-    /**
-     * Load multiple sound resources
-     */
-    function loadList(basePath: string, resList: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
-    /**
-     * Get paused audio instance by resource name.
-     */
-    function getPausedAudio(name: string): HTMLAudioElement;
-    function getPausedAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
-    /**
-     * Get playing audio instance by resource name.
-     */
-    function getPlayingAudio(name: string): HTMLAudioElement;
-    function getPlayingAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
-    /**
-     * Get audio list
-     */
-    function getAudioListByName(name: string): HTMLAudioElement[];
-    /**
-     * Play sound by name
-     */
-    function play(name: string, loop?: boolean): HTMLAudioElement;
-    /**
-     * Pause sound by name
-     */
-    function pause(name: string, reset?: boolean): void;
-    /**
-     * Resume audio by name
-     */
-    function resume(name: string, reset?: boolean): void;
-    /**
-     * Pause all audios
-     */
-    function pauseAll(reset?: boolean): void;
-    /**
-     * Resume all played audio
-     */
-    function resumeAll(reset?: boolean): void;
-    /**
-     * Stop the looping sound by name
-     */
-    function stopLoop(name: string): void;
 }
 declare namespace canvas2d.Stage {
     /**
