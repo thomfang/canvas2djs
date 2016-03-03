@@ -1,4 +1,5 @@
 ﻿/// <reference path="stage.ts" />
+/// <reference path="util.ts" />
 
 /**
  * Virtual UI event manager
@@ -16,6 +17,7 @@ namespace canvas2d.UIEvent {
         _moved?: boolean;
         beginTarget?: Sprite;
         target?: Sprite;
+        cancelBubble: boolean;
     }
 
     var keyDown = "keydown";
@@ -29,33 +31,34 @@ namespace canvas2d.UIEvent {
     var mouseMoved = "mousemove";
     var mouseEnded = "mouseup";
 
-    const ON_CLICK = "onclick";
-    const ON_KEY_UP = "onkeyup";
-    const ON_KEY_DOWN = "onkeydown";
+    const onclick = "onclick";
+    const onkeyup = "onkeyup";
+    const onkeydown = "onkeydown";
 
-    const ON_TOUCH_BEGIN = "ontouchbegin";
-    const ON_TOUCH_MOVED = "ontouchmoved";
-    const ON_TOUCH_ENDED = "ontouchended";
+    const ontouchbegin = "ontouchbegin";
+    const ontouchmoved = "ontouchmoved";
+    const ontouchended = "ontouchended";
 
-    const ON_MOUSE_BEGIN = "onmousebegin";
-    const ON_MOUSE_MOVED = "onmousemoved";
-    const ON_MOUSE_ENDED = "onmouseended";
+    const onmousebegin = "onmousebegin";
+    const onmousemoved = "onmousemoved";
+    const onmouseended = "onmouseended";
 
-    var touchMap: { [index: number]: IEventHelper } = {};
-    var mouseLoc: IEventHelper;
+    var touchHelperMap: { [index: number]: IEventHelper } = {};
+    var mouseBeginHelper: IEventHelper;
+    var mouseMovedHelper: IEventHelper;
 
     var registered: boolean;
 
     export var supportTouch: boolean = "ontouchend" in window;
 
     /**
-     * Register UI event, internal method
+     * Register UI event
      */
     export function register(): void {
         if (registered) {
             return;
         }
-        
+
         var canvas = Stage.canvas;
 
         if (Stage.touchEnabled && supportTouch) {
@@ -77,13 +80,14 @@ namespace canvas2d.UIEvent {
     }
 
     /**
-     * Unregister UI event, internal method
+     * Unregister UI event
      */
     export function unregister(): void {
         var canvas = Stage.canvas;
         canvas.removeEventListener(touchBegin, touchBeginHandler, false);
         canvas.removeEventListener(touchMoved, touchMovedHandler, false);
         canvas.removeEventListener(touchEnded, touchEndedHandler, false);
+        
         canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
         canvas.removeEventListener(mouseMoved, mouseMovedHandler, false);
         canvas.removeEventListener(mouseEnded, mouseEndedHandler, false);
@@ -94,55 +98,45 @@ namespace canvas2d.UIEvent {
         registered = false;
     }
 
-    function transformTouches(touches, justGet?: boolean): IEventHelper[] {
-        var ret: IEventHelper[] = [];
-        var pos = Stage.canvas.getBoundingClientRect();
-
-        for (var i: number = 0, x: number, y: number, id: number, transformed, touch; touch = touches[i]; i++) {
-            id = touch.identifier;
-            x = (touch.clientX - pos.left) / Stage._scale;
-            y = (touch.clientY - pos.top) / Stage._scale;
-
-            transformed = touchMap[id];
-
-            if (!transformed) {
-                transformed = touchMap[id] = {
-                    identifier: id,
-                    beginX: x,
-                    beginY: y
-                };
-            }
-            else if (!justGet) {
-                transformed._moved = x - transformed.beginX !== 0 || y - transformed.beginY !== 0;
-            }
-
-            transformed.stageX = x;
-            transformed.stageY = y;
-
-            ret.push(transformed);
-        }
-        return ret;
-    }
-
-    function transformLocation(event): IEventHelper {
+    /**
+     * Transform event location to stage location
+     */    
+    export function transformLocation(event) {
         var pos = Stage.canvas.getBoundingClientRect();
         var x = (event.clientX - pos.left) / Stage._scale;
         var y = (event.clientY - pos.top) / Stage._scale;
+        return { x, y };
+    }
 
-        if (!mouseLoc) {
-            mouseLoc = {
-                beginX: x,
-                beginY: y
-            };
+    function transformTouches(touches, justGet?: boolean): IEventHelper[] {
+        var helpers: IEventHelper[] = [];
+        var rect = Stage.canvas.getBoundingClientRect();
+
+        for (var i: number = 0, x: number, y: number, id: number, helper, touch; touch = touches[i]; i++) {
+            id = touch.identifier;
+            x = (touch.clientX - rect.left) / Stage._scale;
+            y = (touch.clientY - rect.top) / Stage._scale;
+
+            helper = touchHelperMap[id];
+
+            if (!helper) {
+                helper = touchHelperMap[id] = {
+                    identifier: id,
+                    beginX: x,
+                    beginY: y,
+                    cancelBubble: false
+                };
+            }
+            else if (!justGet) {
+                helper._moved = x - helper.beginX !== 0 || y - helper.beginY !== 0;
+            }
+
+            helper.stageX = x;
+            helper.stageY = y;
+
+            helpers.push(helper);
         }
-        else {
-            mouseLoc._moved = x - mouseLoc.beginX !== 0 || y - mouseLoc.beginY !== 0;
-        }
-
-        mouseLoc.stageX = x;
-        mouseLoc.stageY = y;
-
-        return mouseLoc;
+        return helpers;
     }
 
     function isRectContainPoint(rect: IRect, p: IEventHelper) {
@@ -151,8 +145,11 @@ namespace canvas2d.UIEvent {
     }
 
     function isMovedSmallRange(e: IEventHelper) {
-        let x = Math.abs(e.beginX - e.localX);
-        let y = Math.abs(e.beginY - e.localY);
+        if (e.beginX == null && e.beginY == null) {
+            return false;
+        }
+        let x = Math.abs(e.beginX - e.stageX);
+        let y = Math.abs(e.beginY - e.stageY);
 
         return x <= 5 && y <= 5;
     }
@@ -162,13 +159,13 @@ namespace canvas2d.UIEvent {
             return;
         }
 
-        var touches = transformTouches(event.changedTouches);
+        var helpers = transformTouches(event.changedTouches);
 
-        if (dispatchTouch(Stage.sprite, 0, 0, touches.slice(), event, ON_TOUCH_BEGIN)) {
-            touches.forEach((touch) => {
-                touch.beginTarget = touch.target;
-            });
-        }
+        dispatchTouch(Stage.sprite, 0, 0, helpers.slice(), event, ontouchbegin);
+
+        helpers.forEach((touch) => {
+            touch.beginTarget = touch.target;
+        });
 
         event.preventDefault();
     }
@@ -178,36 +175,37 @@ namespace canvas2d.UIEvent {
             return;
         }
 
-        var touches: IEventHelper[] = transformTouches(event.changedTouches);
+        var helpers = transformTouches(event.changedTouches);
 
-        dispatchTouch(Stage.sprite, 0, 0, touches, event, ON_TOUCH_MOVED);
+        dispatchTouch(Stage.sprite, 0, 0, helpers, event, ontouchmoved);
 
         event.preventDefault();
     }
 
     function touchEndedHandler(event: TouchEvent) {
-        var touches = transformTouches(event.changedTouches, true);
-        var target;
+        if (Stage.isRunning && Stage.touchEnabled) {
+            var helpers = transformTouches(event.changedTouches, true);
+            
+            dispatchTouch(Stage.sprite, 0, 0, helpers.slice(), event, ontouchended, true);
 
-        touches.forEach((touch) => {
-            target = touch.target;
+            helpers.forEach(helper => {
+                // target = helper.target;
+                
+                // if (hasImplements(target, ontouchended)) {
+                //     target[ontouchended](helper, helpers, event);
+                // }
 
-            if (Stage.isRunning && Stage.touchEnabled) {
-                if (hasImplements(target, ON_TOUCH_ENDED)) {
-                    target[ON_TOUCH_ENDED](touch, touches, event);
-                }
+                // if (hasImplements(target, onclick) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
+                //     target[onclick](helper, event);
+                // }
 
-                if (hasImplements(target, ON_CLICK) && target === touch.beginTarget && (!touch._moved || isMovedSmallRange(touch))) {
-                    target[ON_CLICK](touch, event);
-                }
-            }
+                helper.target = null;
+                helper.beginTarget = null;
+                touchHelperMap[helper.identifier] = null;
+            });
 
-            touch.target = null;
-            touch.beginTarget = null;
-            touchMap[touch.identifier] = null;
-        });
-
-        touches = null;
+            helpers = null;
+        }
     }
 
     function mouseBeginHandler(event: MouseEvent) {
@@ -216,9 +214,19 @@ namespace canvas2d.UIEvent {
         }
 
         var location = transformLocation(event);
+        var helper: IEventHelper = {
+            beginX: location.x,
+            beginY: location.y,
+            stageX: location.x,
+            stageY: location.y,
+            cancelBubble: false
+        };
 
-        if (dispatchMouse(Stage.sprite, 0, 0, location, event, ON_MOUSE_BEGIN)) {
-            location.beginTarget = location.target;
+        dispatchMouse(Stage.sprite, 0, 0, helper, event, onmousebegin);
+
+        if (helper.target) {
+            helper.beginTarget = helper.target;
+            mouseBeginHelper = helper;
         }
 
         event.preventDefault();
@@ -231,74 +239,104 @@ namespace canvas2d.UIEvent {
 
         var location = transformLocation(event);
 
-        dispatchMouse(Stage.sprite, 0, 0, location, event, ON_MOUSE_MOVED);
+        if (mouseBeginHelper) {
+            mouseBeginHelper.stageX = location.x;
+            mouseBeginHelper.stageY = location.y;
+            mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
+            dispatchMouse(Stage.sprite, 0, 0, mouseBeginHelper, event, onmousemoved);
+        }
+        else {
+            mouseMovedHelper = {
+                beginX: null,
+                beginY: null,
+                stageX: location.x,
+                stageY: location.y,
+                cancelBubble: false
+            };
+            dispatchMouse(Stage.sprite, 0, 0, mouseMovedHelper, event, onmousemoved);
+        }
+
         event.preventDefault();
     }
 
     function mouseEndedHandler(event: MouseEvent) {
-        var location = transformLocation(event);
-        var target;
+        if (Stage.isRunning && Stage.mouseEnabled) {
+            var location = transformLocation(event)
+            var helper = mouseBeginHelper || mouseMovedHelper;
+            var target;
 
-        if (Stage.mouseEnabled) {
-            target = location.target;
+            helper.stageX = location.x;
+            helper.stageY = location.y;
+            target = helper.target;
 
-            if (hasImplements(target, ON_MOUSE_ENDED)) {
-                target[ON_MOUSE_ENDED](location, event);
-            }
+            // if (hasImplements(target, ON_MOUSE_ENDED)) {
+            //     target[ON_MOUSE_ENDED](helper, event);
+            // }
+            
+            var triggerClick = !helper._moved || isMovedSmallRange(helper);
+            dispatchMouse(Stage.sprite, 0, 0, helper, event, onmouseended, triggerClick);
 
-            if (hasImplements(target, ON_CLICK) && target === location.beginTarget && (!location._moved || isMovedSmallRange(location))) {
-                target[ON_CLICK](location, event);
-            }
+            // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
+            //     target[ON_CLICK](helper, event);
+            // }
         }
 
-        mouseLoc = location.target = location.beginTarget = null;
+        mouseBeginHelper = helper.target = helper.beginTarget = null;
     }
 
     function keyDownHandler(event) {
         if (!Stage.isRunning || !Stage.keyboardEnabled) {
             return;
         }
-        dispatchKeyboard(Stage.sprite, event.keyCode, event, ON_KEY_DOWN);
+        dispatchKeyboard(Stage.sprite, event.keyCode, event, onkeydown);
     }
 
     function keyUpHandler(event) {
         if (!Stage.isRunning || !Stage.keyboardEnabled) {
             return;
         }
-        dispatchKeyboard(Stage.sprite, event.keyCode, event, ON_KEY_UP);
+        dispatchKeyboard(Stage.sprite, event.keyCode, event, onkeyup);
     }
 
-    function dispatchTouch(sprite: Sprite, offsetX: number, offsetY: number, touches: IEventHelper[], event: Event, methodName: string): boolean {
+    function dispatchTouch(sprite: Sprite, offsetX: number, offsetY: number, helpers: IEventHelper[], event: Event, methodName: string, needTriggerClick?: boolean): any {
         if (sprite.touchEnabled === false || !sprite.visible) {
-            return false;
+            return;
         }
 
         offsetX += sprite.x - sprite._originPixelX;
         offsetY += sprite.y - sprite._originPixelY;
 
         var children = sprite.children;
-        var dispatched: boolean;
+        var tmpHelpers = helpers.slice();
+        var callback = helper => result.indexOf(helper) === -1;
+        var result: IEventHelper[];
 
         if (children && children.length) {
-            var index = children.length;
+            let index = children.length;
 
             while (--index >= 0) {
-                dispatched = dispatchTouch(children[index], offsetX, offsetY, touches, event, methodName);
-
-                if (dispatched && !touches.length) {
-                    return true;
+                result = dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, needTriggerClick);
+                if (result) {
+                    tmpHelpers = tmpHelpers.filter(callback);
+                    if (!tmpHelpers.length) {
+                        break;
+                    }
                 }
+            }
+            
+            if (helpers.every(helper => helper.cancelBubble)) {
+                
             }
         }
 
-        var notImplementMethod: boolean = !hasImplements(sprite, methodName);
-        var notImplementClick: boolean = !hasImplements(sprite, ON_CLICK);
+        var hasMethod: boolean = hasImplements(sprite, methodName);
+        var hasClickHandler: boolean = hasImplements(sprite, onclick);
 
-        if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
-            return false;
+        if (!hasMethod && !hasClickHandler) {
+            return;
         }
 
-        var hits: IEventHelper[] = [];
+        var hits: IEventHelper[] = helpers.filter(helper => tmpHelpers.indexOf(helper) === -1);
         var rect: IRect = {
             x: offsetX,
             y: offsetY,
@@ -306,28 +344,30 @@ namespace canvas2d.UIEvent {
             height: sprite.height
         };
 
-        for (var i = 0, touch: IEventHelper; touch = touches[i]; i++) {
-            if (isRectContainPoint(rect, touch)) {
-                touch.target = sprite;
-                touch.localX = touch.stageX - rect.x;
-                touch.localY = touch.stageY - rect.y;
-
-                hits.push(touch);
-                touches.splice(i--, 1);
+        for (let i = 0, helper: IEventHelper; helper = tmpHelpers[i]; i++) {
+            if (isRectContainPoint(rect, helper)) {
+                if (!helper.target) {
+                    helper.target = sprite;
+                }
+                helper.localX = helper.stageX - rect.x;
+                helper.localY = helper.stageY - rect.y;
+                hits.push(helper);
             }
         }
 
         if (hits.length) {
-            if (!notImplementMethod) {
+            if (hasMethod) {
                 sprite[methodName](hits, event);
             }
-            return true;
+            if (hasClickHandler && needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
+                sprite[onclick](hits[0], event);
+            }
+            
+            return hits;
         }
-
-        return false;
     }
 
-    function dispatchMouse(sprite: Sprite, offsetX: number, offsetY: number, location: IEventHelper, event: Event, methodName: string): boolean {
+    function dispatchMouse(sprite: Sprite, offsetX: number, offsetY: number, helper: IEventHelper, event: Event, methodName: string, triggerClick?: boolean): boolean {
         if (sprite.mouseEnabled === false || !sprite.visible) {
             return false;
         }
@@ -336,22 +376,28 @@ namespace canvas2d.UIEvent {
         offsetY += sprite.y - sprite._originPixelY;
 
         var children = sprite.children;
+        var triggerred = false;
 
         if (children && children.length) {
             var index = children.length;
 
             while (--index >= 0) {
-                if (dispatchMouse(children[index], offsetX, offsetY, location, event, methodName)) {
-                    return true;
+                triggerred = dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, triggerClick);
+                if (triggerred) {
+                    break;
                 }
+            }
+            
+            if (helper.cancelBubble) {
+                return true;
             }
         }
 
-        var notImplementMethod: boolean = !hasImplements(sprite, methodName);
-        var notImplementClick: boolean = !hasImplements(sprite, ON_CLICK);
+        var hasMethod: boolean = hasImplements(sprite, methodName);
+        var hasClickHandler: boolean = hasImplements(sprite, onclick);
 
-        if (sprite.width === 0 || sprite.height === 0 || (notImplementMethod && notImplementClick)) {
-            return false;
+        if (!hasMethod && !hasClickHandler) {
+            return triggerred;
         }
 
         var rect: IRect = {
@@ -361,18 +407,22 @@ namespace canvas2d.UIEvent {
             height: sprite.height
         };
 
-        if (isRectContainPoint(rect, location)) {
-            location.target = sprite;
-            location.localX = location.stageX - rect.x;
-            location.localY = location.stageY - rect.y;
-
-            if (!notImplementMethod) {
-                sprite[methodName](location, event);
+        if (triggerred || isRectContainPoint(rect, helper)) {
+            if (!helper.target) {
+                helper.target = sprite;
             }
+            helper.localX = helper.stageX - rect.x;
+            helper.localY = helper.stageY - rect.y;
+
+            if (hasMethod) {
+                sprite[methodName](helper, event);
+            }
+            if (hasClickHandler && triggerClick) {
+                sprite[onclick](helper, event);
+            }
+            
             return true;
         }
-
-        return false;
     }
 
     function dispatchKeyboard(sprite: Sprite, keyCode: number, event, methodName: string) {

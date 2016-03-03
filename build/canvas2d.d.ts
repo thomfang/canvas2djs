@@ -561,16 +561,24 @@ declare namespace canvas2d.UIEvent {
         _moved?: boolean;
         beginTarget?: Sprite;
         target?: Sprite;
+        cancelBubble: boolean;
     }
     var supportTouch: boolean;
     /**
-     * Register UI event, internal method
+     * Register UI event
      */
     function register(): void;
     /**
-     * Unregister UI event, internal method
+     * Unregister UI event
      */
     function unregister(): void;
+    /**
+     * Transform event location to stage location
+     */
+    function transformLocation(event: any): {
+        x: number;
+        y: number;
+    };
 }
 declare namespace canvas2d.UIEvent {
     const Key: {
