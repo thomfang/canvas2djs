@@ -27,8 +27,8 @@
         var cvs = document.getElementById('cvs');
             
             canvas2d.Stage.init(cvs, 320, 480, canvas2d.Stage.ScaleMode.SHOW_ALL, true);
-            // canvas2d.Stage.mouseEnabled = true;
-            canvas2d.Stage.touchEnabled = true;
+            canvas2d.Stage.mouseEnabled = true;
+            // canvas2d.Stage.touchEnabled = true;
             canvas2d.Stage.start();
             
             var innerBox = new canvas2d.Sprite({
@@ -39,22 +39,22 @@
                 border: {width: 1, color: 'red'},
                 onclick: function(e) {
                     // e.cancelBubble = true;
-                    console.log('inner', e.target);
+                    console.log('inner');
                 }
             });
             var outerBox = new canvas2d.Sprite({
-                // width: 200,
-                // height: 200,
+                width: 200,
+                height: 200,
                 alignX: canvas2d.AlignType.CENTER,
                 alignY: canvas2d.AlignType.CENTER,
                 border: {width: 1, color: '#fff'},
-                onclick: function(e) {
-                    console.log('outer', e.target)
+                onmousemoved: function(e) {
+                    console.log('outer')
                 }
             });
             
-            outerBox.addChild(innerBox);
             canvas2d.Stage.addChild(outerBox);
+            outerBox.addChild(innerBox);
             
             // var container = new canvas2d.Sprite({
             //     width: 80,

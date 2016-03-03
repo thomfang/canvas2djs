@@ -87,7 +87,7 @@ namespace canvas2d.UIEvent {
         canvas.removeEventListener(touchBegin, touchBeginHandler, false);
         canvas.removeEventListener(touchMoved, touchMovedHandler, false);
         canvas.removeEventListener(touchEnded, touchEndedHandler, false);
-        
+
         canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
         canvas.removeEventListener(mouseMoved, mouseMovedHandler, false);
         canvas.removeEventListener(mouseEnded, mouseEndedHandler, false);
@@ -100,7 +100,7 @@ namespace canvas2d.UIEvent {
 
     /**
      * Transform event location to stage location
-     */    
+     */
     export function transformLocation(event) {
         var pos = Stage.canvas.getBoundingClientRect();
         var x = (event.clientX - pos.left) / Stage._scale;
@@ -185,7 +185,7 @@ namespace canvas2d.UIEvent {
     function touchEndedHandler(event: TouchEvent) {
         if (Stage.isRunning && Stage.touchEnabled) {
             var helpers = transformTouches(event.changedTouches, true);
-            
+
             dispatchTouch(Stage.sprite, 0, 0, helpers.slice(), event, ontouchended, true);
 
             helpers.forEach(helper => {
@@ -307,42 +307,39 @@ namespace canvas2d.UIEvent {
         offsetY += sprite.y - sprite._originPixelY;
 
         var children = sprite.children;
-        var tmpHelpers = helpers.slice();
-        var callback = helper => result.indexOf(helper) === -1;
+        var tmpHelpers: IEventHelper[] = helpers.slice();
+        var triggerreds: IEventHelper[] = [];
         var result: IEventHelper[];
+
+        var callback = helper => result.indexOf(helper) === -1;
 
         if (children && children.length) {
             let index = children.length;
 
             while (--index >= 0) {
                 result = dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, needTriggerClick);
-                if (result) {
+                if (result && result.length) {
+                    triggerreds.push(...result);
+                    
+                    // Remove triggerred touch helper, it won't pass to other child sprites
                     tmpHelpers = tmpHelpers.filter(callback);
+                    
+                    // All triggerred then exit the loop
                     if (!tmpHelpers.length) {
                         break;
                     }
                 }
             }
-            
-            if (helpers.every(helper => helper.cancelBubble)) {
-                
-            }
         }
 
-        var hasMethod: boolean = hasImplements(sprite, methodName);
-        var hasClickHandler: boolean = hasImplements(sprite, onclick);
-
-        if (!hasMethod && !hasClickHandler) {
-            return;
-        }
-
-        var hits: IEventHelper[] = helpers.filter(helper => tmpHelpers.indexOf(helper) === -1);
+        var hits: IEventHelper[] = triggerreds.filter(helper => !helper.cancelBubble);
         var rect: IRect = {
             x: offsetX,
             y: offsetY,
             width: sprite.width,
             height: sprite.height
         };
+        var count = 0;
 
         for (let i = 0, helper: IEventHelper; helper = tmpHelpers[i]; i++) {
             if (isRectContainPoint(rect, helper)) {
@@ -351,20 +348,29 @@ namespace canvas2d.UIEvent {
                 }
                 helper.localX = helper.stageX - rect.x;
                 helper.localY = helper.stageY - rect.y;
+                
+                // Add for current sprite hit list
                 hits.push(helper);
+                count++;
             }
         }
 
         if (hits.length) {
+            var hasMethod: boolean = hasImplements(sprite, methodName);
+            var hasClickHandler: boolean = hasImplements(sprite, onclick);
+            
             if (hasMethod) {
                 sprite[methodName](hits, event);
-            }
-            if (hasClickHandler && needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
-                sprite[onclick](hits[0], event);
+                triggerreds.push(...hits.slice(hits.length - count, count));
             }
             
-            return hits;
+            // Click event would just trigger by only a touch
+            if (hasClickHandler && needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
+                sprite[onclick](hits[0], event);
+                util.addArrayItem(triggerreds, hits[0]);
+            }
         }
+        return triggerreds;
     }
 
     function dispatchMouse(sprite: Sprite, offsetX: number, offsetY: number, helper: IEventHelper, event: Event, methodName: string, triggerClick?: boolean): boolean {
@@ -387,17 +393,10 @@ namespace canvas2d.UIEvent {
                     break;
                 }
             }
-            
+
             if (helper.cancelBubble) {
                 return true;
             }
-        }
-
-        var hasMethod: boolean = hasImplements(sprite, methodName);
-        var hasClickHandler: boolean = hasImplements(sprite, onclick);
-
-        if (!hasMethod && !hasClickHandler) {
-            return triggerred;
         }
 
         var rect: IRect = {
@@ -408,6 +407,9 @@ namespace canvas2d.UIEvent {
         };
 
         if (triggerred || isRectContainPoint(rect, helper)) {
+            var hasMethod: boolean = hasImplements(sprite, methodName);
+            var hasClickHandler: boolean = hasImplements(sprite, onclick);
+
             if (!helper.target) {
                 helper.target = sprite;
             }
@@ -420,7 +422,7 @@ namespace canvas2d.UIEvent {
             if (hasClickHandler && triggerClick) {
                 sprite[onclick](helper, event);
             }
-            
+
             return true;
         }
     }

@@ -1904,56 +1904,64 @@ var canvas2d;
         }
         function dispatchTouch(sprite, offsetX, offsetY, helpers, event, methodName, needTriggerClick) {
             if (sprite.touchEnabled === false || !sprite.visible) {
-                return false;
+                return;
             }
             offsetX += sprite.x - sprite._originPixelX;
             offsetY += sprite.y - sprite._originPixelY;
             var children = sprite.children;
             var tmpHelpers = helpers.slice();
+            var triggerreds = [];
+            var result;
+            var callback = function (helper) { return result.indexOf(helper) === -1; };
             if (children && children.length) {
                 var index = children.length;
                 while (--index >= 0) {
-                    dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, needTriggerClick);
-                    if (!tmpHelpers.length) {
-                        return;
+                    result = dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, needTriggerClick);
+                    if (result && result.length) {
+                        triggerreds.push.apply(triggerreds, result);
+                        // Remove triggerred touch helper, it won't pass to other child sprites
+                        tmpHelpers = tmpHelpers.filter(callback);
+                        // All triggerred then exit the loop
+                        if (!tmpHelpers.length) {
+                            break;
+                        }
                     }
                 }
             }
-            var hasMethod = hasImplements(sprite, methodName);
-            var hasClickHandler = hasImplements(sprite, onclick);
-            if (!hasMethod && !hasClickHandler) {
-                return;
-            }
-            var hits = helpers.filter(function (helper) { return tmpHelpers.indexOf(helper) === -1; });
+            var hits = triggerreds.filter(function (helper) { return !helper.cancelBubble; });
             var rect = {
                 x: offsetX,
                 y: offsetY,
                 width: sprite.width,
                 height: sprite.height
             };
-            for (var i = 0, helper; helper = tmpHelpers[i]; i++) {
+            var count = 0;
+            for (var i = 0, helper = void 0; helper = tmpHelpers[i]; i++) {
                 if (isRectContainPoint(rect, helper)) {
                     if (!helper.target) {
                         helper.target = sprite;
                     }
                     helper.localX = helper.stageX - rect.x;
                     helper.localY = helper.stageY - rect.y;
+                    // Add for current sprite hit list
                     hits.push(helper);
+                    count++;
                 }
             }
             if (hits.length) {
+                var hasMethod = hasImplements(sprite, methodName);
+                var hasClickHandler = hasImplements(sprite, onclick);
                 if (hasMethod) {
                     sprite[methodName](hits, event);
+                    triggerreds.push.apply(triggerreds, hits.slice(hits.length - count, count));
                 }
+                // Click event would just trigger by only a touch
                 if (hasClickHandler && needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
                     sprite[onclick](hits[0], event);
+                    canvas2d.util.addArrayItem(triggerreds, hits[0]);
                 }
-                hits.forEach(function (hit) {
-                    if (hit.cancelBubble) {
-                        canvas2d.util.removeArrayItem(helpers, hit);
-                    }
-                });
             }
+            return triggerreds;
         }
         function dispatchMouse(sprite, offsetX, offsetY, helper, event, methodName, triggerClick) {
             if (sprite.mouseEnabled === false || !sprite.visible) {
@@ -1975,11 +1983,6 @@ var canvas2d;
                     return true;
                 }
             }
-            var hasMethod = hasImplements(sprite, methodName);
-            var hasClickHandler = hasImplements(sprite, onclick);
-            if (!hasMethod && !hasClickHandler) {
-                return triggerred;
-            }
             var rect = {
                 x: offsetX,
                 y: offsetY,
@@ -1987,6 +1990,8 @@ var canvas2d;
                 height: sprite.height
             };
             if (triggerred || isRectContainPoint(rect, helper)) {
+                var hasMethod = hasImplements(sprite, methodName);
+                var hasClickHandler = hasImplements(sprite, onclick);
                 if (!helper.target) {
                     helper.target = sprite;
                 }
