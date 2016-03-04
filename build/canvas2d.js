@@ -2,13 +2,13 @@ var canvas2d;
 (function (canvas2d) {
     var util;
     (function (util) {
-        var uuidKey = '__CANVAS2D_UUID__';
-        var uuidCounter = 0;
+        var key = '__CANVAS2D_UUID__';
+        var counter = 0;
         function uuid(target) {
-            if (typeof target[uuidKey] === 'undefined') {
-                target[uuidKey] = uuidCounter++;
+            if (typeof target[key] === 'undefined') {
+                Object.defineProperty(target, key, { value: counter++ });
             }
-            return target[uuidKey];
+            return target[key];
         }
         util.uuid = uuid;
         function addArrayItem(array, item) {
@@ -576,81 +576,485 @@ var canvas2d;
     })();
     canvas2d.Action = Action;
 })(canvas2d || (canvas2d = {}));
-/**
- * Simple sound manager
- */
+/// <reference path="util.ts" />
+var canvas2d;
+(function (canvas2d) {
+    var counter = 0;
+    var prefix = '__CANVAS2D_ONCE__';
+    /**
+     * EventEmitter
+     */
+    var EventEmitter = (function () {
+        function EventEmitter() {
+        }
+        EventEmitter.prototype.addListener = function (type, listener) {
+            var id = canvas2d.util.uuid(this);
+            if (!EventEmitter._cache[id]) {
+                EventEmitter._cache[id] = {};
+            }
+            if (!EventEmitter._cache[id][type]) {
+                EventEmitter._cache[id][type] = [];
+            }
+            canvas2d.util.addArrayItem(EventEmitter._cache[id][type], listener);
+            return this;
+        };
+        EventEmitter.prototype.on = function (type, listener) {
+            return this.addListener(type, listener);
+        };
+        EventEmitter.prototype.once = function (type, listener) {
+            listener[prefix + canvas2d.util.uuid(this)] = true;
+            return this.addListener(type, listener);
+        };
+        EventEmitter.prototype.removeListener = function (type, listener) {
+            var cache = EventEmitter._cache[canvas2d.util.uuid(this)];
+            if (cache && cache[type]) {
+                canvas2d.util.removeArrayItem(cache[type], listener);
+                if (!cache[type].length) {
+                    delete cache[type];
+                }
+            }
+            return this;
+        };
+        EventEmitter.prototype.removeAllListeners = function (type) {
+            var id = canvas2d.util.uuid(this);
+            var cache = EventEmitter._cache[id];
+            if (cache) {
+                if (type == null) {
+                    EventEmitter[id] = null;
+                }
+                else {
+                    delete cache[type];
+                }
+            }
+            return this;
+        };
+        EventEmitter.prototype.emit = function (type) {
+            var _this = this;
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            var id = canvas2d.util.uuid(this);
+            var cache = EventEmitter._cache[id];
+            var onceKey = prefix + id;
+            if (cache && cache[type]) {
+                cache[type].slice().forEach(function (listener) {
+                    listener.apply(_this, args);
+                    if (listener[onceKey]) {
+                        _this.removeListener(type, listener);
+                        listener[onceKey] = null;
+                    }
+                });
+            }
+            return this;
+        };
+        EventEmitter._cache = {};
+        return EventEmitter;
+    })();
+    canvas2d.EventEmitter = EventEmitter;
+})(canvas2d || (canvas2d = {}));
+/// <reference path="./eventemitter.ts" />
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var canvas2d;
+(function (canvas2d) {
+    var AudioCtx = window['AudioContext'] || window['webkitAudioContext'];
+    var context = AudioCtx ? new AudioCtx() : null;
+    /**
+     * WebAudio
+     */
+    var WebAudio = (function (_super) {
+        __extends(WebAudio, _super);
+        function WebAudio(src) {
+            _super.call(this);
+            this._startTime = 0;
+            this.loop = false;
+            this.muted = false;
+            this.loaded = false;
+            this.volume = 1;
+            this.playing = false;
+            this.autoplay = false;
+            this.duration = 0;
+            this.currentTime = 0;
+            this.src = src;
+            this._handleEvent = this._handleEvent.bind(this);
+            this._gainNode = context.createGain ? context.createGain() : context['createGainNode']();
+            this._gainNode.connect(context.destination);
+        }
+        Object.defineProperty(WebAudio, "enabled", {
+            get: function () {
+                return this._enabled;
+            },
+            set: function (enabled) {
+                if (enabled && this.isSupported && !this._initialized) {
+                    var source = context.createBufferSource();
+                    source.buffer = context.createBuffer(1, 1, 22050);
+                    source.connect(context.destination);
+                    source.start ? source.start(0, 0, 0) : source['noteOn'](0, 0, 0);
+                    this._initialized = true;
+                }
+                this._enabled = enabled;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        WebAudio.prototype.load = function () {
+            if (this._isLoading || this.loaded) {
+                return;
+            }
+            var request = new XMLHttpRequest();
+            request.onprogress = request.onload = request.onerror = this._handleEvent;
+            request.open('GET', this.src, true);
+            request.responseType = 'arraybuffer';
+            request.send();
+            this._isLoading = true;
+        };
+        WebAudio.prototype.play = function () {
+            if (!WebAudio.enabled) {
+                return;
+            }
+            if (this.playing) {
+                this.stop();
+            }
+            if (this.loaded) {
+                this._play();
+            }
+            else if (!this._buffer) {
+                this.autoplay = true;
+                this.load();
+            }
+        };
+        WebAudio.prototype.pause = function () {
+            if (this.playing) {
+                this._audioNode.stop();
+                this.currentTime += context.currentTime - this._startTime;
+                this.playing = false;
+            }
+        };
+        WebAudio.prototype.resume = function () {
+            if (!this.playing && WebAudio.enabled) {
+                this._play();
+            }
+        };
+        WebAudio.prototype.stop = function () {
+            if (this.playing) {
+                this._audioNode.stop(0);
+                this._audioNode.disconnect();
+                this.currentTime = 0;
+                this.playing = false;
+            }
+        };
+        WebAudio.prototype.setMute = function (muted) {
+            if (this.muted != muted) {
+                this.muted = muted;
+                this._gainNode.gain.value = muted ? 0 : this.volume;
+            }
+        };
+        WebAudio.prototype.setVolume = function (volume) {
+            if (this.volume != volume) {
+                this.volume = volume;
+                this._gainNode.gain.value = volume;
+            }
+        };
+        WebAudio.prototype.clone = function () {
+            var _this = this;
+            var cloned = new WebAudio(this.src);
+            if (this._isLoading) {
+                cloned._isLoading = true;
+                this.once('load', function () {
+                    cloned._onDecodeCompleted(_this._buffer);
+                });
+            }
+            else if (this.loaded) {
+                cloned._onDecodeCompleted(this._buffer);
+            }
+            return cloned;
+        };
+        WebAudio.prototype._handleEvent = function (e) {
+            var _this = this;
+            var type = e.type;
+            switch (type) {
+                case 'load':
+                    var request = e.target;
+                    request.onload = request.onprogress = request.onerror = null;
+                    context.decodeAudioData(request.response, function (buffer) { return _this._onDecodeCompleted(buffer); }, function () { return _this.emit('error'); });
+                    request = null;
+                    break;
+                case 'ended':
+                    if (this.playing) {
+                        this.currentTime = 0;
+                    }
+                    this.playing = false;
+                    this.emit('ended');
+                    if (this.loop) {
+                        this.play();
+                    }
+                    break;
+                default:
+                    this.emit(type, e);
+                    break;
+            }
+        };
+        WebAudio.prototype._onDecodeCompleted = function (buffer) {
+            this._buffer = buffer;
+            this._isLoading = false;
+            this.loaded = true;
+            this.duration = buffer.duration;
+            this.emit('load');
+            if (this.autoplay) {
+                this.play();
+            }
+        };
+        WebAudio.prototype._play = function () {
+            this._clearAudioNode();
+            var audioNode = context.createBufferSource();
+            if (!audioNode.start) {
+                audioNode.start = audioNode['noteOn'];
+                audioNode.stop = audioNode['noteOff'];
+            }
+            this._gainNode.gain.value = this.muted ? 0 : this.volume;
+            audioNode.buffer = this._buffer;
+            audioNode.onended = this._handleEvent;
+            audioNode.connect(this._gainNode);
+            audioNode.start(0, this.currentTime);
+            this._audioNode = audioNode;
+            this._startTime = context.currentTime;
+            this.playing = true;
+        };
+        WebAudio.prototype._clearAudioNode = function () {
+            var audioNode = this._audioNode;
+            if (audioNode) {
+                audioNode.onended = null;
+                audioNode.disconnect(0);
+                this._audioNode = null;
+            }
+        };
+        WebAudio.isSupported = AudioCtx != null;
+        WebAudio._initialized = false;
+        WebAudio._enabled = false;
+        return WebAudio;
+    })(canvas2d.EventEmitter);
+    canvas2d.WebAudio = WebAudio;
+    /**
+     * HTMLAudio
+     */
+    var HTMLAudio = (function (_super) {
+        __extends(HTMLAudio, _super);
+        function HTMLAudio(src) {
+            _super.call(this);
+            this.loop = false;
+            this.muted = false;
+            this.loaded = false;
+            this.volume = 1;
+            this.playing = false;
+            this.autoplay = false;
+            this.duration = 0;
+            this.currentTime = 0;
+            this.src = src;
+            this._handleEvent = this._handleEvent.bind(this);
+        }
+        HTMLAudio.prototype.load = function () {
+            if (this.loaded || this._isLoading) {
+                return;
+            }
+            var audioNode = this._audioNode = new Audio();
+            audioNode.addEventListener('canplaythrough', this._handleEvent, false);
+            audioNode.addEventListener('ended', this._handleEvent, false);
+            audioNode.addEventListener('error', this._handleEvent, false);
+            audioNode.preload = "auto";
+            audioNode['autobuffer'] = true;
+            audioNode.setAttribute('src', this.src);
+            audioNode.volume = this.volume;
+            audioNode.load();
+        };
+        HTMLAudio.prototype.play = function () {
+            if (!HTMLAudio.enabled) {
+                return;
+            }
+            if (this.playing) {
+                this.stop();
+            }
+            if (this.loaded) {
+                this._play();
+            }
+            else if (!this._isLoading) {
+                this.autoplay = true;
+                this.load();
+            }
+        };
+        HTMLAudio.prototype.pause = function () {
+            if (this.playing) {
+                this._audioNode.pause();
+                this.currentTime = this._audioNode.currentTime;
+                this.playing = false;
+            }
+        };
+        HTMLAudio.prototype.resume = function () {
+            if (!this.playing && HTMLAudio.enabled) {
+                this.play();
+            }
+        };
+        HTMLAudio.prototype.stop = function () {
+            if (this.playing) {
+                this._audioNode.pause();
+                this._audioNode.currentTime = this.currentTime = 0;
+                this.playing = false;
+            }
+        };
+        HTMLAudio.prototype.setMute = function (muted) {
+            if (this.muted != muted) {
+                this.muted = muted;
+                if (this._audioNode) {
+                    this._audioNode.volume = muted ? 0 : this.volume;
+                }
+            }
+        };
+        HTMLAudio.prototype.setVolume = function (volume) {
+            if (this.volume != volume) {
+                this.volume = volume;
+                if (this._audioNode) {
+                    this._audioNode.volume = volume;
+                }
+            }
+        };
+        HTMLAudio.prototype.clone = function () {
+            var cloned = new HTMLAudio(this.src);
+            if (this.loaded) {
+                cloned._audioNode = this._audioNode.cloneNode(true);
+                cloned.loaded = true;
+                cloned.duration = this.duration;
+            }
+            return cloned;
+        };
+        HTMLAudio.prototype._handleEvent = function (e) {
+            var type = e.type;
+            switch (type) {
+                case 'canplaythrough':
+                    e.target.removeEventListener('canplaythrough', this._handleEvent, false);
+                    this.loaded = true;
+                    this.duration = this._audioNode.duration;
+                    this.emit('load');
+                    if (this.autoplay) {
+                        this.play();
+                    }
+                    break;
+                case 'ended':
+                    this.playing = false;
+                    this.currentTime = 0;
+                    this.emit('ended');
+                    if (this.loop) {
+                        this.play();
+                    }
+                    break;
+            }
+        };
+        HTMLAudio.prototype._play = function () {
+            if (!this.playing) {
+                this._audioNode.volume = this.muted ? 0 : this.volume;
+                this._audioNode.play();
+                this.playing = true;
+            }
+        };
+        HTMLAudio.enabled = false;
+        return HTMLAudio;
+    })(canvas2d.EventEmitter);
+    canvas2d.HTMLAudio = HTMLAudio;
+})(canvas2d || (canvas2d = {}));
+/// <reference path="./audio.ts" />
 var canvas2d;
 (function (canvas2d) {
     var Sound;
     (function (Sound) {
-        var audios = {};
-        /**
-         * Could play sound
-         */
-        Sound.enabled = true;
-        /**
-         * Extension for media type
-         */
+        /** Could play sound */
+        Sound.enabled = false;
+        /** Extension for media type */
         Sound.extension = ".mp3";
-        /**
-         *  Supported types of the browser
-         */
+        /** Supported types of the browser */
         Sound.supportedType = {};
+        /** audio cache */
+        Sound._audioesCache = {};
+        var pausedAudioes = {};
+        /**
+         * Set global sound enabled or not.
+         * Call this function in a UI event callback when need to set enabled.
+         */
+        function setEnabled(value) {
+            Sound.enabled = value;
+            if (value) {
+                canvas2d.WebAudio.enabled = true;
+                canvas2d.HTMLAudio.enabled = true;
+                if (pausedAudioes) {
+                    Object.keys(pausedAudioes).forEach(function (id) {
+                        pausedAudioes[id].resume();
+                    });
+                    pausedAudioes = null;
+                }
+            }
+            else {
+                canvas2d.WebAudio.enabled = false;
+                canvas2d.HTMLAudio.enabled = false;
+                pausedAudioes = {};
+                Object.keys(Sound._audioesCache).forEach(function (name) {
+                    Sound._audioesCache[name].forEach(function (audio) {
+                        if (audio.playing) {
+                            audio.pause();
+                            pausedAudioes[canvas2d.util.uuid(audio)] = audio;
+                        }
+                    });
+                });
+            }
+        }
+        Sound.setEnabled = setEnabled;
         /**
          * Load a sound resource
          */
         function load(basePath, name, onComplete, channels) {
             if (channels === void 0) { channels = 1; }
-            var path = basePath + name + Sound.extension;
-            var audio = document.createElement("audio");
-            function onCanPlayThrough() {
-                this.removeEventListener('canplaythrough', onCanPlayThrough, false);
+            var src = basePath + name + Sound.extension;
+            var audio = canvas2d.WebAudio.isSupported ? new canvas2d.WebAudio(src) : new canvas2d.HTMLAudio(src);
+            audio.once('load', function () {
                 if (onComplete) {
                     onComplete();
                 }
-                var clone;
+                var cloned;
                 while (--channels > 0) {
-                    clone = audio.cloneNode(true);
-                    audios[name].push(clone);
+                    cloned = audio.clone();
+                    Sound._audioesCache[name].push(cloned);
                 }
-                console.log("Loaded: " + path);
+            });
+            audio.once('error', function (e) {
+                console.warn("canvas2d.Sound.load() Error: " + src + " could not be loaded.");
+                Sound._audioesCache[name] = null;
+            });
+            if (!Sound._audioesCache[name]) {
+                Sound._audioesCache[name] = [];
             }
-            function onError(e) {
-                console.warn("Error: " + path + " could not be loaded.");
-                audios[name] = null;
-            }
-            audio.addEventListener('canplaythrough', onCanPlayThrough, false);
-            audio.addEventListener('error', onError, false);
-            audio['preload'] = "auto";
-            audio['autobuffer'] = true;
-            audio.setAttribute('src', path);
-            audio.load();
-            audios[name] = [audio];
-            console.log("Start to load: ", path);
+            Sound._audioesCache[name].push(audio);
         }
         Sound.load = load;
         /**
          * Load multiple sound resources
          */
-        function loadList(basePath, resList, onAllCompleted, onProgress) {
-            var allCount = resList.length;
+        function loadList(basePath, resources, onAllCompleted, onProgress) {
+            var totalCount = resources.length;
             var endedCount = 0;
             var onCompleted = function () {
                 ++endedCount;
                 if (onProgress) {
-                    onProgress(endedCount / allCount);
+                    onProgress(endedCount / totalCount);
                 }
-                if (endedCount === allCount && onAllCompleted) {
+                if (endedCount === totalCount && onAllCompleted) {
                     onAllCompleted();
                 }
             };
-            resList.forEach(function (res) {
-                load(basePath, res.name, onCompleted, res.channels);
-            });
+            resources.forEach(function (res) { return load(basePath, res.name, onCompleted, res.channels); });
         }
         Sound.loadList = loadList;
-        function getPausedAudio(name, isGetAll) {
-            var list = audios[name];
+        function getAudio(name, returnList) {
+            var list = Sound._audioesCache[name];
             if (!list || !list.length) {
                 return null;
             }
@@ -658,11 +1062,8 @@ var canvas2d;
             var all = [];
             var audio;
             for (; audio = list[i]; i++) {
-                if (audio.ended || audio.paused) {
-                    if (audio.ended) {
-                        audio.currentTime = 0;
-                    }
-                    if (!isGetAll) {
+                if (!audio.playing) {
+                    if (!returnList) {
                         return audio;
                     }
                     all.push(audio);
@@ -670,47 +1071,22 @@ var canvas2d;
             }
             return all;
         }
-        Sound.getPausedAudio = getPausedAudio;
-        function getPlayingAudio(name, isGetAll) {
-            var list = audios[name];
-            if (!list || !list.length) {
-                return null;
-            }
-            var i = 0;
-            var all = [];
-            var audio;
-            for (; audio = list[i]; i++) {
-                if (!audio.paused) {
-                    if (!isGetAll) {
-                        return audio;
-                    }
-                    all.push(audio);
-                }
-            }
-            return all;
-        }
-        Sound.getPlayingAudio = getPlayingAudio;
+        Sound.getAudio = getAudio;
         /**
-         * Get audio list
+         * Get all audioes by name
          */
-        function getAudioListByName(name) {
-            return audios[name].slice();
+        function getAllAudioes(name) {
+            return Sound._audioesCache[name] && Sound._audioesCache[name].slice();
         }
-        Sound.getAudioListByName = getAudioListByName;
+        Sound.getAllAudioes = getAllAudioes;
         /**
          * Play sound by name
          */
         function play(name, loop) {
-            var audio = Sound.enabled && getPausedAudio(name);
+            if (loop === void 0) { loop = false; }
+            var audio = Sound.enabled && getAudio(name);
             if (audio) {
-                if (loop) {
-                    audio.loop = true;
-                    audio.addEventListener("ended", replay, false);
-                }
-                else {
-                    audio.loop = false;
-                    audio.removeEventListener("ended", replay, false);
-                }
+                audio.loop = loop;
                 audio.play();
             }
             return audio;
@@ -719,69 +1095,33 @@ var canvas2d;
         /**
          * Pause sound by name
          */
-        function pause(name, reset) {
-            var list = audios[name];
+        function pause(name) {
+            var list = getAudio(name, true);
             if (list) {
-                list.forEach(function (audio) {
-                    audio.pause();
-                    if (reset) {
-                        audio.currentTime = 0;
-                    }
-                });
+                list.forEach(function (audio) { return audio.pause(); });
             }
         }
         Sound.pause = pause;
         /**
+         * Stop sound by name
+         */
+        function stop(name) {
+            var list = Sound._audioesCache[name];
+            if (list) {
+                list.forEach(function (audio) { return audio.stop(); });
+            }
+        }
+        Sound.stop = stop;
+        /**
          * Resume audio by name
          */
-        function resume(name, reset) {
-            var list = audios[name];
+        function resume(name) {
+            var list = Sound._audioesCache[name];
             if (list) {
-                list.forEach(function (audio) {
-                    if (!audio.ended && audio.currentTime > 0) {
-                        if (reset) {
-                            audio.currentTime = 0;
-                        }
-                        audio.play();
-                    }
-                });
+                list.forEach(function (audio) { return !audio.playing && audio.currentTime > 0 && audio.resume(); });
             }
         }
         Sound.resume = resume;
-        /**
-         * Pause all audios
-         */
-        function pauseAll(reset) {
-            Object.keys(audios).forEach(function (name) {
-                pause(name, reset);
-            });
-        }
-        Sound.pauseAll = pauseAll;
-        /**
-         * Resume all played audio
-         */
-        function resumeAll(reset) {
-            Object.keys(audios).forEach(function (name) {
-                resume(name, reset);
-            });
-        }
-        Sound.resumeAll = resumeAll;
-        /**
-         * Stop the looping sound by name
-         */
-        function stopLoop(name) {
-            var list = getPlayingAudio(name, true);
-            if (list) {
-                list.forEach(function (audio) {
-                    audio.removeEventListener("ended", replay, false);
-                    audio.loop = false;
-                });
-            }
-        }
-        Sound.stopLoop = stopLoop;
-        function replay() {
-            this.play();
-        }
         function detectSupportedType() {
             var aud = new Audio();
             var reg = /maybe|probably/i;
@@ -913,91 +1253,9 @@ var canvas2d;
     })();
     canvas2d.Texture = Texture;
 })(canvas2d || (canvas2d = {}));
-/// <reference path="util.ts" />
-var canvas2d;
-(function (canvas2d) {
-    var counter = 0;
-    var prefix = '__CANVAS2D_ONCE__';
-    /**
-     * EventEmitter
-     */
-    var EventEmitter = (function () {
-        function EventEmitter() {
-        }
-        EventEmitter.prototype.addListener = function (type, listener) {
-            var id = canvas2d.util.uuid(this);
-            if (!EventEmitter._cache[id]) {
-                EventEmitter._cache[id] = {};
-            }
-            if (!EventEmitter._cache[id][type]) {
-                EventEmitter._cache[id][type] = [];
-            }
-            canvas2d.util.addArrayItem(EventEmitter._cache[id][type], listener);
-            return this;
-        };
-        EventEmitter.prototype.on = function (type, listener) {
-            return this.addListener(type, listener);
-        };
-        EventEmitter.prototype.once = function (type, listener) {
-            listener[prefix + canvas2d.util.uuid(this)] = true;
-            return this.addListener(type, listener);
-        };
-        EventEmitter.prototype.removeListener = function (type, listener) {
-            var cache = EventEmitter._cache[canvas2d.util.uuid(this)];
-            if (cache && cache[type]) {
-                canvas2d.util.removeArrayItem(cache[type], listener);
-                if (!cache[type].length) {
-                    delete cache[type];
-                }
-            }
-            return this;
-        };
-        EventEmitter.prototype.removeAllListeners = function (type) {
-            var id = canvas2d.util.uuid(this);
-            var cache = EventEmitter._cache[id];
-            if (cache) {
-                if (type == null) {
-                    EventEmitter[id] = null;
-                }
-                else {
-                    delete cache[type];
-                }
-            }
-            return this;
-        };
-        EventEmitter.prototype.emit = function (type) {
-            var _this = this;
-            var args = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                args[_i - 1] = arguments[_i];
-            }
-            var id = canvas2d.util.uuid(this);
-            var cache = EventEmitter._cache[id];
-            var onceKey = prefix + id;
-            if (cache && cache[type]) {
-                cache[type].slice().forEach(function (listener) {
-                    listener.apply(_this, args);
-                    if (listener[onceKey]) {
-                        _this.removeListener(type, listener);
-                        listener[onceKey] = null;
-                    }
-                });
-            }
-            return this;
-        };
-        EventEmitter._cache = {};
-        return EventEmitter;
-    })();
-    canvas2d.EventEmitter = EventEmitter;
-})(canvas2d || (canvas2d = {}));
 /// <reference path="action.ts" />
 /// <reference path="texture.ts" />
 /// <reference path="eventemitter.ts" />
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
 var canvas2d;
 (function (canvas2d) {
     (function (AlignType) {

@@ -11,22 +11,27 @@ namespace canvas2d {
     export class WebAudio extends EventEmitter {
 
         static isSupported: boolean = AudioCtx != null;
-        static enabled: boolean = false;
-        static enable() {
-            if (!this.enabled && this.isSupported) {
+
+        private static _initialized: boolean = false;
+        private static _enabled: boolean = false;
+
+        static set enabled(enabled: boolean) {
+            if (enabled && this.isSupported && !this._initialized) {
                 let source = context.createBufferSource();
                 source.buffer = context.createBuffer(1, 1, 22050);
                 source.connect(context.destination);
                 source.start ? source.start(0, 0, 0) : source['noteOn'](0, 0, 0);
-                this.enabled = true;
+                this._initialized = true;
             }
-            return this.enabled;
+            this._enabled = enabled;
+        }
+        static get enabled() {
+            return this._enabled;
         }
 
         private _gainNode: GainNode;
         private _audioNode: AudioBufferSourceNode;
         private _buffer: AudioBuffer;
-        private _offset: number = 0;
         private _startTime: number = 0;
         private _isLoading: boolean;
 
@@ -34,16 +39,18 @@ namespace canvas2d {
         loop: boolean = false;
         muted: boolean = false;
         loaded: boolean = false;
-        volume: number = 0;
+        volume: number = 1;
         playing: boolean = false;
         autoplay: boolean = false;
         duration: number = 0;
+        currentTime: number = 0;
 
         constructor(src: string) {
             super();
 
             this.src = src;
-            this._gainNode = context.createGain ? context.createGain : context['createGainNode']();
+            this._handleEvent = this._handleEvent.bind(this);
+            this._gainNode = context.createGain ? context.createGain() : context['createGainNode']();
             this._gainNode.connect(context.destination);
         }
 
@@ -51,16 +58,21 @@ namespace canvas2d {
             if (this._isLoading || this.loaded) {
                 return;
             }
-            
+
             let request = new XMLHttpRequest();
-            request.onprogress = request.onload = request.onerror = (e) => this._handleEvent(e);
+            request.onprogress = request.onload = request.onerror = this._handleEvent;
             request.open('GET', this.src, true);
-            request.responseText = 'arraybuffer';
+            request.responseType = 'arraybuffer';
             request.send();
+
             this._isLoading = true;
         }
 
         play() {
+            if (!WebAudio.enabled) {
+                return;
+            }
+
             if (this.playing) {
                 this.stop();
             }
@@ -76,14 +88,14 @@ namespace canvas2d {
 
         pause() {
             if (this.playing) {
-                this._audioNode.stop(0);
-                this._offset += context.currentTime - this._startTime;
+                this._audioNode.stop();
+                this.currentTime += context.currentTime - this._startTime;
                 this.playing = false;
             }
         }
 
         resume() {
-            if (!this.playing) {
+            if (!this.playing && WebAudio.enabled) {
                 this._play();
             }
         }
@@ -92,7 +104,7 @@ namespace canvas2d {
             if (this.playing) {
                 this._audioNode.stop(0);
                 this._audioNode.disconnect();
-                this._offset = 0;
+                this.currentTime = 0;
                 this.playing = false;
             }
         }
@@ -112,7 +124,19 @@ namespace canvas2d {
         }
 
         clone() {
+            let cloned = new WebAudio(this.src);
 
+            if (this._isLoading) {
+                cloned._isLoading = true;
+                this.once('load', () => {
+                    cloned._onDecodeCompleted(this._buffer);
+                });
+            }
+            else if (this.loaded) {
+                cloned._onDecodeCompleted(this._buffer);
+            }
+
+            return cloned;
         }
 
         private _handleEvent(e: Event) {
@@ -125,10 +149,13 @@ namespace canvas2d {
                     request = null;
                     break;
                 case 'ended':
+                    if (this.playing) {
+                        this.currentTime = 0;
+                    }
                     this.playing = false;
                     this.emit('ended');
                     if (this.loop) {
-                        this._play();
+                        this.play();
                     }
                     break;
                 default:
@@ -138,11 +165,13 @@ namespace canvas2d {
         }
 
         private _onDecodeCompleted(buffer: AudioBuffer) {
+            this._buffer = buffer;
+            this._isLoading = false;
             this.loaded = true;
             this.duration = buffer.duration;
             this.emit('load');
             if (this.autoplay) {
-                this._play();
+                this.play();
             }
         }
 
@@ -159,9 +188,9 @@ namespace canvas2d {
             this._gainNode.gain.value = this.muted ? 0 : this.volume;
 
             audioNode.buffer = this._buffer;
-            audioNode.onended = e => this._handleEvent(e);
+            audioNode.onended = this._handleEvent;
             audioNode.connect(this._gainNode);
-            audioNode.start(0, this._offset);
+            audioNode.start(0, this.currentTime);
 
             this._audioNode = audioNode;
             this._startTime = context.currentTime;
@@ -183,34 +212,35 @@ namespace canvas2d {
      * HTMLAudio
      */
     export class HTMLAudio extends EventEmitter {
-        
+
+        static enabled: boolean = false;
+
         private _audioNode: HTMLAudioElement;
         private _isLoading: boolean;
-        
+
         src: string;
         loop: boolean = false;
         muted: boolean = false;
         loaded: boolean = false;
-        volume: number = 0;
+        volume: number = 1;
         playing: boolean = false;
         autoplay: boolean = false;
         duration: number = 0;
-        
+        currentTime: number = 0;
+
         constructor(src: string) {
             super();
-            
+
             this.src = src;
-            this.muted = false;
             this._handleEvent = this._handleEvent.bind(this);
         }
-        
+
         load() {
             if (this.loaded || this._isLoading) {
                 return;
             }
-            
-            let audioNode = new Audio();
-            audioNode.oncanplaythrough = audioNode.onerror = (e) => this._handleEvent(e);
+
+            let audioNode = this._audioNode = new Audio();
             audioNode.addEventListener('canplaythrough', this._handleEvent, false);
             audioNode.addEventListener('ended', this._handleEvent, false);
             audioNode.addEventListener('error', this._handleEvent, false);
@@ -221,50 +251,109 @@ namespace canvas2d {
             audioNode.volume = this.volume;
             audioNode.load();
         }
-        
+
         play() {
-            
+            if (!HTMLAudio.enabled) {
+                return;
+            }
+            if (this.playing) {
+                this.stop();
+            }
+
+            if (this.loaded) {
+                this._play();
+            }
+            else if (!this._isLoading) {
+                this.autoplay = true;
+                this.load();
+            }
         }
-        
+
         pause() {
-            
+            if (this.playing) {
+                this._audioNode.pause();
+                this.currentTime = this._audioNode.currentTime;
+                this.playing = false;
+            }
         }
-        
+
         resume() {
-            
+            if (!this.playing && HTMLAudio.enabled) {
+                this.play();
+            }
         }
-        
+
         stop() {
-            
+            if (this.playing) {
+                this._audioNode.pause();
+                this._audioNode.currentTime = this.currentTime = 0;
+                this.playing = false;
+            }
         }
-        
+
+        setMute(muted: boolean) {
+            if (this.muted != muted) {
+                this.muted = muted;
+                if (this._audioNode) {
+                    this._audioNode.volume = muted ? 0 : this.volume;
+                }
+            }
+        }
+
+        setVolume(volume: number) {
+            if (this.volume != volume) {
+                this.volume = volume;
+                if (this._audioNode) {
+                    this._audioNode.volume = volume;
+                }
+            }
+        }
+
         clone() {
-            
+            let cloned = new HTMLAudio(this.src);
+
+            if (this.loaded) {
+                cloned._audioNode = <HTMLAudioElement>this._audioNode.cloneNode(true);
+                cloned.loaded = true;
+                cloned.duration = this.duration;
+            }
+
+            return cloned;
         }
-        
+
         private _handleEvent(e: Event) {
             let type = e.type;
+
             switch (type) {
                 case 'canplaythrough':
                     e.target.removeEventListener('canplaythrough', this._handleEvent, false);
+
                     this.loaded = true;
                     this.duration = this._audioNode.duration;
                     this.emit('load');
+
                     if (this.autoplay) {
-                        this._play();
+                        this.play();
                     }
                     break;
                 case 'ended':
                     this.playing = false;
+                    this.currentTime = 0;
                     this.emit('ended');
-                    break;
-                default:
+
+                    if (this.loop) {
+                        this.play();
+                    }
                     break;
             }
         }
-        
+
         private _play() {
-            
+            if (!this.playing) {
+                this._audioNode.volume = this.muted ? 0 : this.volume;
+                this._audioNode.play();
+                this.playing = true;
+            }
         }
     }
 }

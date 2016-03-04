@@ -1,116 +1,129 @@
-﻿/**
- * Simple sound manager
- */
+﻿/// <reference path="./audio.ts" />
+
 namespace canvas2d.Sound {
-
-    var audios: { [index: string]: Array<HTMLAudioElement> } = {};
-
-    /**
-     * Could play sound
-     */
-    export var enabled: boolean = true;
-    
-    /**
-     * Extension for media type
-     */
-    export var extension: string = ".mp3";
-    
-    /**
-     *  Supported types of the browser
-     */
-    export var supportedType: { [index: string]: boolean } = {};
 
     export interface ISoundResource {
         name: string;
         channels?: number;
     }
 
+    /** Could play sound */
+    export var enabled: boolean = false;
+    
+    /** Extension for media type */
+    export var extension: string = ".mp3";
+    
+    /** Supported types of the browser */
+    export var supportedType: { [index: string]: boolean } = {};
+    
+    /** audio cache */
+    export var _audioesCache: { [index: string]: Array<WebAudio | HTMLAudio> } = {};
+
+    var pausedAudioes: { [id: number]: WebAudio | HTMLAudio } = {};
+    
+    /**
+     * Set global sound enabled or not.
+     * Call this function in a UI event callback when need to set enabled.
+     */
+    export function setEnabled(value: boolean) {
+        Sound.enabled = value;
+
+        if (value) {
+            WebAudio.enabled = true;
+            HTMLAudio.enabled = true;
+            
+            if (pausedAudioes) {
+                Object.keys(pausedAudioes).forEach(id => {
+                    pausedAudioes[id].resume();
+                });
+                pausedAudioes = null;
+            }
+        }
+        else {
+            WebAudio.enabled = false;
+            HTMLAudio.enabled = false;
+            
+            pausedAudioes = {};
+            Object.keys(_audioesCache).forEach(name => {
+                _audioesCache[name].forEach(audio => {
+                    if (audio.playing) {
+                        audio.pause();
+                        pausedAudioes[util.uuid(audio)] = audio;
+                    }
+                });
+            });
+        }
+    }
+
     /**
      * Load a sound resource
      */
     export function load(basePath: string, name: string, onComplete: () => any, channels = 1) {
-        var path: string = basePath + name + extension;
-        var audio: HTMLAudioElement = document.createElement("audio");
+        var src: string = basePath + name + extension;
+        var audio = WebAudio.isSupported ? new WebAudio(src) : new HTMLAudio(src);
 
-        function onCanPlayThrough() {
-            this.removeEventListener('canplaythrough', onCanPlayThrough, false);
-
+        audio.once('load', () => {
             if (onComplete) {
                 onComplete();
             }
 
-            var clone;
+            var cloned;
             while (--channels > 0) {
-                clone = audio.cloneNode(true);
-                audios[name].push(clone);
+                cloned = audio.clone();
+                _audioesCache[name].push(cloned);
             }
+        });
+        audio.once('error', (e: ErrorEvent) => {
+            console.warn("canvas2d.Sound.load() Error: " + src + " could not be loaded.");
+            _audioesCache[name] = null;
+        });
 
-            console.log("Loaded: " + path);
+        if (!_audioesCache[name]) {
+            _audioesCache[name] = [];
         }
-
-        function onError(e: ErrorEvent) {
-            console.warn("Error: " + path + " could not be loaded.");
-            audios[name] = null;
-        }
-
-        audio.addEventListener('canplaythrough', onCanPlayThrough, false);
-        audio.addEventListener('error', onError, false);
-
-        audio['preload'] = "auto";
-        audio['autobuffer'] = true;
-        audio.setAttribute('src', path);
-        audio.load();
-        audios[name] = [audio];
-
-        console.log("Start to load: ", path);
+        _audioesCache[name].push(audio);
     }
 
     /**
      * Load multiple sound resources
      */
-    export function loadList(basePath: string, resList: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any) {
-        let allCount = resList.length;
+    export function loadList(basePath: string, resources: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any) {
+        let totalCount = resources.length;
         let endedCount = 0;
 
         let onCompleted = () => {
             ++endedCount;
-            
-            if (onProgress) {
-                onProgress(endedCount / allCount);
-            }
 
-            if (endedCount === allCount && onAllCompleted) {
+            if (onProgress) {
+                onProgress(endedCount / totalCount);
+            }
+            if (endedCount === totalCount && onAllCompleted) {
                 onAllCompleted();
             }
         }
 
-        resList.forEach((res) => {
-            load(basePath, res.name, onCompleted, res.channels);
-        });
+        resources.forEach(res => load(basePath, res.name, onCompleted, res.channels));
     }
 
     /**
      * Get paused audio instance by resource name.
      */
-    export function getPausedAudio(name: string): HTMLAudioElement;
-    export function getPausedAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
-    export function getPausedAudio(name: string, isGetAll?: boolean): any {
-        var list: any = audios[name];
+    export function getAudio(name: string): WebAudio | HTMLAudio;
+    export function getAudio(name: string, returnList: boolean): Array<WebAudio | HTMLAudio>;
+    export function getAudio(name: string, returnList?: boolean): any {
+        var list = _audioesCache[name];
 
         if (!list || !list.length) {
             return null;
         }
 
         var i: number = 0;
-        var all: HTMLAudioElement[] = [];
-        var audio: HTMLAudioElement;
+        var all: Array<WebAudio | HTMLAudio> = [];
+        var audio: WebAudio | HTMLAudio;
 
         for (; audio = list[i]; i++) {
-            if (audio.ended || audio.paused) {
-                if (audio.ended) {
-                    audio.currentTime = 0;
-                }
-                if (!isGetAll) {
+            if (!audio.playing) {
+                if (!returnList) {
                     return audio;
                 }
                 all.push(audio);
@@ -121,55 +134,20 @@ namespace canvas2d.Sound {
     }
     
     /**
-     * Get playing audio instance by resource name.
+     * Get all audioes by name
      */
-    export function getPlayingAudio(name: string): HTMLAudioElement;
-    export function getPlayingAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
-    export function getPlayingAudio(name: string, isGetAll?: boolean): any {
-        var list: any = audios[name];
-
-        if (!list || !list.length) {
-            return null;
-        }
-
-        var i: number = 0;
-        var all: HTMLAudioElement[] = [];
-        var audio: HTMLAudioElement;
-
-        for (; audio = list[i]; i++) {
-            if (!audio.paused) {
-                if (!isGetAll) {
-                    return audio;
-                }
-                all.push(audio);
-            }
-        }
-
-        return all;
-    }
-    
-    /**
-     * Get audio list
-     */
-    export function getAudioListByName(name: string): HTMLAudioElement[] {
-        return audios[name].slice();
+    export function getAllAudioes(name: string): Array<WebAudio | HTMLAudio> {
+        return _audioesCache[name] && _audioesCache[name].slice();
     }
 
     /**
      * Play sound by name
      */
-    export function play(name: string, loop?: boolean): HTMLAudioElement {
-        var audio = enabled && getPausedAudio(name);
+    export function play(name: string, loop: boolean = false): WebAudio | HTMLAudio {
+        var audio = enabled && getAudio(name);
 
         if (audio) {
-            if (loop) {
-                audio.loop = true;
-                audio.addEventListener("ended", replay, false);
-            }
-            else {
-                audio.loop = false;
-                audio.removeEventListener("ended", replay, false);
-            }
+            audio.loop = loop;
             audio.play();
         }
         return audio;
@@ -178,70 +156,33 @@ namespace canvas2d.Sound {
     /**
      * Pause sound by name
      */
-    export function pause(name: string, reset?: boolean): void {
-        let list = audios[name];
+    export function pause(name: string): void {
+        let list = getAudio(name, true);
 
         if (list) {
-            list.forEach(audio => {
-                audio.pause();
-                if (reset) {
-                    audio.currentTime = 0;
-                }
-            });
+            list.forEach(audio => audio.pause());
+        }
+    }
+    
+    /**
+     * Stop sound by name
+     */
+    export function stop(name: string): void {
+        let list = _audioesCache[name];
+
+        if (list) {
+            list.forEach(audio => audio.stop());
         }
     }
     
     /**
      * Resume audio by name
      */
-    export function resume(name: string, reset?: boolean): void {
-        let list = audios[name];
+    export function resume(name: string): void {
+        let list = _audioesCache[name];
         if (list) {
-            list.forEach(audio => {
-                if (!audio.ended && audio.currentTime > 0) {
-                    if (reset) {
-                        audio.currentTime = 0;
-                    }
-                    audio.play();
-                }
-            });
+            list.forEach(audio => !audio.playing && audio.currentTime > 0 && audio.resume());
         }
-    }
-    
-    /**
-     * Pause all audios
-     */
-    export function pauseAll(reset?: boolean) {
-        Object.keys(audios).forEach(name => {
-            pause(name, reset);
-        });
-    }
-    
-    /**
-     * Resume all played audio
-     */
-    export function resumeAll(reset?: boolean) {
-        Object.keys(audios).forEach(name => {
-            resume(name, reset);
-        });
-    }
-
-    /**
-     * Stop the looping sound by name
-     */
-    export function stopLoop(name: string): void {
-        var list = getPlayingAudio(name, true);
-
-        if (list) {
-            list.forEach(audio => {
-                audio.removeEventListener("ended", replay, false);
-                audio.loop = false;
-            });
-        }
-    }
-
-    function replay(): void {
-        this.play();
     }
 
     function detectSupportedType() {

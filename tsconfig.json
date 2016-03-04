@@ -18,6 +18,7 @@
         "src/sprite.ts",
         "src/stage.ts",
         "src/textlabel.ts",
-        "src/eventemitter.ts"
+        "src/eventemitter.ts",
+        "src/audio.ts"
     ]
 }

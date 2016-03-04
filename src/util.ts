@@ -1,13 +1,13 @@
 namespace canvas2d.util {
 
-    var uuidKey = '__CANVAS2D_UUID__';
-    var uuidCounter = 0;
+    var key = '__CANVAS2D_UUID__';
+    var counter = 0;
 
     export function uuid(target: any) {
-        if (typeof target[uuidKey] === 'undefined') {
-            target[uuidKey] = uuidCounter++;
+        if (typeof target[key] === 'undefined') {
+            Object.defineProperty(target, key, { value: counter++ });
         }
-        return target[uuidKey];
+        return target[key];
     }
 
     export function addArrayItem(array: any[], item: any) {

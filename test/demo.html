@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Demo</title>
     <script src="../build/canvas2d.js"></script>
     <script src="../build/canvas2d-template.js"></script>
@@ -28,8 +29,10 @@
             
             canvas2d.Stage.init(cvs, 320, 480, canvas2d.Stage.ScaleMode.SHOW_ALL, true);
             canvas2d.Stage.mouseEnabled = true;
-            // canvas2d.Stage.touchEnabled = true;
+            canvas2d.Stage.touchEnabled = true;
             canvas2d.Stage.start();
+            
+            canvas2d.Sound.loadList('', [{channels:4, name: 'bomb'},{channels:4, name: 'achievement'}, {channels:1, name: 'bg'}]);
             
             var innerBox = new canvas2d.Sprite({
                 width: 100,
@@ -40,6 +43,25 @@
                 onclick: function(e) {
                     // e.cancelBubble = true;
                     console.log('inner');
+                    
+                    canvas2d.Sound.setEnabled(true);
+                    
+                    setTimeout(function () {
+                        a = canvas2d.Sound.play('bomb');
+                        b = canvas2d.Sound.getAudio('achievement');
+                        a.on('ended', function () {
+                            // console.log(222);
+                            b.play();
+                            // canvas2d.Sound.play('bomb');
+                        });
+                        b.on('ended', function () {
+                            // console.log(111);
+                            a.play();
+                            // canvas2d.Sound.play('achievement');
+                        });
+                        // a.play();
+                        // canvas2d.Sound.play('bg');
+                    }, 1000);
                 }
             });
             var outerBox = new canvas2d.Sprite({
@@ -48,13 +70,13 @@
                 alignX: canvas2d.AlignType.CENTER,
                 alignY: canvas2d.AlignType.CENTER,
                 border: {width: 1, color: '#fff'},
-                onmousemoved: function(e) {
-                    console.log('outer')
+                onclick: function(e) {
+                    canvas2d.Sound.setEnabled(!canvas2d.Sound.enabled);
                 }
             });
             
             canvas2d.Stage.addChild(outerBox);
-            outerBox.addChild(innerBox);
+            canvas2d.Stage.addChild(innerBox);
             
             // var container = new canvas2d.Sprite({
             //     width: 80,

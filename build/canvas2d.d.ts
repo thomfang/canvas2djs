@@ -131,28 +131,111 @@ declare namespace canvas2d {
         stop(): void;
     }
 }
-/**
- * Simple sound manager
- */
+declare namespace canvas2d {
+    interface IEventListener {
+        (...args: any[]): any;
+    }
+    /**
+     * EventEmitter
+     */
+    class EventEmitter {
+        private static _cache;
+        addListener(type: string, listener: IEventListener): this;
+        on(type: string, listener: IEventListener): this;
+        once(type: string, listener: IEventListener): this;
+        removeListener(type: string, listener: IEventListener): this;
+        removeAllListeners(type?: string): this;
+        emit(type: string, ...args: any[]): this;
+    }
+}
+declare namespace canvas2d {
+    /**
+     * WebAudio
+     */
+    class WebAudio extends EventEmitter {
+        static isSupported: boolean;
+        private static _initialized;
+        private static _enabled;
+        static enabled: boolean;
+        private _gainNode;
+        private _audioNode;
+        private _buffer;
+        private _startTime;
+        private _isLoading;
+        src: string;
+        loop: boolean;
+        muted: boolean;
+        loaded: boolean;
+        volume: number;
+        playing: boolean;
+        autoplay: boolean;
+        duration: number;
+        currentTime: number;
+        constructor(src: string);
+        load(): void;
+        play(): void;
+        pause(): void;
+        resume(): void;
+        stop(): void;
+        setMute(muted: boolean): void;
+        setVolume(volume: number): void;
+        clone(): WebAudio;
+        private _handleEvent(e);
+        private _onDecodeCompleted(buffer);
+        private _play();
+        private _clearAudioNode();
+    }
+    /**
+     * HTMLAudio
+     */
+    class HTMLAudio extends EventEmitter {
+        static enabled: boolean;
+        private _audioNode;
+        private _isLoading;
+        src: string;
+        loop: boolean;
+        muted: boolean;
+        loaded: boolean;
+        volume: number;
+        playing: boolean;
+        autoplay: boolean;
+        duration: number;
+        currentTime: number;
+        constructor(src: string);
+        load(): void;
+        play(): void;
+        pause(): void;
+        resume(): void;
+        stop(): void;
+        setMute(muted: boolean): void;
+        setVolume(volume: number): void;
+        clone(): HTMLAudio;
+        private _handleEvent(e);
+        private _play();
+    }
+}
 declare namespace canvas2d.Sound {
-    /**
-     * Could play sound
-     */
-    var enabled: boolean;
-    /**
-     * Extension for media type
-     */
-    var extension: string;
-    /**
-     *  Supported types of the browser
-     */
-    var supportedType: {
-        [index: string]: boolean;
-    };
     interface ISoundResource {
         name: string;
         channels?: number;
     }
+    /** Could play sound */
+    var enabled: boolean;
+    /** Extension for media type */
+    var extension: string;
+    /** Supported types of the browser */
+    var supportedType: {
+        [index: string]: boolean;
+    };
+    /** audio cache */
+    var _audioesCache: {
+        [index: string]: Array<WebAudio | HTMLAudio>;
+    };
+    /**
+     * Set global sound enabled or not.
+     * Call this function in a UI event callback when need to set enabled.
+     */
+    function setEnabled(value: boolean): void;
     /**
      * Load a sound resource
      */
@@ -160,45 +243,32 @@ declare namespace canvas2d.Sound {
     /**
      * Load multiple sound resources
      */
-    function loadList(basePath: string, resList: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
+    function loadList(basePath: string, resources: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
     /**
      * Get paused audio instance by resource name.
      */
-    function getPausedAudio(name: string): HTMLAudioElement;
-    function getPausedAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
+    function getAudio(name: string): WebAudio | HTMLAudio;
+    function getAudio(name: string, returnList: boolean): Array<WebAudio | HTMLAudio>;
     /**
-     * Get playing audio instance by resource name.
+     * Get all audioes by name
      */
-    function getPlayingAudio(name: string): HTMLAudioElement;
-    function getPlayingAudio(name: string, isGetAll: boolean): HTMLAudioElement[];
-    /**
-     * Get audio list
-     */
-    function getAudioListByName(name: string): HTMLAudioElement[];
+    function getAllAudioes(name: string): Array<WebAudio | HTMLAudio>;
     /**
      * Play sound by name
      */
-    function play(name: string, loop?: boolean): HTMLAudioElement;
+    function play(name: string, loop?: boolean): WebAudio | HTMLAudio;
     /**
      * Pause sound by name
      */
-    function pause(name: string, reset?: boolean): void;
+    function pause(name: string): void;
+    /**
+     * Stop sound by name
+     */
+    function stop(name: string): void;
     /**
      * Resume audio by name
      */
-    function resume(name: string, reset?: boolean): void;
-    /**
-     * Pause all audios
-     */
-    function pauseAll(reset?: boolean): void;
-    /**
-     * Resume all played audio
-     */
-    function resumeAll(reset?: boolean): void;
-    /**
-     * Stop the looping sound by name
-     */
-    function stopLoop(name: string): void;
+    function resume(name: string): void;
 }
 declare namespace canvas2d {
     interface IRect {
@@ -239,23 +309,6 @@ declare namespace canvas2d {
         }) => any): void;
         private _createByPath(path, rect?);
         private _createByImage(image, rect?);
-    }
-}
-declare namespace canvas2d {
-    interface IEventListener {
-        (...args: any[]): any;
-    }
-    /**
-     * EventEmitter
-     */
-    class EventEmitter {
-        private static _cache;
-        addListener(type: string, listener: IEventListener): this;
-        on(type: string, listener: IEventListener): this;
-        once(type: string, listener: IEventListener): this;
-        removeListener(type: string, listener: IEventListener): this;
-        removeAllListeners(type?: string): this;
-        emit(type: string, ...args: any[]): this;
     }
 }
 declare namespace canvas2d {
