@@ -152,7 +152,7 @@ namespace canvas2d.Sound {
      * Get audio list
      */
     export function getAudioListByName(name: string): HTMLAudioElement[] {
-        return audios[name];
+        return audios[name].slice();
     }
 
     /**

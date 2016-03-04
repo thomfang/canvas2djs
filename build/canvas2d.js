@@ -694,7 +694,7 @@ var canvas2d;
          * Get audio list
          */
         function getAudioListByName(name) {
-            return audios[name];
+            return audios[name].slice();
         }
         Sound.getAudioListByName = getAudioListByName;
         /**
@@ -1451,11 +1451,14 @@ var canvas2d;
         var bufferCanvas;
         var bufferContext;
         var stageScaleMode;
+        var autoAdjustCanvasSize = false;
         var isUseInnerTimer = true;
         /**
          * FPS value
          */
         Stage.fps = 30;
+        Stage.width = 0;
+        Stage.height = 0;
         /**
          * Game running state
          */
@@ -1482,7 +1485,10 @@ var canvas2d;
             ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
         })(Stage.ScaleMode || (Stage.ScaleMode = {}));
         var ScaleMode = Stage.ScaleMode;
-        Stage.autoAdjustCanvasSize = false;
+        /**
+         * Scale value for adjusting the resolution design
+         */
+        Stage._scale = 1;
         function adjustCanvasSize() {
             if (!Stage.canvas || !Stage.canvas.parentNode) {
                 return;
@@ -1537,7 +1543,7 @@ var canvas2d;
                     deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
                     break;
                 default:
-                    throw new Error('Unknow stage scale mode "' + stageScaleMode + '"');
+                    throw new Error("Unknow stage scale mode \"" + stageScaleMode + "\"");
             }
             style.width = width + 'px';
             style.height = height + 'px';
@@ -1577,13 +1583,13 @@ var canvas2d;
         }
         Stage.init = init;
         function setAutoAdjustCanvasSize(value) {
-            if (value && !Stage.autoAdjustCanvasSize) {
-                Stage.autoAdjustCanvasSize = true;
+            if (value && !autoAdjustCanvasSize) {
+                autoAdjustCanvasSize = true;
                 adjustCanvasSize();
                 window.addEventListener("resize", adjustCanvasSize);
             }
-            else if (!value && Stage.autoAdjustCanvasSize) {
-                Stage.autoAdjustCanvasSize = false;
+            else if (!value && autoAdjustCanvasSize) {
+                autoAdjustCanvasSize = false;
                 window.removeEventListener("resize", adjustCanvasSize);
             }
         }

@@ -511,7 +511,6 @@ declare namespace canvas2d.Stage {
      * Scale value for adjusting the resolution design
      */
     var _scale: number;
-    var autoAdjustCanvasSize: boolean;
     function adjustCanvasSize(): void;
     /**
      * Initialize the stage

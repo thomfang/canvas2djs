@@ -9,15 +9,15 @@ namespace canvas2d.Stage {
     var bufferCanvas: HTMLCanvasElement;
     var bufferContext: CanvasRenderingContext2D;
     var stageScaleMode: ScaleMode;
-
+    var autoAdjustCanvasSize = false;
     var isUseInnerTimer = true;
 
     /**
      * FPS value
      */
     export var fps: number = 30;
-    export var width: number;
-    export var height: number;
+    export var width: number = 0;
+    export var height: number = 0;
     
     /**
      * Game running state
@@ -72,9 +72,7 @@ namespace canvas2d.Stage {
     /**
      * Scale value for adjusting the resolution design
      */
-    export var _scale: number;
-
-    export var autoAdjustCanvasSize = false;
+    export var _scale: number = 1;
 
     export function adjustCanvasSize(): void {
         if (!canvas || !canvas.parentNode) {
@@ -132,7 +130,7 @@ namespace canvas2d.Stage {
                 deltaWidth = (Stage.width - device.width / scale) * 0.5 | 0;
                 break;
             default:
-                throw new Error('Unknow stage scale mode "' + stageScaleMode + '"');
+                throw new Error(`Unknow stage scale mode "${stageScaleMode}"`);
         }
 
         style.width = width + 'px';
