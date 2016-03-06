@@ -50,17 +50,11 @@
                         a = canvas2d.Sound.play('bomb');
                         b = canvas2d.Sound.getAudio('achievement');
                         a.on('ended', function () {
-                            // console.log(222);
                             b.play();
-                            // canvas2d.Sound.play('bomb');
                         });
                         b.on('ended', function () {
-                            // console.log(111);
                             a.play();
-                            // canvas2d.Sound.play('achievement');
                         });
-                        // a.play();
-                        // canvas2d.Sound.play('bg');
                     }, 1000);
                 }
             });
