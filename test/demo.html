@@ -27,72 +27,72 @@
     <script>
         var cvs = document.getElementById('cvs');
             
-            canvas2d.Stage.init(cvs, 320, 480, canvas2d.Stage.ScaleMode.SHOW_ALL, true);
+            canvas2d.Stage.init(cvs, 320, 480, canvas2d.ScaleMode.SHOW_ALL, true);
             canvas2d.Stage.mouseEnabled = true;
             canvas2d.Stage.touchEnabled = true;
             canvas2d.Stage.start();
             
-            canvas2d.Sound.loadList('', [{channels:4, name: 'bomb'},{channels:4, name: 'achievement'}, {channels:1, name: 'bg'}]);
+            // canvas2d.Sound.loadList('', [{channels:4, name: 'bomb'},{channels:4, name: 'achievement'}, {channels:1, name: 'bg'}]);
             
-            var innerBox = new canvas2d.Sprite({
-                width: 100,
-                height: 100,
-                alignX: canvas2d.AlignType.CENTER,
-                alignY: canvas2d.AlignType.CENTER,
-                border: {width: 1, color: 'red'},
-                onclick: function(e) {
-                    // e.cancelBubble = true;
-                    console.log('inner');
-                    
-                    canvas2d.Sound.setEnabled(true);
-                    
-                    setTimeout(function () {
-                        a = canvas2d.Sound.play('bomb');
-                        b = canvas2d.Sound.getAudio('achievement');
-                        a.on('ended', function () {
-                            b.play();
-                        });
-                        b.on('ended', function () {
-                            a.play();
-                        });
-                    }, 1000);
-                }
-            });
-            var outerBox = new canvas2d.Sprite({
-                width: 200,
-                height: 200,
-                alignX: canvas2d.AlignType.CENTER,
-                alignY: canvas2d.AlignType.CENTER,
-                border: {width: 1, color: '#fff'},
-                onclick: function(e) {
-                    canvas2d.Sound.setEnabled(!canvas2d.Sound.enabled);
-                }
-            });
-            
-            canvas2d.Stage.addChild(outerBox);
-            canvas2d.Stage.addChild(innerBox);
-            
-            // var container = new canvas2d.Sprite({
-            //     width: 80,
-            //     height: 20,
-            //     bgColor: 'red',
+            // var innerBox = new canvas2d.Sprite({
+            //     width: 100,
+            //     height: 100,
             //     alignX: canvas2d.AlignType.CENTER,
-            //     y: 200
+            //     alignY: canvas2d.AlignType.CENTER,
+            //     border: {width: 1, color: 'red'},
+            //     onclick: function(e) {
+            //         // e.cancelBubble = true;
+            //         console.log('inner');
+                    
+            //         canvas2d.Sound.enabled = true;
+                    
+            //         setTimeout(function () {
+            //             a = canvas2d.Sound.play('bomb');
+            //             b = canvas2d.Sound.getAudio('achievement');
+            //             a.on('ended', function () {
+            //                 b.play();
+            //             });
+            //             b.on('ended', function () {
+            //                 a.play();
+            //             });
+            //         }, 1000);
+            //     }
             // });
-            // var label = new canvas2d.TextLabel({
-            //     text: '+20攻击力',
-            //     fontName:'arial',
-            //     fontSize: 12,
-            //     fontColor: '#0f0',
-            //     stroke: {
-            //         color: '#000',
-            //         width: 1
-            //     },
+            // var outerBox = new canvas2d.Sprite({
+            //     width: 200,
+            //     height: 200,
             //     alignX: canvas2d.AlignType.CENTER,
-            //     alignY: canvas2d.AlignType.CENTER
+            //     alignY: canvas2d.AlignType.CENTER,
+            //     border: {width: 1, color: '#fff'},
+            //     onclick: function(e) {
+            //         canvas2d.Sound.enabled = !canvas2d.Sound.enabled;
+            //     }
             // });
-            // container.addChild(label);
-            // canvas2d.Stage.addChild(container);
+            
+            // canvas2d.Stage.addChild(outerBox);
+            // canvas2d.Stage.addChild(innerBox);
+            
+            var container = new canvas2d.Sprite({
+                width: 80,
+                height: 20,
+                bgColor: 'red',
+                alignX: canvas2d.AlignType.CENTER,
+                y: 200
+            });
+            var label = new canvas2d.TextLabel({
+                text: '+20攻击力',
+                fontName:'arial',
+                fontSize: 12,
+                fontColor: '#0f0',
+                stroke: {
+                    color: '#000',
+                    width: 1
+                },
+                alignX: canvas2d.AlignType.CENTER,
+                alignY: canvas2d.AlignType.CENTER
+            });
+            container.addChild(label);
+            canvas2d.Stage.addChild(container);
             
             // var ball = new canvas2d.Sprite({
             //     bgColor: 'red',

@@ -214,61 +214,33 @@ declare namespace canvas2d {
         private _play();
     }
 }
-declare namespace canvas2d.Sound {
+declare namespace canvas2d {
     interface ISoundResource {
         name: string;
         channels?: number;
     }
-    /** Could play sound */
-    var enabled: boolean;
-    /** Extension for media type */
-    var extension: string;
-    /** Supported types of the browser */
-    var supportedType: {
-        [index: string]: boolean;
+    const Sound: {
+        enabled: boolean;
+        supportedType: {
+            mp3: boolean;
+            mp4: boolean;
+            wav: boolean;
+            ogg: boolean;
+        };
+        extension: string;
+        getAudio: {
+            (name: string): WebAudio | HTMLAudio;
+            (name: string, returnList: boolean): (WebAudio | HTMLAudio)[];
+        };
+        _cache: any;
+        load(basePath: string, name: string, onComplete: () => any, channels?: number): void;
+        loadList(basePath: string, resources: ISoundResource[], onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
+        getAllAudioes(name: string): (WebAudio | HTMLAudio)[];
+        play(name: string, loop?: boolean): WebAudio | HTMLAudio;
+        pause(name: string): void;
+        stop(name: string): void;
+        resume(name: string): void;
     };
-    /** audio cache */
-    var _audioesCache: {
-        [index: string]: Array<WebAudio | HTMLAudio>;
-    };
-    /**
-     * Set global sound enabled or not.
-     * Call this function in a UI event callback when need to set enabled.
-     */
-    function setEnabled(value: boolean): void;
-    /**
-     * Load a sound resource
-     */
-    function load(basePath: string, name: string, onComplete: () => any, channels?: number): void;
-    /**
-     * Load multiple sound resources
-     */
-    function loadList(basePath: string, resources: Array<ISoundResource>, onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
-    /**
-     * Get paused audio instance by resource name.
-     */
-    function getAudio(name: string): WebAudio | HTMLAudio;
-    function getAudio(name: string, returnList: boolean): Array<WebAudio | HTMLAudio>;
-    /**
-     * Get all audioes by name
-     */
-    function getAllAudioes(name: string): Array<WebAudio | HTMLAudio>;
-    /**
-     * Play sound by name
-     */
-    function play(name: string, loop?: boolean): WebAudio | HTMLAudio;
-    /**
-     * Pause sound by name
-     */
-    function pause(name: string): void;
-    /**
-     * Stop sound by name
-     */
-    function stop(name: string): void;
-    /**
-     * Resume audio by name
-     */
-    function resume(name: string): void;
 }
 declare namespace canvas2d {
     interface IRect {
@@ -507,96 +479,14 @@ declare namespace canvas2d {
         update(deltaTime: number): any;
     }
 }
-declare namespace canvas2d.Stage {
-    /**
-     * FPS value
-     */
-    var fps: number;
-    var width: number;
-    var height: number;
-    /**
-     * Game running state
-     */
-    var isRunning: boolean;
-    /**
-     * Set the stage could recieve touch event
-     */
-    var touchEnabled: boolean;
-    /**
-     * Set the stage could recieve mouse event
-     */
-    var mouseEnabled: boolean;
-    /**
-     * Set the stage could recieve keyboard event
-     */
-    var keyboardEnabled: boolean;
-    /**
-     * Canvas element of this stage
-     */
-    var canvas: HTMLCanvasElement;
-    /**
-     * Canvas rendering context2d object
-     */
-    var context: CanvasRenderingContext2D;
-    /**
-     * Root sprite container of the stage
-     */
-    var sprite: Sprite;
-    /**
-     * Visible rectangle after adjusting for resolution design
-     */
-    var visibleRect: {
-        left: number;
-        right: number;
-        top: number;
-        bottom: number;
-    };
-    /**
-     *  Scale mode for adjusting resolution design
-     */
+declare namespace canvas2d {
     enum ScaleMode {
         SHOW_ALL = 0,
         NO_BORDER = 1,
         FIX_WIDTH = 2,
         FIX_HEIGHT = 3,
     }
-    /**
-     * Scale value for adjusting the resolution design
-     */
-    var _scale: number;
-    function adjustCanvasSize(): void;
-    /**
-     * Initialize the stage
-     * @param  canvas     Canvas element
-     * @param  width      Resolution design width
-     * @param  height     Resolution design height
-     * @param  scaleMode  Adjust resolution design scale mode
-     */
-    function init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean): void;
-    function setAutoAdjustCanvasSize(value: boolean): void;
-    /**
-     * Start the stage event loop
-     */
-    function start(useOuterTimer?: boolean): void;
-    function step(deltaTime: number): void;
-    /**
-     * Stop the stage event loop
-     */
-    function stop(unregisterUIEvent?: boolean): void;
-    function render(): void;
-    /**
-     * Add sprite to the stage
-     */
-    function addChild(child: Sprite, position?: number): void;
-    /**
-     * Remove sprite from the stage
-     */
-    function removeChild(child: Sprite): void;
-    /**
-     * Remove all sprites from the stage
-     * @param  recusive  Recusize remove all the children
-     */
-    function removeAllChild(recusive?: boolean): void;
+    const Stage: any;
 }
 /**
  * Virtual UI event manager

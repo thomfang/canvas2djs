@@ -2,9 +2,9 @@
 /// <reference path="texture.ts" />
 
 namespace canvas2d {
-    
+
     export interface IBMFontLabel extends ISprite {
-        textureMap: {[word: string]: Texture};
+        textureMap: { [word: string]: Texture };
         text?: string;
     }
 
@@ -15,8 +15,8 @@ namespace canvas2d {
 
         private _text: string;
         private _words: Texture[];
-        private _textureMap: {[word: string]: Texture};
-        
+        private _textureMap: { [word: string]: Texture };
+
         constructor(attrs?: IBMFontLabel) {
             super(attrs);
         }
@@ -30,19 +30,19 @@ namespace canvas2d {
         get text() {
             return this._text;
         }
-        
+
         get textureMap() {
             return this._textureMap;
         }
-        
+
         set textureMap(textureMap: { [word: string]: Texture }) {
             this._textureMap = textureMap;
             this.setText(this._text);
         }
-        
+
         setText(text: string) {
             this._text = text || '';
-            
+
             if (!this.textureMap || !this._text) {
                 return;
             }
@@ -68,7 +68,7 @@ namespace canvas2d {
                     if (!word) {
                         return;
                     }
-                    
+
                     super.addChild(new Sprite({
                         x: i * word.width,
                         texture: word,
@@ -81,11 +81,11 @@ namespace canvas2d {
                 this.height = this._words[0].height;
             }
         }
-        
+
         private _updateWordTexture() {
-            
+
         }
-        
+
         addChild() {
             throw new Error('BMFontLabel:addChild is not callable!');
         }

@@ -4,7 +4,7 @@ namespace canvas2d {
 
     var AudioCtx = window['AudioContext'] || window['webkitAudioContext'];
     var context: AudioContext = AudioCtx ? new AudioCtx() : null;
-    
+
     /**
      * WebAudio
      */
@@ -150,12 +150,13 @@ namespace canvas2d {
                     break;
                 case 'ended':
                     if (this.playing) {
+                        // play ended, not paused
                         this.currentTime = 0;
-                    }
-                    this.playing = false;
-                    this.emit('ended');
-                    if (this.loop) {
-                        this.play();
+                        this.playing = false;
+                        this.emit('ended');
+                        if (this.loop) {
+                            this.play();
+                        }
                     }
                     break;
                 default:
@@ -207,7 +208,7 @@ namespace canvas2d {
             }
         }
     }
-    
+
     /**
      * HTMLAudio
      */
