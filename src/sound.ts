@@ -119,7 +119,7 @@ namespace canvas2d {
             return getAudio;
         },
 
-        get _cache() {
+        get _cache(): { [index: string]: Array<WebAudio | HTMLAudio> } {
             return Object.create(audioesCache);
         },
 

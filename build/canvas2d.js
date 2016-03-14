@@ -1731,6 +1731,7 @@ var canvas2d;
     var renderingContext;
     var rootSprite;
     var visibleRect;
+    var canvasScale = 1;
     (function (ScaleMode) {
         ScaleMode[ScaleMode["SHOW_ALL"] = 0] = "SHOW_ALL";
         ScaleMode[ScaleMode["NO_BORDER"] = 1] = "NO_BORDER";
@@ -1738,36 +1739,6 @@ var canvas2d;
         ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
     })(canvas2d.ScaleMode || (canvas2d.ScaleMode = {}));
     var ScaleMode = canvas2d.ScaleMode;
-    var canvasScale = 1;
-    function setAutoAdjustCanvasSize(value) {
-        if (value && !autoAdjustCanvasSize) {
-            autoAdjustCanvasSize = true;
-            canvas2d.Stage.adjustCanvasSize();
-            window.addEventListener("resize", canvas2d.Stage.adjustCanvasSize);
-        }
-        else if (!value && autoAdjustCanvasSize) {
-            autoAdjustCanvasSize = false;
-            window.removeEventListener("resize", canvas2d.Stage.adjustCanvasSize);
-        }
-    }
-    function startTimer() {
-        eventloopTimerId = setTimeout(function () {
-            if (!isUseInnerTimer) {
-                return;
-            }
-            var deltaTime = getDeltaTime();
-            canvas2d.Action.step(deltaTime);
-            canvas2d.Stage.step(deltaTime);
-            canvas2d.Stage.render();
-            startTimer();
-        }, frameRate);
-    }
-    function getDeltaTime() {
-        var now = Date.now();
-        var delta = now - lastUpdateTime;
-        lastUpdateTime = now;
-        return delta / 1000;
-    }
     canvas2d.Stage = {
         get fps() {
             return fps;
@@ -1829,7 +1800,7 @@ var canvas2d;
                 return;
             }
             currentScaleMode = value;
-            canvas2d.Stage.adjustCanvasSize();
+            adjustCanvasSize();
         },
         get autoAdjustCanvasSize() {
             return autoAdjustCanvasSize;
@@ -1862,71 +1833,7 @@ var canvas2d;
             setAutoAdjustCanvasSize(autoAdjustCanvasSize);
         },
         adjustCanvasSize: function () {
-            if (!canvasElement || !canvasElement.parentNode) {
-                return;
-            }
-            var style = canvasElement.style;
-            var container = {
-                width: canvasElement.parentElement.offsetWidth,
-                height: canvasElement.parentElement.offsetHeight
-            };
-            var scaleX = container.width / stageWidth;
-            var scaleY = container.height / stageHeight;
-            var deltaWidth = 0;
-            var deltaHeight = 0;
-            var scale;
-            var width;
-            var height;
-            switch (currentScaleMode) {
-                case ScaleMode.SHOW_ALL:
-                    if (scaleX < scaleY) {
-                        scale = scaleX;
-                        width = container.width;
-                        height = scale * stageHeight;
-                    }
-                    else {
-                        scale = scaleY;
-                        width = scale * stageWidth;
-                        height = container.height;
-                    }
-                    break;
-                case ScaleMode.NO_BORDER:
-                    if (scaleX > scaleY) {
-                        scale = scaleX;
-                    }
-                    else {
-                        scale = scaleY;
-                    }
-                    width = stageWidth * scale;
-                    height = stageHeight * scale;
-                    deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
-                    deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
-                    break;
-                case ScaleMode.FIX_WIDTH:
-                    scale = scaleX;
-                    width = container.width;
-                    height = container.height * scale;
-                    deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
-                    break;
-                case ScaleMode.FIX_HEIGHT:
-                    scale = scaleY;
-                    width = scale * container.width;
-                    height = container.height;
-                    deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
-                    break;
-                default:
-                    throw new Error("Unknow stage scale mode \"" + currentScaleMode + "\"");
-            }
-            style.width = width + 'px';
-            style.height = height + 'px';
-            style.top = ((container.height - height) * 0.5) + 'px';
-            style.left = ((container.width - width) * 0.5) + 'px';
-            style.position = 'absolute';
-            visibleRect.left = deltaWidth;
-            visibleRect.right = stageWidth - deltaWidth;
-            visibleRect.top = deltaHeight;
-            visibleRect.bottom = stageHeight - deltaHeight;
-            canvasScale = scale;
+            adjustCanvasSize();
         },
         start: function (useOuterTimer) {
             if (!isRunning) {
@@ -1953,15 +1860,7 @@ var canvas2d;
             clearTimeout(eventloopTimerId);
         },
         render: function () {
-            if (!isRunning) {
-                return;
-            }
-            var width = canvasElement.width;
-            var height = canvasElement.height;
-            bufferContext.clearRect(0, 0, width, height);
-            rootSprite._visit(bufferContext);
-            renderingContext.clearRect(0, 0, width, height);
-            renderingContext.drawImage(bufferCanvas, 0, 0, width, height);
+            render();
         },
         /**
          * Add sprite to the stage
@@ -1983,6 +1882,108 @@ var canvas2d;
             rootSprite.removeAllChildren(recusive);
         }
     };
+    function setAutoAdjustCanvasSize(value) {
+        if (value && !autoAdjustCanvasSize) {
+            autoAdjustCanvasSize = true;
+            adjustCanvasSize();
+            window.addEventListener("resize", adjustCanvasSize);
+        }
+        else if (!value && autoAdjustCanvasSize) {
+            autoAdjustCanvasSize = false;
+            window.removeEventListener("resize", adjustCanvasSize);
+        }
+    }
+    function adjustCanvasSize() {
+        if (!canvasElement || !canvasElement.parentNode) {
+            return;
+        }
+        var style = canvasElement.style;
+        var container = {
+            width: canvasElement.parentElement.offsetWidth,
+            height: canvasElement.parentElement.offsetHeight
+        };
+        var scaleX = container.width / stageWidth;
+        var scaleY = container.height / stageHeight;
+        var deltaWidth = 0;
+        var deltaHeight = 0;
+        var scale;
+        var width;
+        var height;
+        switch (currentScaleMode) {
+            case ScaleMode.SHOW_ALL:
+                if (scaleX < scaleY) {
+                    scale = scaleX;
+                    width = container.width;
+                    height = scale * stageHeight;
+                }
+                else {
+                    scale = scaleY;
+                    width = scale * stageWidth;
+                    height = container.height;
+                }
+                break;
+            case ScaleMode.NO_BORDER:
+                scale = scaleX > scaleY ? scaleX : scaleY;
+                width = stageWidth * scale;
+                height = stageHeight * scale;
+                deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
+                deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
+                break;
+            case ScaleMode.FIX_WIDTH:
+                scale = scaleX;
+                width = container.width;
+                height = container.height * scale;
+                deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
+                break;
+            case ScaleMode.FIX_HEIGHT:
+                scale = scaleY;
+                width = scale * container.width;
+                height = container.height;
+                deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
+                break;
+            default:
+                throw new Error("Unknow stage scale mode \"" + currentScaleMode + "\"");
+        }
+        style.width = width + 'px';
+        style.height = height + 'px';
+        style.top = ((container.height - height) * 0.5) + 'px';
+        style.left = ((container.width - width) * 0.5) + 'px';
+        style.position = 'absolute';
+        visibleRect.left = deltaWidth;
+        visibleRect.right = stageWidth - deltaWidth;
+        visibleRect.top = deltaHeight;
+        visibleRect.bottom = stageHeight - deltaHeight;
+        canvasScale = scale;
+    }
+    function render() {
+        if (!isRunning) {
+            return;
+        }
+        var width = canvasElement.width;
+        var height = canvasElement.height;
+        bufferContext.clearRect(0, 0, width, height);
+        rootSprite._visit(bufferContext);
+        renderingContext.clearRect(0, 0, width, height);
+        renderingContext.drawImage(bufferCanvas, 0, 0, width, height);
+    }
+    function startTimer() {
+        eventloopTimerId = setTimeout(function () {
+            if (!isUseInnerTimer) {
+                return;
+            }
+            var deltaTime = getDeltaTime();
+            canvas2d.Action.step(deltaTime);
+            rootSprite._update(deltaTime);
+            render();
+            startTimer();
+        }, frameRate);
+    }
+    function getDeltaTime() {
+        var now = Date.now();
+        var delta = now - lastUpdateTime;
+        lastUpdateTime = now;
+        return delta / 1000;
+    }
 })(canvas2d || (canvas2d = {}));
 /// <reference path="stage.ts" />
 /// <reference path="util.ts" />

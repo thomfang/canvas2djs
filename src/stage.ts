@@ -11,23 +11,25 @@ namespace canvas2d {
     var currentScaleMode: ScaleMode;
     var autoAdjustCanvasSize = false;
     var isUseInnerTimer = true;
-    
+
     var fps: number = 30;
     var frameRate: number = 1000 / 30;
     var stageWidth: number = 0;
     var stageHeight: number = 0;
-    
+
     var isRunning: boolean = false;
-    
+
     var touchEnabled: boolean = false;
     var mouseEnabled: boolean = false;
     var keyboardEnabled: boolean = false;
-    
+
     var canvasElement: HTMLCanvasElement;
     var renderingContext: CanvasRenderingContext2D;
-    
+
     var rootSprite: Sprite;
     var visibleRect: { left: number; right: number; top: number; bottom: number };
+
+    var canvasScale: number = 1;
 
     export enum ScaleMode {
         SHOW_ALL,
@@ -35,128 +37,92 @@ namespace canvas2d {
         FIX_WIDTH,
         FIX_HEIGHT
     }
-    
-    var canvasScale: number = 1;
-
-    function setAutoAdjustCanvasSize(value: boolean) {
-        if (value && !autoAdjustCanvasSize) {
-            autoAdjustCanvasSize = true;
-            Stage.adjustCanvasSize();
-            window.addEventListener("resize", Stage.adjustCanvasSize);
-        }
-        else if (!value && autoAdjustCanvasSize) {
-            autoAdjustCanvasSize = false;
-            window.removeEventListener("resize", Stage.adjustCanvasSize);
-        }
-    }
-
-    function startTimer() {
-        eventloopTimerId = setTimeout(() => {
-            if (!isUseInnerTimer) {
-                return;
-            }
-
-            var deltaTime: number = getDeltaTime();
-            Action.step(deltaTime);
-            Stage.step(deltaTime);
-            Stage.render();
-            startTimer();
-        }, frameRate);
-    }
-
-    function getDeltaTime(): number {
-        var now = Date.now();
-        var delta = now - lastUpdateTime;
-
-        lastUpdateTime = now;
-        return delta / 1000;
-    }
 
     export const Stage = {
 
-        get fps() {
+        get fps(): number {
             return fps;
         },
-        
+
         set fps(value: number) {
             frameRate = 1000 / value;
             fps = value;
         },
 
-        get isRunning() {
+        get isRunning(): boolean {
             return isRunning;
         },
-        
+
         set isRunning(value: boolean) {
             isRunning = value;
         },
 
-        get width() {
+        get width(): number {
             return stageWidth;
         },
 
-        get height() {
+        get height(): number {
             return stageHeight;
         },
 
-        get canvas() {
+        get canvas(): HTMLCanvasElement {
             return canvasElement;
         },
 
-        get context() {
+        get context(): CanvasRenderingContext2D {
             return renderingContext;
         },
 
-        get sprite() {
+        get sprite(): Sprite {
             return rootSprite;
         },
 
-        get visibleRect() {
+        get visibleRect(): { left: number; right: number; top: number; bottom: number; } {
             return visibleRect;
         },
 
-        get _scale() {
+        get _scale(): number {
             return canvasScale;
         },
-        
-        get touchEnabled() {
+
+        get touchEnabled(): boolean {
             return touchEnabled;
         },
-        
+
         set touchEnabled(value: boolean) {
             touchEnabled = value;
         },
-        
-        get mouseEnabled() {
+
+        get mouseEnabled(): boolean {
             return mouseEnabled;
         },
-        
+
         set mouseEnabled(value: boolean) {
             mouseEnabled = value;
         },
-        
-        get keyboardEnabled() {
+
+        get keyboardEnabled(): boolean {
             return keyboardEnabled;
         },
-        
+
         set keyboardEnabled(value: boolean) {
             keyboardEnabled = value;
         },
-        
-        get scaleMode() {
+
+        get scaleMode(): ScaleMode {
             return currentScaleMode;
         },
-        
+
         set scaleMode(value: ScaleMode) {
             if (value === currentScaleMode) {
                 return;
             }
-            
+
             currentScaleMode = value;
-            Stage.adjustCanvasSize();
+            adjustCanvasSize();
         },
 
-        get autoAdjustCanvasSize() {
+        get autoAdjustCanvasSize(): boolean {
             return autoAdjustCanvasSize;
         },
 
@@ -196,76 +162,7 @@ namespace canvas2d {
         },
 
         adjustCanvasSize() {
-            if (!canvasElement || !canvasElement.parentNode) {
-                return;
-            }
-
-            var style = canvasElement.style;
-            var container = {
-                width: canvasElement.parentElement.offsetWidth,
-                height: canvasElement.parentElement.offsetHeight
-            };
-            var scaleX: number = container.width / stageWidth;
-            var scaleY: number = container.height / stageHeight;
-            var deltaWidth: number = 0;
-            var deltaHeight: number = 0;
-            var scale: number;
-            var width: number;
-            var height: number;
-
-            switch (currentScaleMode) {
-                case ScaleMode.SHOW_ALL:
-                    if (scaleX < scaleY) {
-                        scale = scaleX;
-                        width = container.width;
-                        height = scale * stageHeight;
-                    }
-                    else {
-                        scale = scaleY;
-                        width = scale * stageWidth;
-                        height = container.height;
-                    }
-                    break;
-                case ScaleMode.NO_BORDER:
-                    if (scaleX > scaleY) {
-                        scale = scaleX;
-                    }
-                    else {
-                        scale = scaleY;
-                    }
-                    width = stageWidth * scale;
-                    height = stageHeight * scale;
-                    deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
-                    deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
-                    break;
-                case ScaleMode.FIX_WIDTH:
-                    scale = scaleX;
-                    width = container.width;
-                    height = container.height * scale;
-                    deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
-                    break;
-                case ScaleMode.FIX_HEIGHT:
-                    scale = scaleY;
-                    width = scale * container.width;
-                    height = container.height;
-                    deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
-                    break;
-                default:
-                    throw new Error(`Unknow stage scale mode "${currentScaleMode}"`);
-            }
-
-            style.width = width + 'px';
-            style.height = height + 'px';
-            style.top = ((container.height - height) * 0.5) + 'px';
-            style.left = ((container.width - width) * 0.5) + 'px';
-            style.position = 'absolute';
-
-            visibleRect.left = deltaWidth;
-            visibleRect.right = stageWidth - deltaWidth;
-            visibleRect.top = deltaHeight;
-            visibleRect.bottom = stageHeight - deltaHeight;
-
-            canvasScale = scale;
+            adjustCanvasSize();
         },
 
         start(useOuterTimer?: boolean): void {
@@ -300,19 +197,7 @@ namespace canvas2d {
         },
 
         render() {
-            if (!isRunning) {
-                return;
-            }
-
-            var width: number = canvasElement.width;
-            var height: number = canvasElement.height;
-
-            bufferContext.clearRect(0, 0, width, height);
-
-            rootSprite._visit(bufferContext);
-
-            renderingContext.clearRect(0, 0, width, height);
-            renderingContext.drawImage(bufferCanvas, 0, 0, width, height);
+            render();
         },
 
         /**
@@ -337,4 +222,122 @@ namespace canvas2d {
             rootSprite.removeAllChildren(recusive);
         }
     };
+
+    function setAutoAdjustCanvasSize(value: boolean) {
+        if (value && !autoAdjustCanvasSize) {
+            autoAdjustCanvasSize = true;
+            adjustCanvasSize();
+            window.addEventListener("resize", adjustCanvasSize);
+        }
+        else if (!value && autoAdjustCanvasSize) {
+            autoAdjustCanvasSize = false;
+            window.removeEventListener("resize", adjustCanvasSize);
+        }
+    }
+
+    function adjustCanvasSize() {
+        if (!canvasElement || !canvasElement.parentNode) {
+            return;
+        }
+
+        var style = canvasElement.style;
+        var container = {
+            width: canvasElement.parentElement.offsetWidth,
+            height: canvasElement.parentElement.offsetHeight
+        };
+        var scaleX: number = container.width / stageWidth;
+        var scaleY: number = container.height / stageHeight;
+        var deltaWidth: number = 0;
+        var deltaHeight: number = 0;
+        var scale: number;
+        var width: number;
+        var height: number;
+
+        switch (currentScaleMode) {
+            case ScaleMode.SHOW_ALL:
+                if (scaleX < scaleY) {
+                    scale = scaleX;
+                    width = container.width;
+                    height = scale * stageHeight;
+                }
+                else {
+                    scale = scaleY;
+                    width = scale * stageWidth;
+                    height = container.height;
+                }
+                break;
+            case ScaleMode.NO_BORDER:
+                scale = scaleX > scaleY ? scaleX : scaleY;
+                width = stageWidth * scale;
+                height = stageHeight * scale;
+                deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
+                deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
+                break;
+            case ScaleMode.FIX_WIDTH:
+                scale = scaleX;
+                width = container.width;
+                height = container.height * scale;
+                deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
+                break;
+            case ScaleMode.FIX_HEIGHT:
+                scale = scaleY;
+                width = scale * container.width;
+                height = container.height;
+                deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
+                break;
+            default:
+                throw new Error(`Unknow stage scale mode "${currentScaleMode}"`);
+        }
+
+        style.width = width + 'px';
+        style.height = height + 'px';
+        style.top = ((container.height - height) * 0.5) + 'px';
+        style.left = ((container.width - width) * 0.5) + 'px';
+        style.position = 'absolute';
+
+        visibleRect.left = deltaWidth;
+        visibleRect.right = stageWidth - deltaWidth;
+        visibleRect.top = deltaHeight;
+        visibleRect.bottom = stageHeight - deltaHeight;
+
+        canvasScale = scale;
+    }
+
+    function render() {
+        if (!isRunning) {
+            return;
+        }
+
+        var width: number = canvasElement.width;
+        var height: number = canvasElement.height;
+
+        bufferContext.clearRect(0, 0, width, height);
+
+        rootSprite._visit(bufferContext);
+
+        renderingContext.clearRect(0, 0, width, height);
+        renderingContext.drawImage(bufferCanvas, 0, 0, width, height);
+    }
+
+    function startTimer() {
+        eventloopTimerId = setTimeout(() => {
+            if (!isUseInnerTimer) {
+                return;
+            }
+
+            var deltaTime: number = getDeltaTime();
+            Action.step(deltaTime);
+            rootSprite._update(deltaTime);
+            render();
+            startTimer();
+        }, frameRate);
+    }
+
+    function getDeltaTime(): number {
+        var now = Date.now();
+        var delta = now - lastUpdateTime;
+
+        lastUpdateTime = now;
+        return delta / 1000;
+    }
 }

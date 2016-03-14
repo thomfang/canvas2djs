@@ -232,7 +232,9 @@ declare namespace canvas2d {
             (name: string): WebAudio | HTMLAudio;
             (name: string, returnList: boolean): (WebAudio | HTMLAudio)[];
         };
-        _cache: any;
+        _cache: {
+            [index: string]: (WebAudio | HTMLAudio)[];
+        };
         load(basePath: string, name: string, onComplete: () => any, channels?: number): void;
         loadList(basePath: string, resources: ISoundResource[], onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
         getAllAudioes(name: string): (WebAudio | HTMLAudio)[];
@@ -486,7 +488,36 @@ declare namespace canvas2d {
         FIX_WIDTH = 2,
         FIX_HEIGHT = 3,
     }
-    const Stage: any;
+    const Stage: {
+        fps: number;
+        isRunning: boolean;
+        width: number;
+        height: number;
+        canvas: HTMLCanvasElement;
+        context: CanvasRenderingContext2D;
+        sprite: Sprite;
+        visibleRect: {
+            left: number;
+            right: number;
+            top: number;
+            bottom: number;
+        };
+        _scale: number;
+        touchEnabled: boolean;
+        mouseEnabled: boolean;
+        keyboardEnabled: boolean;
+        scaleMode: ScaleMode;
+        autoAdjustCanvasSize: boolean;
+        init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean): void;
+        adjustCanvasSize(): void;
+        start(useOuterTimer?: boolean): void;
+        step(deltaTime: number): void;
+        stop(unregisterUIEvent?: boolean): void;
+        render(): void;
+        addChild(child: Sprite, position?: number): void;
+        removeChild(child: Sprite): void;
+        removeAllChildren(recusive?: boolean): void;
+    };
 }
 /**
  * Virtual UI event manager
