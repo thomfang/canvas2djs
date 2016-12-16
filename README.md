@@ -3,6 +3,13 @@ canvas2d.ts
 An HTML5 canvas based game engine.
 
 
+Install
+===
+
+```
+npm install canvas2djs
+```
+
 Usage
 ===
 Include by script:
@@ -22,7 +29,7 @@ import * as canvas2d from 'canvas2d';
 Quick start
 ===
 
-* Stage
+* **Stage**
     
     ```typescript
     var stage = new canvas2d.Stage(
@@ -39,7 +46,7 @@ Quick start
     stage.start();
     ```
 
-* Sprite
+* **Sprite**
 
     ```typescript
     var ball = new Sprite({
@@ -63,7 +70,7 @@ Quick start
     stage.addChild(box);
     ```
 
-* Action
+* **Action**
 
     ```typescript
     var action = new canvas2d.Action(ball);
@@ -73,13 +80,13 @@ Quick start
     action.start(); // run action
     ```
     
-* Texture
+* **Texture**
 
     ```typescript
     var texture = new canvas2d.Texture('path/to/img/xxx.png');
     ```
 
-* TextLabel
+* **TextLabel**
 
     ```typescript
     var title = new canvas2d.TextLabel({
@@ -94,7 +101,7 @@ Quick start
     stage.addChild(title);
     ```
 
-* Sound
+* **Sound**
 
     ```typescript
     canvas2d.Sound.enabled = true;
