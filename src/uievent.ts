@@ -1,121 +1,131 @@
-﻿/// <reference path="stage.ts" />
-/// <reference path="util.ts" />
+﻿import * as Util from './Util';
+import Sprite from './Sprite';
+import Stage from './Stage';
 
-/**
- * Virtual UI event manager
- */
-namespace canvas2d.UIEvent {
+type Rect = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 
-    export interface IEventHelper {
-        identifier?: number;
-        beginX: number;
-        beginY: number;
-        localX?: number;
-        localY?: number;
-        stageX?: number;
-        stageY?: number;
-        _moved?: boolean;
-        beginTarget?: Sprite;
-        target?: Sprite;
-        cancelBubble: boolean;
+export interface IEventHelper {
+    identifier?: number;
+    beginX: number;
+    beginY: number;
+    localX?: number;
+    localY?: number;
+    stageX?: number;
+    stageY?: number;
+    _moved?: boolean;
+    beginTarget?: Sprite;
+    target?: Sprite;
+    cancelBubble: boolean;
+}
+
+const keyDown = "keydown";
+const keyUp = "keyup";
+
+const touchBegin = "touchstart";
+const touchMoved = "touchmove";
+const touchEnded = "touchend";
+
+const mouseBegin = "mousedown";
+const mouseMoved = "mousemove";
+const mouseEnded = "mouseup";
+
+const onclick = "onclick";
+const onkeyup = "onkeyup";
+const onkeydown = "onkeydown";
+
+const ontouchbegin = "ontouchbegin";
+const ontouchmoved = "ontouchmoved";
+const ontouchended = "ontouchended";
+
+const onmousebegin = "onmousebegin";
+const onmousemoved = "onmousemoved";
+const onmouseended = "onmouseended";
+
+export default class UIEvent {
+
+    public static supportTouch: boolean = "ontouchend" in window;
+
+    private _registered: boolean;
+    private _touchHelperMap: { [index: number]: IEventHelper } = {};
+    private _mouseBeginHelper: IEventHelper;
+    private _mouseMovedHelper: IEventHelper;
+
+    stage: Stage;
+    element: HTMLElement;
+
+    constructor(stage: Stage) {
+        this.stage = stage;
+        this.element = stage.canvas;
     }
 
-    var keyDown = "keydown";
-    var keyUp = "keyup";
-
-    var touchBegin = "touchstart";
-    var touchMoved = "touchmove";
-    var touchEnded = "touchend";
-
-    var mouseBegin = "mousedown";
-    var mouseMoved = "mousemove";
-    var mouseEnded = "mouseup";
-
-    const onclick = "onclick";
-    const onkeyup = "onkeyup";
-    const onkeydown = "onkeydown";
-
-    const ontouchbegin = "ontouchbegin";
-    const ontouchmoved = "ontouchmoved";
-    const ontouchended = "ontouchended";
-
-    const onmousebegin = "onmousebegin";
-    const onmousemoved = "onmousemoved";
-    const onmouseended = "onmouseended";
-
-    var touchHelperMap: { [index: number]: IEventHelper } = {};
-    var mouseBeginHelper: IEventHelper;
-    var mouseMovedHelper: IEventHelper;
-
-    var registered: boolean;
-
-    export var supportTouch: boolean = "ontouchend" in window;
-
-    /**
-     * Register UI event
-     */
-    export function register(): void {
-        if (registered) {
+    register() {
+        if (this._registered) {
             return;
         }
 
-        var canvas = Stage.canvas;
+        var {stage, element} = this;
 
-        if (Stage.touchEnabled && supportTouch) {
-            canvas.addEventListener(touchBegin, touchBeginHandler, false);
-            canvas.addEventListener(touchMoved, touchMovedHandler, false);
-            canvas.addEventListener(touchEnded, touchEndedHandler, false);
+        if (stage.touchEnabled && UIEvent.supportTouch) {
+            element.addEventListener(touchBegin, this._touchBeginHandler, false);
+            element.addEventListener(touchMoved, this._touchMovedHandler, false);
+            element.addEventListener(touchEnded, this._touchEndedHandler, false);
         }
-        if (Stage.mouseEnabled) {
-            canvas.addEventListener(mouseBegin, mouseBeginHandler, false);
-            canvas.addEventListener(mouseMoved, mouseMovedHandler, false);
-            canvas.addEventListener(mouseEnded, mouseEndedHandler, false);
+        if (stage.mouseEnabled) {
+            element.addEventListener(mouseBegin, this._mouseBeginHandler, false);
+            element.addEventListener(mouseMoved, this._mouseMovedHandler, false);
+            element.addEventListener(mouseEnded, this._mouseEndedHandler, false);
         }
-        if (Stage.keyboardEnabled) {
-            document.addEventListener(keyDown, keyDownHandler, false);
-            document.addEventListener(keyUp, keyUpHandler, false);
+        if (stage.keyboardEnabled) {
+            document.addEventListener(keyDown, this._keyDownHandler, false);
+            document.addEventListener(keyUp, this._keyUpHandler, false);
         }
 
-        registered = true;
+        this._touchHelperMap = {};
+        this._registered = true;
     }
 
-    /**
-     * Unregister UI event
-     */
-    export function unregister(): void {
-        var canvas = Stage.canvas;
-        canvas.removeEventListener(touchBegin, touchBeginHandler, false);
-        canvas.removeEventListener(touchMoved, touchMovedHandler, false);
-        canvas.removeEventListener(touchEnded, touchEndedHandler, false);
+    unregister(): void {
+        var element = this.element;
 
-        canvas.removeEventListener(mouseBegin, mouseBeginHandler, false);
-        canvas.removeEventListener(mouseMoved, mouseMovedHandler, false);
-        canvas.removeEventListener(mouseEnded, mouseEndedHandler, false);
+        element.removeEventListener(touchBegin, this._touchBeginHandler, false);
+        element.removeEventListener(touchMoved, this._touchMovedHandler, false);
+        element.removeEventListener(touchEnded, this._touchEndedHandler, false);
 
-        document.removeEventListener(keyDown, keyDownHandler, false);
-        document.removeEventListener(keyUp, keyUpHandler, false);
 
-        registered = false;
+        element.removeEventListener(mouseBegin, this._mouseBeginHandler, false);
+        element.removeEventListener(mouseMoved, this._mouseMovedHandler, false);
+        element.removeEventListener(mouseEnded, this._mouseEndedHandler, false);
+
+        document.removeEventListener(keyDown, this._keyDownHandler, false);
+        document.removeEventListener(keyUp, this._keyUpHandler, false);
+
+        this._mouseBeginHelper = this._mouseMovedHelper = null;
+        this._registered = false;
     }
 
-    /**
-     * Transform event location to stage location
-     */
-    export function transformLocation(event) {
-        var pos = Stage.canvas.getBoundingClientRect();
-        var x = (event.clientX - pos.left) / Stage._scale;
-        var y = (event.clientY - pos.top) / Stage._scale;
+    transformLocation(event) {
+        var clientReact = this.element.getBoundingClientRect();
+        var scale = this.stage.scale;
+        var x = (event.clientX - clientReact.left) / scale;
+        var y = (event.clientY - clientReact.top) / scale;
         return { x, y };
     }
 
-    function transformTouches(touches, justGet?: boolean): IEventHelper[] {
+    private _transformTouches(touches, justGet?: boolean): IEventHelper[] {
         var helpers: IEventHelper[] = [];
-        var rect = Stage.canvas.getBoundingClientRect();
+        var rect = this.element.getBoundingClientRect();
+        var scale = this.stage.scale;
+        var touchHelperMap = this._touchHelperMap;
 
         for (var i: number = 0, x: number, y: number, id: number, helper, touch; touch = touches[i]; i++) {
             id = touch.identifier;
-            x = (touch.clientX - rect.left) / Stage._scale;
-            y = (touch.clientY - rect.top) / Stage._scale;
+            x = (touch.clientX - rect.left) / scale;
+            y = (touch.clientY - rect.top) / scale;
 
             helper = touchHelperMap[id];
 
@@ -136,32 +146,20 @@ namespace canvas2d.UIEvent {
 
             helpers.push(helper);
         }
+
         return helpers;
     }
 
-    function isRectContainPoint(rect: IRect, p: IEventHelper) {
-        return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
-            rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
-    }
+    private _touchBeginHandler = (event: TouchEvent) => {
+        var stage = this.stage;
 
-    function isMovedSmallRange(e: IEventHelper) {
-        if (e.beginX == null && e.beginY == null) {
-            return false;
-        }
-        let x = Math.abs(e.beginX - e.stageX);
-        let y = Math.abs(e.beginY - e.stageY);
-
-        return x <= 5 && y <= 5;
-    }
-
-    function touchBeginHandler(event: TouchEvent) {
-        if (!Stage.isRunning || !Stage.touchEnabled) {
+        if (!stage.isRunning || !stage.touchEnabled) {
             return;
         }
 
-        var helpers = transformTouches(event.changedTouches);
+        var helpers = this._transformTouches(event.changedTouches);
 
-        dispatchTouch(Stage.sprite, 0, 0, helpers.slice(), event, ontouchbegin);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, ontouchbegin);
 
         helpers.forEach((touch) => {
             touch.beginTarget = touch.target;
@@ -170,27 +168,31 @@ namespace canvas2d.UIEvent {
         event.preventDefault();
     }
 
-    function touchMovedHandler(event: TouchEvent) {
-        if (!Stage.isRunning || !Stage.touchEnabled) {
+    private _touchMovedHandler = (event: TouchEvent) => {
+        var stage = this.stage;
+
+        if (!stage.isRunning || !stage.touchEnabled) {
             return;
         }
 
-        var helpers = transformTouches(event.changedTouches);
+        var helpers = this._transformTouches(event.changedTouches);
 
-        dispatchTouch(Stage.sprite, 0, 0, helpers, event, ontouchmoved);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers, event, ontouchmoved);
 
         event.preventDefault();
     }
 
-    function touchEndedHandler(event: TouchEvent) {
-        if (Stage.isRunning && Stage.touchEnabled) {
-            var helpers = transformTouches(event.changedTouches, true);
+    private _touchEndedHandler = (event: TouchEvent) => {
+        var stage = this.stage;
 
-            dispatchTouch(Stage.sprite, 0, 0, helpers.slice(), event, ontouchended, true);
+        if (stage.isRunning && stage.touchEnabled) {
+            var helpers = this._transformTouches(event.changedTouches, true);
+
+            this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, ontouchended, true);
 
             helpers.forEach(helper => {
                 // target = helper.target;
-                
+
                 // if (hasImplements(target, ontouchended)) {
                 //     target[ontouchended](helper, helpers, event);
                 // }
@@ -201,19 +203,20 @@ namespace canvas2d.UIEvent {
 
                 helper.target = null;
                 helper.beginTarget = null;
-                touchHelperMap[helper.identifier] = null;
+                this._touchHelperMap[helper.identifier] = null;
             });
 
             helpers = null;
         }
     }
 
-    function mouseBeginHandler(event: MouseEvent) {
-        if (!Stage.isRunning || !Stage.mouseEnabled) {
+    private _mouseBeginHandler = (event: MouseEvent) => {
+        var stage = this.stage;
+        if (!stage.isRunning || !stage.mouseEnabled) {
             return;
         }
 
-        var location = transformLocation(event);
+        var location = this.transformLocation(event);
         var helper: IEventHelper = {
             beginX: location.x,
             beginY: location.y,
@@ -222,47 +225,50 @@ namespace canvas2d.UIEvent {
             cancelBubble: false
         };
 
-        dispatchMouse(Stage.sprite, 0, 0, helper, event, onmousebegin);
+        this._dispatchMouse(stage.sprite, 0, 0, helper, event, onmousebegin);
 
         if (helper.target) {
             helper.beginTarget = helper.target;
-            mouseBeginHelper = helper;
+            this._mouseBeginHelper = helper;
         }
 
         event.preventDefault();
     }
 
-    function mouseMovedHandler(event: MouseEvent) {
-        if (!Stage.isRunning || !Stage.mouseEnabled) {
+    private _mouseMovedHandler = (event: MouseEvent) => {
+        var stage = this.stage;
+        if (!stage.isRunning || !stage.mouseEnabled) {
             return;
         }
 
-        var location = transformLocation(event);
+        var location = this.transformLocation(event);
+        var mouseBeginHelper = this._mouseBeginHelper;
 
         if (mouseBeginHelper) {
             mouseBeginHelper.stageX = location.x;
             mouseBeginHelper.stageY = location.y;
             mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
-            dispatchMouse(Stage.sprite, 0, 0, mouseBeginHelper, event, onmousemoved);
+            this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onmousemoved);
         }
         else {
-            mouseMovedHelper = {
+            let mouseMovedHelper = this._mouseMovedHelper = {
                 beginX: null,
                 beginY: null,
                 stageX: location.x,
                 stageY: location.y,
                 cancelBubble: false
             };
-            dispatchMouse(Stage.sprite, 0, 0, mouseMovedHelper, event, onmousemoved);
+            this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onmousemoved);
         }
 
         event.preventDefault();
     }
 
-    function mouseEndedHandler(event: MouseEvent) {
-        if (Stage.isRunning && Stage.mouseEnabled) {
-            var location = transformLocation(event)
-            var helper = mouseBeginHelper || mouseMovedHelper;
+    private _mouseEndedHandler = (event: MouseEvent) => {
+        var stage = this.stage;
+        if (stage.isRunning && stage.mouseEnabled) {
+            var location = this.transformLocation(event)
+            var helper = this._mouseBeginHelper || this._mouseMovedHelper;
             var target;
 
             helper.stageX = location.x;
@@ -272,33 +278,43 @@ namespace canvas2d.UIEvent {
             // if (hasImplements(target, ON_MOUSE_ENDED)) {
             //     target[ON_MOUSE_ENDED](helper, event);
             // }
-            
+
             var triggerClick = !helper._moved || isMovedSmallRange(helper);
-            dispatchMouse(Stage.sprite, 0, 0, helper, event, onmouseended, triggerClick);
+            this._dispatchMouse(stage.sprite, 0, 0, helper, event, onmouseended, triggerClick);
 
             // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
             //     target[ON_CLICK](helper, event);
             // }
         }
 
-        mouseBeginHelper = helper.target = helper.beginTarget = null;
+        this._mouseBeginHelper = helper.target = helper.beginTarget = null;
     }
 
-    function keyDownHandler(event) {
-        if (!Stage.isRunning || !Stage.keyboardEnabled) {
+    private _keyDownHandler = (event: KeyboardEvent) => {
+        var stage = this.stage;
+        if (!stage.isRunning || !stage.keyboardEnabled) {
             return;
         }
-        dispatchKeyboard(Stage.sprite, event.keyCode, event, onkeydown);
+        this._dispatchKeyboard(stage.sprite, event.keyCode, event, onkeydown);
     }
 
-    function keyUpHandler(event) {
-        if (!Stage.isRunning || !Stage.keyboardEnabled) {
+    private _keyUpHandler = (event: KeyboardEvent) => {
+        var stage = this.stage;
+        if (!stage.isRunning || !stage.keyboardEnabled) {
             return;
         }
-        dispatchKeyboard(Stage.sprite, event.keyCode, event, onkeyup);
+        this._dispatchKeyboard(stage.sprite, event.keyCode, event, onkeyup);
     }
 
-    function dispatchTouch(sprite: Sprite, offsetX: number, offsetY: number, helpers: IEventHelper[], event: Event, methodName: string, needTriggerClick?: boolean): any {
+    private _dispatchTouch(
+        sprite: Sprite,
+        offsetX: number,
+        offsetY: number,
+        helpers: IEventHelper[],
+        event: TouchEvent,
+        methodName: string,
+        needTriggerClick?: boolean
+    ): any {
         if (sprite.touchEnabled === false || !sprite.visible) {
             return;
         }
@@ -317,13 +333,13 @@ namespace canvas2d.UIEvent {
             let index = children.length;
 
             while (--index >= 0) {
-                result = dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, needTriggerClick);
+                result = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, needTriggerClick);
                 if (result && result.length) {
                     triggerreds.push(...result);
-                    
+
                     // Remove triggerred touch helper, it won't pass to other child sprites
                     tmpHelpers = tmpHelpers.filter(callback);
-                    
+
                     // All triggerred then exit the loop
                     if (!tmpHelpers.length) {
                         break;
@@ -333,7 +349,7 @@ namespace canvas2d.UIEvent {
         }
 
         var hits: IEventHelper[] = triggerreds.filter(helper => !helper.cancelBubble);
-        var rect: IRect = {
+        var rect: Rect = {
             x: offsetX,
             y: offsetY,
             width: sprite.width,
@@ -348,7 +364,7 @@ namespace canvas2d.UIEvent {
                 }
                 helper.localX = helper.stageX - rect.x;
                 helper.localY = helper.stageY - rect.y;
-                
+
                 // Add for current sprite hit list
                 hits.push(helper);
                 count++;
@@ -358,22 +374,30 @@ namespace canvas2d.UIEvent {
         if (hits.length) {
             var hasMethod: boolean = hasImplements(sprite, methodName);
             var hasClickHandler: boolean = hasImplements(sprite, onclick);
-            
+
             if (hasMethod) {
                 sprite[methodName](hits, event);
                 triggerreds.push(...hits.slice(hits.length - count, count));
             }
-            
+
             // Click event would just trigger by only a touch
             if (hasClickHandler && needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
-                sprite[onclick](hits[0], event);
-                util.addArrayItem(triggerreds, hits[0]);
+                sprite[onclick](hits[0], event as any);
+                Util.addArrayItem(triggerreds, hits[0]);
             }
         }
         return triggerreds;
     }
 
-    function dispatchMouse(sprite: Sprite, offsetX: number, offsetY: number, helper: IEventHelper, event: Event, methodName: string, triggerClick?: boolean): boolean {
+    private _dispatchMouse(
+        sprite: Sprite,
+        offsetX: number,
+        offsetY: number,
+        helper: IEventHelper,
+        event: MouseEvent,
+        methodName: string,
+        triggerClick?: boolean
+    ): boolean {
         if (sprite.mouseEnabled === false || !sprite.visible) {
             return false;
         }
@@ -388,7 +412,7 @@ namespace canvas2d.UIEvent {
             var index = children.length;
 
             while (--index >= 0) {
-                triggerred = dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, triggerClick);
+                triggerred = this._dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, triggerClick);
                 if (triggerred) {
                     break;
                 }
@@ -399,7 +423,7 @@ namespace canvas2d.UIEvent {
             }
         }
 
-        var rect: IRect = {
+        var rect: Rect = {
             x: offsetX,
             y: offsetY,
             width: sprite.width,
@@ -427,7 +451,7 @@ namespace canvas2d.UIEvent {
         }
     }
 
-    function dispatchKeyboard(sprite: Sprite, keyCode: number, event, methodName: string) {
+    private _dispatchKeyboard(sprite: Sprite, keyCode: number, event, methodName: string) {
         if (sprite.keyboardEnabled === false) {
             return;
         }
@@ -440,12 +464,27 @@ namespace canvas2d.UIEvent {
 
         if (children && children.length) {
             for (; child = children[i]; i++) {
-                dispatchKeyboard(child, keyCode, event, methodName);
+                this._dispatchKeyboard(child, keyCode, event, methodName);
             }
         }
     }
+}
 
-    function hasImplements(sprite: Sprite, methodName: string) {
-        return sprite[methodName] !== Sprite.prototype[methodName] && typeof sprite[methodName] === 'function';
+function isRectContainPoint(rect: Rect, p: IEventHelper) {
+    return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
+        rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
+}
+
+function isMovedSmallRange(e: IEventHelper) {
+    if (e.beginX == null && e.beginY == null) {
+        return false;
     }
+    let x = Math.abs(e.beginX - e.stageX);
+    let y = Math.abs(e.beginY - e.stageY);
+
+    return x <= 5 && y <= 5;
+}
+
+function hasImplements(sprite: Sprite, methodName: string) {
+    return sprite[methodName] !== Sprite.prototype[methodName] && typeof sprite[methodName] === 'function';
 }

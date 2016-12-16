@@ -1,24 +1,25 @@
 {
     "compilerOptions": {
-        "sourceMap": true,
+        // "sourceMap": true,
         "declaration": true,
         "target": "es5",
         "noEmitOnError": true,
         "noImplicitAny": false,
-        "preserveConstEnums": true,
-        "out": "build/canvas2d.js"
+        "preserveConstEnums": true
     },
     "files": [
-        "src/action.ts",
-        "src/sound.ts",
-        "src/tween.ts",
-        "src/uievent.ts",
-        "src/uievent.key.ts",
-        "src/texture.ts",
-        "src/sprite.ts",
-        "src/stage.ts",
-        "src/textlabel.ts",
-        "src/eventemitter.ts",
-        "src/audio.ts"
+        "src/Util.ts",
+        "src/Action.ts",
+        "src/Sound.ts",
+        "src/Tween.ts",
+        "src/UIEvent.ts",
+        "src/Keys.ts",
+        "src/Texture.ts",
+        "src/Sprite.ts",
+        "src/Stage.ts",
+        "src/TextLabel.ts",
+        "src/EventEmitter.ts",
+        "src/BMFontLabel.ts",
+        "src/Audio.ts"
     ]
 }

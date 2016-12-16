@@ -1,241 +1,154 @@
-﻿/// <reference path="action.ts" />
-/// <reference path="uievent.ts" />
-/// <reference path="sprite.ts" />
+﻿import UIEvent from './UIEvent';
+import Sprite from './Sprite';
+import Action from './Action';
 
-namespace canvas2d {
+export enum ScaleMode {
+    SHOW_ALL,
+    NO_BORDER,
+    FIX_WIDTH,
+    FIX_HEIGHT
+}
 
-    var eventloopTimerId: number;
-    var lastUpdateTime: number;
-    var bufferCanvas: HTMLCanvasElement;
-    var bufferContext: CanvasRenderingContext2D;
-    var currentScaleMode: ScaleMode;
-    var autoAdjustCanvasSize = false;
-    var isUseInnerTimer = true;
+export type VisibleRect = {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+};
 
-    var fps: number = 30;
-    var frameRate: number = 1000 / 30;
-    var stageWidth: number = 0;
-    var stageHeight: number = 0;
+export default class Stage {
 
-    var isRunning: boolean = false;
+    private _fps: number = 30;
+    private _frameRate: number = 1000 / this._fps;
+    private _isRunning: boolean;
+    private _width: number = 0;
+    private _height: number = 0;
+    private _rootSprite: Sprite;
+    private _visibleRect: VisibleRect;
+    private _canvasScale: number;
+    private _scaleMode: ScaleMode;
+    private _autoAdjustCanvasSize: boolean;
+    private _canvasElement: HTMLCanvasElement;
+    private _renderContext: CanvasRenderingContext2D;
+    private _bufferCanvas: HTMLCanvasElement;
+    private _bufferContext: CanvasRenderingContext2D;
+    private _useExternalTimer: boolean;
+    private _lastUpdateTime: number;
+    private _eventLoopTimerId: number;
+    private _uiEvent: UIEvent;
 
-    var touchEnabled: boolean = false;
-    var mouseEnabled: boolean = false;
-    var keyboardEnabled: boolean = false;
+    touchEnabled: boolean;
+    mouseEnabled: boolean;
+    keyboardEnabled: boolean;
 
-    var canvasElement: HTMLCanvasElement;
-    var renderingContext: CanvasRenderingContext2D;
-
-    var rootSprite: Sprite;
-    var visibleRect: { left: number; right: number; top: number; bottom: number };
-
-    var canvasScale: number = 1;
-
-    export enum ScaleMode {
-        SHOW_ALL,
-        NO_BORDER,
-        FIX_WIDTH,
-        FIX_HEIGHT
+    get fps(): number {
+        return this._fps;
     }
 
-    export const Stage = {
+    set fps(value: number) {
+        this._frameRate = 1000 / value;
+        this._fps = value;
+    }
 
-        get fps(): number {
-            return fps;
-        },
+    get isRunning(): boolean {
+        return this._isRunning;
+    }
 
-        set fps(value: number) {
-            frameRate = 1000 / value;
-            fps = value;
-        },
+    get width(): number {
+        return this._width;
+    }
 
-        get isRunning(): boolean {
-            return isRunning;
-        },
+    get height(): number {
+        return this._height;
+    }
 
-        set isRunning(value: boolean) {
-            isRunning = value;
-        },
+    get canvas(): HTMLCanvasElement {
+        return this._canvasElement;
+    }
 
-        get width(): number {
-            return stageWidth;
-        },
+    get context(): CanvasRenderingContext2D {
+        return this._renderContext;
+    }
 
-        get height(): number {
-            return stageHeight;
-        },
+    get sprite(): Sprite {
+        return this._rootSprite;
+    }
 
-        get canvas(): HTMLCanvasElement {
-            return canvasElement;
-        },
+    get visibleRect(): VisibleRect {
+        return this._visibleRect;
+    }
 
-        get context(): CanvasRenderingContext2D {
-            return renderingContext;
-        },
+    get scale(): number {
+        return this._canvasScale;
+    }
 
-        get sprite(): Sprite {
-            return rootSprite;
-        },
+    get scaleMode(): ScaleMode {
+        return this._scaleMode;
+    }
 
-        get visibleRect(): { left: number; right: number; top: number; bottom: number; } {
-            return visibleRect;
-        },
-
-        get _scale(): number {
-            return canvasScale;
-        },
-
-        get touchEnabled(): boolean {
-            return touchEnabled;
-        },
-
-        set touchEnabled(value: boolean) {
-            touchEnabled = value;
-        },
-
-        get mouseEnabled(): boolean {
-            return mouseEnabled;
-        },
-
-        set mouseEnabled(value: boolean) {
-            mouseEnabled = value;
-        },
-
-        get keyboardEnabled(): boolean {
-            return keyboardEnabled;
-        },
-
-        set keyboardEnabled(value: boolean) {
-            keyboardEnabled = value;
-        },
-
-        get scaleMode(): ScaleMode {
-            return currentScaleMode;
-        },
-
-        set scaleMode(value: ScaleMode) {
-            if (value === currentScaleMode) {
-                return;
-            }
-
-            currentScaleMode = value;
-            adjustCanvasSize();
-        },
-
-        get autoAdjustCanvasSize(): boolean {
-            return autoAdjustCanvasSize;
-        },
-
-        set autoAdjustCanvasSize(value: boolean) {
-            setAutoAdjustCanvasSize(value);
-        },
-
-        /**
-         * Initialize the stage
-         * @param  canvas     Canvas element
-         * @param  width      Resolution design width
-         * @param  height     Resolution design height
-         * @param  scaleMode  Adjust resolution design scale mode 
-         */
-        init(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean): void {
-            rootSprite = new Sprite({
-                x: width * 0.5,
-                y: height * 0.5,
-                width: width,
-                height: height
-            });
-
-            currentScaleMode = scaleMode;
-
-            canvasElement = canvas;
-            renderingContext = canvas.getContext('2d');
-
-            bufferCanvas = document.createElement("canvas");
-            bufferContext = bufferCanvas.getContext("2d");
-
-            stageWidth = canvas.width = bufferCanvas.width = width;
-            stageHeight = canvas.height = bufferCanvas.height = height;
-
-            visibleRect = { left: 0, right: width, top: 0, bottom: height };
-
-            setAutoAdjustCanvasSize(autoAdjustCanvasSize);
-        },
-
-        adjustCanvasSize() {
-            adjustCanvasSize();
-        },
-
-        start(useOuterTimer?: boolean): void {
-            if (!isRunning) {
-                isUseInnerTimer = !useOuterTimer;
-
-                if (isUseInnerTimer) {
-                    lastUpdateTime = Date.now();
-                    startTimer();
-                }
-
-                UIEvent.register();
-                isRunning = true;
-            }
-        },
-
-        step(deltaTime: number): void {
-            rootSprite._update(deltaTime);
-        },
-
-        stop(unregisterUIEvent?: boolean): void {
-            if (!isRunning) {
-                return;
-            }
-
-            if (unregisterUIEvent) {
-                UIEvent.unregister();
-            }
-
-            isRunning = false;
-            clearTimeout(eventloopTimerId);
-        },
-
-        render() {
-            render();
-        },
-
-        /**
-         * Add sprite to the stage
-         */
-        addChild(child: Sprite, position?: number): void {
-            rootSprite.addChild(child, position);
-        },
-
-        /**
-         * Remove sprite from the stage
-         */
-        removeChild(child: Sprite): void {
-            rootSprite.removeChild(child);
-        },
-
-        /**
-         * Remove all sprites from the stage
-         * @param  recusive  Recusize remove all the children
-         */
-        removeAllChildren(recusive?: boolean): void {
-            rootSprite.removeAllChildren(recusive);
+    set scaleMode(value: ScaleMode) {
+        if (value === this._scaleMode) {
+            return;
         }
-    };
 
-    function setAutoAdjustCanvasSize(value: boolean) {
-        if (value && !autoAdjustCanvasSize) {
-            autoAdjustCanvasSize = true;
-            adjustCanvasSize();
-            window.addEventListener("resize", adjustCanvasSize);
+        this._scaleMode = value;
+        this.adjustCanvasSize();
+    }
+
+    get autoAdjustCanvasSize() {
+        return this._autoAdjustCanvasSize;
+    }
+
+    set autoAdjustCanvasSize(value: boolean) {
+        if (value && !this._autoAdjustCanvasSize) {
+            this._autoAdjustCanvasSize = true;
+            this.adjustCanvasSize();
+            window.addEventListener("resize", this.adjustCanvasSize);
         }
-        else if (!value && autoAdjustCanvasSize) {
-            autoAdjustCanvasSize = false;
-            window.removeEventListener("resize", adjustCanvasSize);
+        else if (!value && this._autoAdjustCanvasSize) {
+            this._autoAdjustCanvasSize = false;
+            window.removeEventListener("resize", this.adjustCanvasSize);
         }
     }
 
-    function adjustCanvasSize() {
+    /**
+     * @param  canvas     Canvas element
+     * @param  width      Resolution design width
+     * @param  height     Resolution design height
+     * @param  scaleMode  Adjust resolution design scale mode 
+     */
+    constructor(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean) {
+        this._rootSprite = new Sprite({
+            x: width * 0.5,
+            y: height * 0.5,
+            width: width,
+            height: height
+        });
+
+        this._scaleMode = scaleMode;
+
+        this._canvasElement = canvas;
+        this._renderContext = canvas.getContext('2d');
+
+        this._bufferCanvas = document.createElement("canvas");
+        this._bufferContext = this._bufferCanvas.getContext("2d");
+
+        this._width = canvas.width = this._bufferCanvas.width = width;
+        this._height = canvas.height = this._bufferCanvas.height = height;
+
+        this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
+        this.autoAdjustCanvasSize = autoAdjustCanvasSize;
+
+        this._uiEvent = new UIEvent(this);
+    }
+
+    adjustCanvasSize = () => {
+        let canvasElement = this._canvasElement;
+        let stageWidth = this._width;
+        let stageHeight = this._height;
+        let currentScaleMode = this._scaleMode;
+        let visibleRect = this._visibleRect;
+
         if (!canvasElement || !canvasElement.parentNode) {
             return;
         }
@@ -300,44 +213,103 @@ namespace canvas2d {
         visibleRect.top = deltaHeight;
         visibleRect.bottom = stageHeight - deltaHeight;
 
-        canvasScale = scale;
+        this._canvasScale = scale;
     }
 
-    function render() {
-        if (!isRunning) {
+    start(useExternalTimer?: boolean): void {
+        if (this._isRunning) {
             return;
         }
 
-        var width: number = canvasElement.width;
-        var height: number = canvasElement.height;
+        this._useExternalTimer = !!useExternalTimer;
 
-        bufferContext.clearRect(0, 0, width, height);
+        if (!useExternalTimer) {
+            this._lastUpdateTime = Date.now();
+            this._startTimer();
+        }
 
-        rootSprite._visit(bufferContext);
-
-        renderingContext.clearRect(0, 0, width, height);
-        renderingContext.drawImage(bufferCanvas, 0, 0, width, height);
+        this._uiEvent.register();
+        this._isRunning = true;
     }
 
-    function startTimer() {
-        eventloopTimerId = setTimeout(() => {
-            if (!isUseInnerTimer) {
+    step(deltaTime: number): void {
+        this._rootSprite._update(deltaTime);
+    }
+
+    stop(unregisterUIEvent?: boolean): void {
+        if (!this._isRunning) {
+            return;
+        }
+
+        if (unregisterUIEvent) {
+            this._uiEvent.unregister();
+        }
+
+        this._isRunning = false;
+        clearTimeout(this._eventLoopTimerId);
+    }
+
+    render() {
+        if (!this._isRunning) {
+            return;
+        }
+
+        var {width, height} = this._canvasElement;
+
+        this._bufferContext.clearRect(0, 0, width, height);
+        this._rootSprite._visit(this._bufferContext);
+
+        this._renderContext.clearRect(0, 0, width, height);
+        this._renderContext.drawImage(this._bufferCanvas, 0, 0, width, height);
+    }
+
+    /**
+     * Add sprite to the stage
+     */
+    addChild(child: Sprite, position?: number): void {
+        this._rootSprite.addChild(child, position);
+    }
+
+    /**
+     * Remove sprite from the stage
+     */
+    removeChild(child: Sprite): void {
+        this._rootSprite.removeChild(child);
+    }
+
+    /**
+     * Remove all sprites from the stage
+     * @param  recusive  Recusize remove all the children
+     */
+    removeAllChildren(recusive?: boolean): void {
+        this._rootSprite.removeAllChildren(recusive);
+    }
+
+    release() {
+        this.stop(true);
+        this._rootSprite.release(true);
+        this._rootSprite = this._uiEvent = this._canvasElement = this._renderContext = this._bufferCanvas = this._bufferContext = null;
+    }
+
+    private _startTimer() {
+        this._eventLoopTimerId = setTimeout(() => {
+            if (this._useExternalTimer) {
                 return;
             }
 
-            var deltaTime: number = getDeltaTime();
+            var deltaTime: number = this._getDeltaTime();
             Action.step(deltaTime);
-            rootSprite._update(deltaTime);
-            render();
-            startTimer();
-        }, frameRate);
+            this._rootSprite._update(deltaTime);
+            this.render();
+            this._startTimer();
+        }, this._frameRate);
     }
 
-    function getDeltaTime(): number {
+    private _getDeltaTime() {
         var now = Date.now();
-        var delta = now - lastUpdateTime;
+        var delta = now - this._lastUpdateTime;
 
-        lastUpdateTime = now;
+        this._lastUpdateTime = now;
         return delta / 1000;
     }
 }
