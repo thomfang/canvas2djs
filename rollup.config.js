@@ -9,7 +9,8 @@ export default {
     dest: 'dist/canvas2d.js',
     plugins: [
         typescript({
-            tsconfig: false
+            tsconfig: false,
+            target: 'es5'
         })
     ]
 }

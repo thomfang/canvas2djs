@@ -30,13 +30,6 @@ function removeArrayItem(array, item) {
     }
 }
 
-
-var Util = Object.freeze({
-	uid: uid,
-	addArrayItem: addArrayItem,
-	removeArrayItem: removeArrayItem
-});
-
 var Keys = {
     MOUSE_LEFT: 1,
     MOUSE_MID: 2,
@@ -1192,7 +1185,7 @@ var Sound = {
         if (list) {
             list.forEach(function (audio) { return !audio.playing && audio.currentTime > 0 && audio.resume(); });
         }
-    }
+    },
 };
 function getAudio(name, returnList) {
     var list = audioesCache[name];
@@ -1274,7 +1267,12 @@ var Texture = (function () {
         return new Texture(source, rect);
     };
     Texture.prototype.onReady = function (callback) {
-        this._readyCallbacks.push(callback);
+        if (this.ready) {
+            callback({ width: this.width, height: this.height });
+        }
+        else {
+            this._readyCallbacks.push(callback);
+        }
     };
     Texture.prototype._createByPath = function (path, rect) {
         var _this = this;
@@ -1286,7 +1284,7 @@ var Texture = (function () {
             }
             loaded[path] = true;
             if (_this._readyCallbacks.length) {
-                var size_1 = { width: img.width, height: img.height };
+                var size_1 = { width: _this.width, height: _this.height };
                 _this._readyCallbacks.forEach(function (callback) {
                     callback(size_1);
                 });
@@ -1296,7 +1294,7 @@ var Texture = (function () {
         };
         img.onerror = function () {
             img = null;
-            console.warn('Texture creating fail by "' + path + '"');
+            console.warn('Texture creating fail, error in loading source "' + path + '"');
         };
         if (!loading[path]) {
             console.log("Start to load: " + path);
@@ -3006,23 +3004,27 @@ var Stage = (function () {
 }());
 
 var canvas2d = {
-    Util,
-    Keys,
-    Tween,
-    Action,
-    EventEmitter,
-    HTMLAudio,
-    WebAudio,
-    Sound,
-    Texture,
-    UIEvent,
-    Sprite,
-    TextLabel,
-    BMFontLabel,
-    Stage,
-    AlignType,
-    RAD_PER_DEG,
-    ScaleMode
+    Util: {
+        uid: uid,
+        addArrayItem: addArrayItem,
+        removeArrayItem: removeArrayItem
+    },
+    Keys: Keys,
+    Tween: Tween,
+    Action: Action,
+    EventEmitter: EventEmitter,
+    HTMLAudio: HTMLAudio,
+    WebAudio: WebAudio,
+    Sound: Sound,
+    Texture: Texture,
+    UIEvent: UIEvent,
+    Sprite: Sprite,
+    TextLabel: TextLabel,
+    BMFontLabel: BMFontLabel,
+    Stage: Stage,
+    AlignType: AlignType,
+    RAD_PER_DEG: RAD_PER_DEG,
+    ScaleMode: ScaleMode,
 };
 
 return canvas2d;

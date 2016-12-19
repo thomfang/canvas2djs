@@ -67,7 +67,12 @@ export default class Texture {
     }
 
     public onReady(callback: (size: { width: number, height: number }) => any) {
-        this._readyCallbacks.push(callback);
+        if (this.ready) {
+            callback({ width: this.width, height: this.height });
+        }
+        else {
+            this._readyCallbacks.push(callback);
+        }
     }
 
     private _createByPath(path: string, rect?: Rect): void {
@@ -82,7 +87,7 @@ export default class Texture {
             loaded[path] = true;
 
             if (this._readyCallbacks.length) {
-                let size = { width: img.width, height: img.height };
+                let size = { width: this.width, height: this.height };
                 this._readyCallbacks.forEach((callback) => {
                     callback(size);
                 });
@@ -93,7 +98,7 @@ export default class Texture {
 
         img.onerror = () => {
             img = null;
-            console.warn('Texture creating fail by "' + path + '"');
+            console.warn('Texture creating fail, error in loading source "' + path + '"');
         };
 
         if (!loading[path]) {

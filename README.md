@@ -94,7 +94,7 @@ Quick start
     var title = new canvas2d.TextLabel({
         text: 'canvas2d',
         fontSize: 32,
-        fontFamily: 'Aria',
+        fontFamily: 'Arial',
         fontWeight: 'bold',
         x: stage.width * 0.5,
         y: 50
