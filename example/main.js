@@ -21,10 +21,10 @@ var demo;
             }
         });
         var label = new canvas2d.TextLabel({
-            text: '+20攻击力',
+            text: 'canvas2djs',
             fontName: 'arial',
             fontSize: 12,
-            fontColor: '#0f0',
+            fontColor: '#fff',
             stroke: {
                 color: '#000',
                 width: 1
@@ -49,7 +49,7 @@ var demo;
             .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5)
             .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5)
             .then(function () {
-            console.log('this is a callback action');
+            console.log('This is a callback action');
         })
             .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5)
             .to({ y: ball.y - 100 }, 0.5)
