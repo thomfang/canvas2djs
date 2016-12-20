@@ -1,3 +1,7 @@
+/**
+ * Type definitions for canvas2djs v0.2.3
+ */
+
 export as namespace canvas2d;
 export = canvas2d;
 

@@ -1,3 +1,9 @@
+/**
+ * canvas2djs v0.2.3
+ * Copyright (c) 2013-present Todd Fon
+ * All rights reserved.
+ */
+
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define('canvas2d', factory) :

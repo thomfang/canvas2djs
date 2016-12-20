@@ -1,6 +1,15 @@
-import typescript from 'rollup-plugin-typescript';
+var typescript = require('rollup-plugin-typescript');
+var pkg = require('./package.json');
 
-export default {
+var banner =
+`/**
+ * ${pkg.name} v${pkg.version}
+ * Copyright (c) 2013-present ${pkg.author}
+ * All rights reserved.
+ */
+`;
+
+module.exports = {
     entry: 'src/canvas2d.ts',
     format: 'umd',
     sourceMap: true,
@@ -12,5 +21,6 @@ export default {
             tsconfig: false,
             target: 'es5'
         })
-    ]
+    ],
+    banner
 }
