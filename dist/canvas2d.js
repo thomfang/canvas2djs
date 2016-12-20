@@ -1240,6 +1240,10 @@ var Texture = (function () {
         this.ready = false;
         this.width = 0;
         this.height = 0;
+        var name = getName(source, rect);
+        if (cache[name]) {
+            return cache[name];
+        }
         if (typeof source === 'string') {
             this._createByPath(source, rect);
         }
@@ -1249,7 +1253,6 @@ var Texture = (function () {
         else {
             throw new Error("Invalid texture source");
         }
-        var name = getName(source, rect);
         if (name) {
             cache[name] = this;
         }
@@ -1321,7 +1324,7 @@ var Texture = (function () {
 }());
 function getName(source, rect) {
     var isStr = typeof source === 'string';
-    if (!isStr || !source.src) {
+    if (!isStr && !source.src) {
         return null;
     }
     var src = isStr ? source : source.src;
@@ -1468,8 +1471,15 @@ var Sprite = (function (_super) {
         get: function () {
             return this._texture;
         },
-        set: function (texture) {
+        set: function (value) {
             var _this = this;
+            var texture;
+            if (typeof value === 'string') {
+                texture = Texture.create(value);
+            }
+            else {
+                texture = value;
+            }
             if (texture === this._texture) {
                 return;
             }
@@ -1685,7 +1695,7 @@ var Sprite = (function (_super) {
         this._clip(context);
         this._drawBgColor(context);
         this._drawBorder(context);
-        var texture = this.texture;
+        var texture = this._texture;
         if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
             var sx = this.sourceX;
             var sy = this.sourceY;
@@ -2253,8 +2263,15 @@ var Sprite$2 = (function (_super) {
         get: function () {
             return this._texture;
         },
-        set: function (texture) {
+        set: function (value) {
             var _this = this;
+            var texture;
+            if (typeof value === 'string') {
+                texture = Texture.create(value);
+            }
+            else {
+                texture = value;
+            }
             if (texture === this._texture) {
                 return;
             }
@@ -2470,7 +2487,7 @@ var Sprite$2 = (function (_super) {
         this._clip(context);
         this._drawBgColor(context);
         this._drawBorder(context);
-        var texture = this.texture;
+        var texture = this._texture;
         if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
             var sx = this.sourceX;
             var sy = this.sourceY;

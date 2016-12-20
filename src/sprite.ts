@@ -30,7 +30,7 @@ export interface ISprite {
         width: number;
         color: string;
     };
-    texture?: Texture;
+    texture?: Texture | string;
     rotation?: number;
     opacity?: number;
     visible?: boolean;
@@ -288,7 +288,16 @@ export default class Sprite extends EventEmitter implements ISprite {
         return this._rotation;
     }
 
-    set texture(texture: Texture) {
+    set texture(value: Texture | string) {
+        let texture: Texture;
+
+        if (typeof value === 'string') {
+            texture = Texture.create(value);
+        }
+        else {
+            texture = value;
+        }
+
         if (texture === this._texture) {
             return;
         }
@@ -531,7 +540,7 @@ export default class Sprite extends EventEmitter implements ISprite {
         this._drawBgColor(context);
         this._drawBorder(context);
 
-        var texture = this.texture;
+        var texture = this._texture;
         if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
             var sx: number = this.sourceX;
             var sy: number = this.sourceY;

@@ -1,7 +1,7 @@
 /// <reference path="../dist/canvas2d.d.ts" />
 
 namespace demo {
-    
+
     var canvas = document.querySelector('canvas');
     var stage: canvas2d.Stage;
 
@@ -14,8 +14,8 @@ namespace demo {
 
     function createTextLabel() {
         var container = new canvas2d.Sprite({
-            width: 80,
-            height: 20,
+            width: 100,
+            height: 40,
             bgColor: 'red',
             alignX: canvas2d.AlignType.CENTER,
             y: 200,
@@ -26,11 +26,11 @@ namespace demo {
         var label = new canvas2d.TextLabel({
             text: 'canvas2djs',
             fontName: 'arial',
-            fontSize: 12,
+            fontSize: 18,
             fontColor: '#fff',
             stroke: {
                 color: '#000',
-                width: 1
+                width: 2
             },
             alignX: canvas2d.AlignType.CENTER,
             alignY: canvas2d.AlignType.CENTER
@@ -38,6 +38,27 @@ namespace demo {
 
         container.addChild(label);
         stage.addChild(container);
+    }
+
+    function createSanta() {
+        var santa = new canvas2d.Sprite({
+            alignX: canvas2d.AlignType.CENTER,
+            alignY: canvas2d.AlignType.CENTER,
+            onclick() {
+                new canvas2d.Action(this).by({ y: -200 }, 0.3).by({ y: 200 }, 0.3).start();
+            }
+        });
+        stage.addChild(santa);
+
+        var frameRate = 20; // frame per second
+        var frameList = [];
+
+        for (let i = 0; i < 11; i++) {
+            frameList.push(new canvas2d.Texture(`img/Run_${i}.png`));
+            // frameList.push(`img/Run_${i}.png`);
+        }
+
+        new canvas2d.Action(santa).animate(frameList, frameRate).start();
     }
 
     function createBallWithAction() {
@@ -65,6 +86,7 @@ namespace demo {
 
     createStage();
     createTextLabel();
-    createBallWithAction();
+    createSanta();
+    // createBallWithAction();
 
 }

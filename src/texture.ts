@@ -49,6 +49,12 @@ export default class Texture {
      * @param  rect    Clipping rect
      */
     constructor(source: string | HTMLCanvasElement | HTMLImageElement, rect?: Rect) {
+        var name: any = getName(source, rect);
+        
+        if (cache[name]) {
+            return cache[name];
+        }
+
         if (typeof source === 'string') {
             this._createByPath(source, rect);
         }
@@ -58,8 +64,6 @@ export default class Texture {
         else {
             throw new Error("Invalid texture source");
         }
-
-        var name: any = getName(source, rect);
 
         if (name) {
             cache[name] = this;
@@ -131,7 +135,7 @@ export default class Texture {
 function getName(source: any, rect?: Rect): any {
     var isStr = typeof source === 'string';
 
-    if (!isStr || !source.src) {
+    if (!isStr && !source.src) {
         return null;
     }
 

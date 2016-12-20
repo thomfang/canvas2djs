@@ -2,7 +2,7 @@ export as namespace canvas2d;
 export = canvas2d;
 
 declare namespace canvas2d {
-
+    
     namespace Util {
         function uid(target: any): any;
         function addArrayItem(array: any[], item: any): void;
@@ -158,7 +158,6 @@ declare namespace canvas2d {
         none(pos: any): number;
         full(pos: any): number;
     };
-
 
     interface IEventHelper {
         identifier?: number;
@@ -364,7 +363,7 @@ declare namespace canvas2d {
             width: number;
             color: string;
         };
-        texture?: Texture;
+        texture?: Texture | string;
         rotation?: number;
         opacity?: number;
         visible?: boolean;
@@ -513,7 +512,7 @@ declare namespace canvas2d {
         originX: number;
         originY: number;
         rotation: number;
-        texture: Texture;
+        texture: Texture | string;
         parent: Sprite;
         alignX: AlignType;
         alignY: AlignType;
