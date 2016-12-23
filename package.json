@@ -1,6 +1,6 @@
 {
   "name": "canvas2djs",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "HTML5 canvas based game engine",
   "main": "dist/canvas2d.js",
   "types": "dist/canvas2d.d.ts",
@@ -22,11 +22,8 @@
     "url": "https://github.com/tilfon/canvas2djs/issues"
   },
   "homepage": "https://github.com/tilfon/canvas2djs",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
-    "rollup": "^0.37.0",
-    "rollup-plugin-typescript": "^0.8.1",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.1",
     "gulp-footer": "^1.0.5",
@@ -34,6 +31,9 @@
     "gulp-replace": "^0.5.4",
     "gulp-strip-line": "^0.0.1",
     "gulp-typescript": "^3.1.3",
+    "rollup": "^0.37.0",
+    "rollup-plugin-typescript": "^0.8.1",
+    "tslib": "^1.4.0",
     "typescript": "^2.1.4"
   }
 }

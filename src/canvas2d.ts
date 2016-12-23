@@ -1,4 +1,4 @@
-import { uid, addArrayItem, removeArrayItem } from './Util';
+import { uid, addArrayItem, removeArrayItem, normalizeColor } from './Util';
 import Keys from './Keys';
 import Tween from './Tween';
 import Action from './Action';
@@ -11,12 +11,14 @@ import Sprite, { AlignType, RAD_PER_DEG } from './Sprite';
 import TextLabel from './TextLabel';
 import BMFontLabel from './BMFontLabel';
 import Stage, { ScaleMode } from './Stage';
+import createSprite from './createSprite';
 
 export default {
     Util: {
         uid: uid,
         addArrayItem: addArrayItem,
-        removeArrayItem: removeArrayItem
+        removeArrayItem: removeArrayItem,
+        normalizeColor: normalizeColor,
     },
     Keys: Keys,
     Tween: Tween,
@@ -34,4 +36,5 @@ export default {
     AlignType: AlignType,
     RAD_PER_DEG: RAD_PER_DEG,
     ScaleMode: ScaleMode,
+    createSprite: createSprite,
 }

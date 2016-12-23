@@ -1,5 +1,5 @@
 /**
- * canvas2djs v0.2.3
+ * canvas2djs v0.2.4
  * Copyright (c) 2013-present Todd Fon
  * All rights reserved.
  */
@@ -16,8 +16,19 @@ function __extends(d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
 
+function __rest(s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
+            t[p[i]] = s[p[i]];
+    return t;
+}
+
 var key = '__CANVAS2D_UUID__';
 var counter = 0;
+var cachedColor = {};
 function uid(target) {
     if (typeof target[key] === 'undefined') {
         Object.defineProperty(target, key, { value: counter++ });
@@ -33,6 +44,29 @@ function removeArrayItem(array, item) {
     var index = array.indexOf(item);
     if (index > -1) {
         array.splice(index, 1);
+    }
+}
+function normalizeColor(color) {
+    if (cachedColor[color]) {
+        return cachedColor[color];
+    }
+    if (typeof color === 'string') {
+        if (color[0] != '#' || (color.length != 4 && color.length != 7)) {
+            throw new Error("canvas2d: \"" + color + "\" is not a valid color string");
+        }
+        cachedColor[color] = color;
+        return color;
+    }
+    if (typeof color === 'number') {
+        var result = color.toString(16);
+        while (result.length < 3) {
+            result = '0' + result;
+        }
+        if (result.length !== 3 && result.length !== 6) {
+            throw new Error("canvas2d: \"0x" + result + "\" is not a valid hex number color");
+        }
+        result = cachedColor[color] = '#' + result;
+        return result;
     }
 }
 
@@ -399,7 +433,7 @@ var Transition = (function () {
                 easing = info.easing;
                 dest = info.dest;
             }
-            _this.options.push({ name, dest, easing });
+            _this.options.push({ name: name, dest: dest, easing: easing });
         });
     };
     Transition.prototype._initAsTransitionBy = function (options) {
@@ -416,7 +450,7 @@ var Transition = (function () {
                 easing = info.easing;
                 deltaValue[name] = info.value;
             }
-            _this.options.push({ name, dest, easing });
+            _this.options.push({ name: name, dest: dest, easing: easing });
         });
     };
     Transition.prototype._initBeginValue = function (target) {
@@ -667,10 +701,10 @@ var Action = (function () {
         this._queue.length = 0;
         removeArrayItem(Action._actionList, this);
     };
-    Action._actionList = [];
-    Action._listenerList = [];
     return Action;
 }());
+Action._actionList = [];
+Action._listenerList = [];
 
 var prefix = '__CANVAS2D_ONCE__';
 /**
@@ -740,9 +774,9 @@ var EventEmitter = (function () {
         }
         return this;
     };
-    EventEmitter._cache = {};
     return EventEmitter;
 }());
+EventEmitter._cache = {};
 
 var AudioCtx = window['AudioContext'] || window['webkitAudioContext'];
 var context = AudioCtx ? new AudioCtx() : null;
@@ -752,20 +786,21 @@ var context = AudioCtx ? new AudioCtx() : null;
 var WebAudio = (function (_super) {
     __extends(WebAudio, _super);
     function WebAudio(src) {
-        _super.call(this);
-        this._startTime = 0;
-        this.loop = false;
-        this.muted = false;
-        this.loaded = false;
-        this.volume = 1;
-        this.playing = false;
-        this.autoplay = false;
-        this.duration = 0;
-        this.currentTime = 0;
-        this.src = src;
-        this._handleEvent = this._handleEvent.bind(this);
-        this._gainNode = context.createGain ? context.createGain() : context['createGainNode']();
-        this._gainNode.connect(context.destination);
+        var _this = _super.call(this) || this;
+        _this._startTime = 0;
+        _this.loop = false;
+        _this.muted = false;
+        _this.loaded = false;
+        _this.volume = 1;
+        _this.playing = false;
+        _this.autoplay = false;
+        _this.duration = 0;
+        _this.currentTime = 0;
+        _this.src = src;
+        _this._handleEvent = _this._handleEvent.bind(_this);
+        _this._gainNode = context.createGain ? context.createGain() : context['createGainNode']();
+        _this._gainNode.connect(context.destination);
+        return _this;
     }
     Object.defineProperty(WebAudio, "enabled", {
         get: function () {
@@ -916,28 +951,29 @@ var WebAudio = (function (_super) {
             this._audioNode = null;
         }
     };
-    WebAudio.isSupported = AudioCtx != null;
-    WebAudio._initialized = false;
-    WebAudio._enabled = false;
     return WebAudio;
 }(EventEmitter));
+WebAudio.isSupported = AudioCtx != null;
+WebAudio._initialized = false;
+WebAudio._enabled = false;
 /**
  * HTMLAudio
  */
 var HTMLAudio = (function (_super) {
     __extends(HTMLAudio, _super);
     function HTMLAudio(src) {
-        _super.call(this);
-        this.loop = false;
-        this.muted = false;
-        this.loaded = false;
-        this.volume = 1;
-        this.playing = false;
-        this.autoplay = false;
-        this.duration = 0;
-        this.currentTime = 0;
-        this.src = src;
-        this._handleEvent = this._handleEvent.bind(this);
+        var _this = _super.call(this) || this;
+        _this.loop = false;
+        _this.muted = false;
+        _this.loaded = false;
+        _this.volume = 1;
+        _this.playing = false;
+        _this.autoplay = false;
+        _this.duration = 0;
+        _this.currentTime = 0;
+        _this.src = src;
+        _this._handleEvent = _this._handleEvent.bind(_this);
+        return _this;
     }
     HTMLAudio.prototype.load = function () {
         if (this.loaded || this._isLoading) {
@@ -1041,9 +1077,9 @@ var HTMLAudio = (function (_super) {
             this.playing = true;
         }
     };
-    HTMLAudio.enabled = false;
     return HTMLAudio;
 }(EventEmitter));
+HTMLAudio.enabled = false;
 
 var enabled = false;
 var extension = ".mp3";
@@ -1361,34 +1397,35 @@ var RAD_PER_DEG = Math.PI / 180;
 var Sprite = (function (_super) {
     __extends(Sprite, _super);
     function Sprite(attrs) {
-        _super.call(this);
-        this._width = 0;
-        this._height = 0;
-        this._originX = 0.5;
-        this._originY = 0.5;
-        this._rotation = 0;
-        this._rotationRad = 0;
-        this._originPixelX = 0;
-        this._originPixelY = 0;
-        this.x = 0;
-        this.y = 0;
-        this.scaleX = 1;
-        this.scaleY = 1;
-        this.radius = 0;
-        this.opacity = 1;
-        this.sourceX = 0;
-        this.sourceY = 0;
-        this.lighterMode = false;
-        this.autoResize = true;
-        this.flippedX = false;
-        this.flippedY = false;
-        this.visible = true;
-        this.clipOverflow = false;
-        this.touchEnabled = true;
-        this.mouseEnabled = true;
-        this.keyboardEnabled = true;
-        this.id = uid(this);
-        this._init(attrs);
+        var _this = _super.call(this) || this;
+        _this._width = 0;
+        _this._height = 0;
+        _this._originX = 0.5;
+        _this._originY = 0.5;
+        _this._rotation = 0;
+        _this._rotationRad = 0;
+        _this._originPixelX = 0;
+        _this._originPixelY = 0;
+        _this.x = 0;
+        _this.y = 0;
+        _this.scaleX = 1;
+        _this.scaleY = 1;
+        _this.radius = 0;
+        _this.opacity = 1;
+        _this.sourceX = 0;
+        _this.sourceY = 0;
+        _this.lighterMode = false;
+        _this.autoResize = true;
+        _this.flippedX = false;
+        _this.flippedY = false;
+        _this.visible = true;
+        _this.clipOverflow = false;
+        _this.touchEnabled = true;
+        _this.mouseEnabled = true;
+        _this.keyboardEnabled = true;
+        _this.id = uid(_this);
+        _this._init(attrs);
+        return _this;
     }
     Sprite.prototype._init = function (attrs) {
         var _this = this;
@@ -1669,23 +1706,24 @@ var Sprite = (function (_super) {
         context.clip();
     };
     Sprite.prototype._drawBgColor = function (context) {
-        if (typeof this.bgColor === 'string') {
-            context.fillStyle = this.bgColor;
-            context.beginPath();
-            if (this.radius > 0) {
-                context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
-            }
-            else {
-                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
-            }
-            context.closePath();
-            context.fill();
+        if (this.bgColor == null) {
+            return;
         }
+        context.fillStyle = normalizeColor(this.bgColor);
+        context.beginPath();
+        if (this.radius > 0) {
+            context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+        }
+        else {
+            context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+        }
+        context.closePath();
+        context.fill();
     };
     Sprite.prototype._drawBorder = function (context) {
         if (this.border) {
             context.lineWidth = this.border.width;
-            context.strokeStyle = this.border.color;
+            context.strokeStyle = normalizeColor(this.border.color);
             context.beginPath();
             if (this.radius > 0) {
                 context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -1799,15 +1837,15 @@ var touchEnded = "touchend";
 var mouseBegin = "mousedown";
 var mouseMoved = "mousemove";
 var mouseEnded = "mouseup";
-var onclick = "onclick";
-var onkeyup = "onkeyup";
-var onkeydown = "onkeydown";
-var ontouchbegin = "ontouchbegin";
-var ontouchmoved = "ontouchmoved";
-var ontouchended = "ontouchended";
-var onmousebegin = "onmousebegin";
-var onmousemoved = "onmousemoved";
-var onmouseended = "onmouseended";
+var onclick = "onClick";
+var onkeyup = "onKeyUp";
+var onkeydown = "onKeyDown";
+var ontouchbegin = "onTouchBegin";
+var ontouchmoved = "onTouchMoved";
+var ontouchended = "onTouchEnded";
+var onmousebegin = "onMouseBegin";
+var onmousemoved = "onMouseMoved";
+var onmouseended = "onMouseEnded";
 var UIEvent = (function () {
     function UIEvent(stage) {
         var _this = this;
@@ -1972,7 +2010,7 @@ var UIEvent = (function () {
         var scale = this.stage.scale;
         var x = (event.clientX - clientReact.left) / scale;
         var y = (event.clientY - clientReact.top) / scale;
-        return { x, y };
+        return { x: x, y: y };
     };
     UIEvent.prototype._transformTouches = function (touches, justGet) {
         var helpers = [];
@@ -2119,9 +2157,9 @@ var UIEvent = (function () {
             }
         }
     };
-    UIEvent.supportTouch = "ontouchend" in window;
     return UIEvent;
 }());
+UIEvent.supportTouch = "ontouchend" in window;
 function isRectContainPoint(rect, p) {
     return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
         rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
@@ -2153,34 +2191,35 @@ var RAD_PER_DEG$1 = Math.PI / 180;
 var Sprite$2 = (function (_super) {
     __extends(Sprite, _super);
     function Sprite(attrs) {
-        _super.call(this);
-        this._width = 0;
-        this._height = 0;
-        this._originX = 0.5;
-        this._originY = 0.5;
-        this._rotation = 0;
-        this._rotationRad = 0;
-        this._originPixelX = 0;
-        this._originPixelY = 0;
-        this.x = 0;
-        this.y = 0;
-        this.scaleX = 1;
-        this.scaleY = 1;
-        this.radius = 0;
-        this.opacity = 1;
-        this.sourceX = 0;
-        this.sourceY = 0;
-        this.lighterMode = false;
-        this.autoResize = true;
-        this.flippedX = false;
-        this.flippedY = false;
-        this.visible = true;
-        this.clipOverflow = false;
-        this.touchEnabled = true;
-        this.mouseEnabled = true;
-        this.keyboardEnabled = true;
-        this.id = uid(this);
-        this._init(attrs);
+        var _this = _super.call(this) || this;
+        _this._width = 0;
+        _this._height = 0;
+        _this._originX = 0.5;
+        _this._originY = 0.5;
+        _this._rotation = 0;
+        _this._rotationRad = 0;
+        _this._originPixelX = 0;
+        _this._originPixelY = 0;
+        _this.x = 0;
+        _this.y = 0;
+        _this.scaleX = 1;
+        _this.scaleY = 1;
+        _this.radius = 0;
+        _this.opacity = 1;
+        _this.sourceX = 0;
+        _this.sourceY = 0;
+        _this.lighterMode = false;
+        _this.autoResize = true;
+        _this.flippedX = false;
+        _this.flippedY = false;
+        _this.visible = true;
+        _this.clipOverflow = false;
+        _this.touchEnabled = true;
+        _this.mouseEnabled = true;
+        _this.keyboardEnabled = true;
+        _this.id = uid(_this);
+        _this._init(attrs);
+        return _this;
     }
     Sprite.prototype._init = function (attrs) {
         var _this = this;
@@ -2461,23 +2500,24 @@ var Sprite$2 = (function (_super) {
         context.clip();
     };
     Sprite.prototype._drawBgColor = function (context) {
-        if (typeof this.bgColor === 'string') {
-            context.fillStyle = this.bgColor;
-            context.beginPath();
-            if (this.radius > 0) {
-                context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
-            }
-            else {
-                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
-            }
-            context.closePath();
-            context.fill();
+        if (this.bgColor == null) {
+            return;
         }
+        context.fillStyle = normalizeColor(this.bgColor);
+        context.beginPath();
+        if (this.radius > 0) {
+            context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+        }
+        else {
+            context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+        }
+        context.closePath();
+        context.fill();
     };
     Sprite.prototype._drawBorder = function (context) {
         if (this.border) {
             context.lineWidth = this.border.width;
-            context.strokeStyle = this.border.color;
+            context.strokeStyle = normalizeColor(this.border.color);
             context.beginPath();
             if (this.radius > 0) {
                 context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -2588,16 +2628,17 @@ var regEnter = /\n/;
 var TextLabel = (function (_super) {
     __extends(TextLabel, _super);
     function TextLabel(attrs) {
-        _super.call(this);
-        this.fontName = 'sans-serif';
-        this.textAlign = 'center';
-        this.fontColor = '#000';
-        this.fontSize = 20;
-        this.fontWeight = 'normal';
-        this.fontStyle = 'normal';
-        this.lineSpace = 5;
-        this._text = '';
-        _super.prototype._init.call(this, attrs);
+        var _this = _super.call(this) || this;
+        _this.fontName = 'sans-serif';
+        _this.textAlign = 'center';
+        _this.fontColor = 0x000;
+        _this.fontSize = 20;
+        _this.fontWeight = 'normal';
+        _this.fontStyle = 'normal';
+        _this.lineSpace = 5;
+        _this._text = '';
+        _super.prototype._init.call(_this, attrs);
+        return _this;
     }
     TextLabel.prototype._init = function (attrs) {
     };
@@ -2636,10 +2677,10 @@ var TextLabel = (function (_super) {
         this.height = height;
     };
     TextLabel.prototype.addChild = function () {
-        throw new Error("TextLabel cannot not have children");
+        throw new Error("canvas2d: TextLabel cannot have children");
     };
     TextLabel.prototype.removeChild = function () {
-        throw new Error("TextLabel has no child");
+        throw new Error("canvas2d: TextLabel has no children");
     };
     TextLabel.prototype.draw = function (context) {
         var _this = this;
@@ -2649,12 +2690,12 @@ var TextLabel = (function (_super) {
             return;
         }
         context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
-        context.fillStyle = this.fontColor;
+        context.fillStyle = normalizeColor(this.fontColor);
         context.textAlign = this.textAlign;
         context.textBaseline = 'middle';
         context.lineJoin = 'round';
         if (this.stroke) {
-            context.strokeStyle = this.stroke.color;
+            context.strokeStyle = normalizeColor(this.stroke.color);
             context.lineWidth = this.stroke.width * 2;
         }
         var y = 0;
@@ -2675,7 +2716,7 @@ var TextLabel = (function (_super) {
 var BMFontLabel = (function (_super) {
     __extends(BMFontLabel, _super);
     function BMFontLabel(attrs) {
-        _super.call(this, attrs);
+        return _super.call(this, attrs) || this;
     }
     Object.defineProperty(BMFontLabel.prototype, "text", {
         get: function () {
@@ -3026,11 +3067,71 @@ var Stage = (function () {
     return Stage;
 }());
 
+function createSprite(type, props) {
+    var children = [];
+    for (var _i = 2; _i < arguments.length; _i++) {
+        children[_i - 2] = arguments[_i];
+    }
+    var sprite;
+    var ref = props.ref, options = __rest(props, ["ref"]);
+    if (typeof type === 'function') {
+        sprite = new type(options);
+    }
+    else {
+        switch (type) {
+            case "sprite":
+                sprite = new Sprite(options);
+                if (children.length) {
+                    children.forEach(function (child) { return child && sprite.addChild(child); });
+                }
+                break;
+            case "text":
+                sprite = new TextLabel(options);
+                if (children.length && ensureString(children)) {
+                    sprite.text = children.join('');
+                }
+                break;
+            case "bmfont":
+                sprite = new BMFontLabel(options);
+                if (children.length && ensureString(children)) {
+                    sprite.text = children.join('');
+                }
+                break;
+            case 'stage':
+                var _a = options, canvas = _a.canvas, width = _a.width, height = _a.height, scaleMode = _a.scaleMode, autoAdjustCanvasSize = _a.autoAdjustCanvasSize, useExternalTimer = _a.useExternalTimer, touchEnabled = _a.touchEnabled, mouseEnabled = _a.mouseEnabled, keyboardEnabled = _a.keyboardEnabled;
+                var stage_1 = sprite = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize);
+                stage_1.touchEnabled = touchEnabled;
+                stage_1.mouseEnabled = mouseEnabled;
+                stage_1.keyboardEnabled = keyboardEnabled;
+                stage_1.start(useExternalTimer);
+                if (children.length) {
+                    children.forEach(function (child) { return child && stage_1.addChild(child); });
+                }
+                break;
+        }
+    }
+    if (sprite == null) {
+        console.error("canvas2d.createSprite: unknown type", type);
+    }
+    if (ref) {
+        ref.call(undefined, sprite);
+    }
+    return sprite;
+}
+function ensureString(list) {
+    var isString = list.every(function (item) { return typeof item === 'string'; });
+    if (!isString) {
+        throw new Error("canvas2d: <text> only can add string children");
+    }
+    return true;
+}
+
 var canvas2d = {
     Util: {
         uid: uid,
         addArrayItem: addArrayItem,
-        removeArrayItem: removeArrayItem
+        removeArrayItem: removeArrayItem,
+        normalizeColor: normalizeColor,
     },
     Keys: Keys,
     Tween: Tween,
@@ -3048,6 +3149,7 @@ var canvas2d = {
     AlignType: AlignType,
     RAD_PER_DEG: RAD_PER_DEG,
     ScaleMode: ScaleMode,
+    createSprite: createSprite,
 };
 
 return canvas2d;

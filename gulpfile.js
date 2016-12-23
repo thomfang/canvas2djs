@@ -22,6 +22,21 @@ gulp.task('default', function () {
             'export = canvas2d;\n',
             'declare namespace canvas2d {\n'
         ].join('\n')))
-        .pipe(footer('\n}'))
+        .pipe(footer([
+            '\n}\n',
+            'declare global {',
+            '   namespace JSX {',
+            '       interface Element extends canvas2d.Sprite<any> { }',
+            '       interface ElementAttributesProperty { _props: {}; }',
+            '       interface IntrinsicClassAttributes<T> extends canvas2d.Ref<T> { }',
+            '       interface IntrinsicElements {',
+            '           sprite: canvas2d.SpriteProps;',
+            '           text: canvas2d.TextProps;',
+            '           bmfont: canvas2d.BMFontProps;',
+            '           stage: canvas2d.StageProps;',
+            '       }',
+            '   }',
+            '}'
+        ].join('\n')))
         .pipe(gulp.dest('dist/'));
 });

@@ -20,6 +20,8 @@
         "src/TextLabel.ts",
         "src/EventEmitter.ts",
         "src/BMFontLabel.ts",
-        "src/Audio.ts"
+        "src/Audio.ts",
+        "src/createSprite.ts",
+        "src/test.tsx"
     ]
 }

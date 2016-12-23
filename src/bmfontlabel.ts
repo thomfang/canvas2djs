@@ -6,7 +6,7 @@ export interface IBMFontLabel extends ISprite {
     text?: string;
 }
 
-export default class BMFontLabel extends Sprite {
+export default class BMFontLabel extends Sprite<IBMFontLabel> {
 
     private _text: string;
     private _words: Texture[];

@@ -1,22 +1,22 @@
-/**
- * Type definitions for canvas2djs v0.2.3
- */
-
 export as namespace canvas2d;
 export = canvas2d;
 
 declare namespace canvas2d {
-    
+    type Color = string | number;
+
     namespace Util {
         function uid(target: any): any;
         function addArrayItem(array: any[], item: any): void;
         function removeArrayItem(array: any[], item: any): void;
+        function normalizeColor(color: string | number): string;
     }
+
 
     interface IActionListener {
         all(callback: Function): IActionListener;
         any(callback: Function): IActionListener;
     }
+
     /**
      * Action manager
      */
@@ -172,8 +172,8 @@ declare namespace canvas2d {
         stageX?: number;
         stageY?: number;
         _moved?: boolean;
-        beginTarget?: Sprite;
-        target?: Sprite;
+        beginTarget?: Sprite<any>;
+        target?: Sprite<any>;
         cancelBubble: boolean;
     }
     class UIEvent {
@@ -340,8 +340,6 @@ declare namespace canvas2d {
     }
 
 
-
-
     enum AlignType {
         TOP = 0,
         RIGHT = 1,
@@ -361,11 +359,11 @@ declare namespace canvas2d {
         scaleY?: number;
         originX?: number;
         originY?: number;
-        bgColor?: string;
+        bgColor?: Color;
         radius?: number;
         border?: {
             width: number;
-            color: string;
+            color: Color;
         };
         texture?: Texture | string;
         rotation?: number;
@@ -415,37 +413,45 @@ declare namespace canvas2d {
         /**
          * Click event handler
          */
-        onclick?(e: IEventHelper, event: MouseEvent): any;
+        onClick?(e: IEventHelper, event: MouseEvent): any;
         /**
          * Mouse begin event handler
          */
-        onmousebegin?(e: IEventHelper, event: MouseEvent): any;
+        onMouseBegin?(e: IEventHelper, event: MouseEvent): any;
         /**
          * Mouse moved event handler
          */
-        onmousemoved?(e: IEventHelper, event: MouseEvent): any;
+        onMouseMoved?(e: IEventHelper, event: MouseEvent): any;
         /**
          * Mouse ended event handler
          */
-        onmouseended?(e: IEventHelper, event: MouseEvent): any;
+        onMouseEnded?(e: IEventHelper, event: MouseEvent): any;
         /**
          * Touch begin event handler
          */
-        ontouchbegin?(touches: IEventHelper[], event: TouchEvent): any;
+        onTouchBegin?(touches: IEventHelper[], event: TouchEvent): any;
         /**
          * Touch moved event handler
          */
-        ontouchmoved?(touches: IEventHelper[], event: TouchEvent): any;
+        onTouchMoved?(touches: IEventHelper[], event: TouchEvent): any;
         /**
          * Touch ended event hadndler
          */
-        ontouchended?(touches: IEventHelper[], event: TouchEvent): any;
+        onTouchEnded?(touches: IEventHelper[], event: TouchEvent): any;
+        /**
+         * KeyDown event handler
+         */
+        onKeyDown?(event: KeyboardEvent): any;
+        /**
+         * KeyUp event handler
+         */
+        onKeyUp?(event: KeyboardEvent): any;
     }
     const RAD_PER_DEG: number;
     /**
      * Sprite as the base element
      */
-    class Sprite extends EventEmitter implements ISprite {
+    class Sprite<T extends ISprite> extends EventEmitter {
         protected _width: number;
         protected _height: number;
         protected _originX: number;
@@ -455,7 +461,8 @@ declare namespace canvas2d {
         protected _texture: Texture;
         protected _alignX: AlignType;
         protected _alignY: AlignType;
-        protected _parent: Sprite;
+        protected _parent: Sprite<any>;
+        protected _props: T & ISprite;
         _originPixelX: number;
         _originPixelY: number;
         id: number;
@@ -475,40 +482,48 @@ declare namespace canvas2d {
         flippedY: boolean;
         visible: boolean;
         clipOverflow: boolean;
-        bgColor: string;
+        bgColor: Color;
         border: {
             width: number;
-            color: string;
+            color: Color;
         };
-        children: Sprite[];
+        children: Sprite<any>[];
         touchEnabled: boolean;
         mouseEnabled: boolean;
         keyboardEnabled: boolean;
-        onclick: (e: IEventHelper, event: MouseEvent) => any;
+        onClick: ISprite["onClick"];
         /**
          * Mouse begin event handler
          */
-        onmousebegin: (e: IEventHelper, event: MouseEvent) => any;
+        onMouseBegin: ISprite["onMouseBegin"];
         /**
          * Mouse moved event handler
          */
-        onmousemoved: (e: IEventHelper, event: MouseEvent) => any;
+        onMouseMoved: ISprite["onMouseMoved"];
         /**
          * Mouse ended event handler
          */
-        onmouseended: (e: IEventHelper, event: MouseEvent) => any;
+        onMouseEnded: ISprite["onMouseEnded"];
         /**
          * Touch begin event handler
          */
-        ontouchbegin: (touches: IEventHelper[], event: TouchEvent) => any;
+        onTouchBegin: ISprite["onTouchBegin"];
         /**
          * Touch moved event handler
          */
-        ontouchmoved: (touches: IEventHelper[], event: TouchEvent) => any;
+        onTouchMoved: ISprite["onTouchMoved"];
+        /**
+         * KeyDown event handler
+         */
+        onKeyDown: ISprite["onKeyDown"];
+        /**
+         * KeyUp event handler
+         */
+        onKeyUp: ISprite["onKeyUp"];
         /**
          * Touch ended event hadndler
          */
-        ontouchended: (touches: IEventHelper[], event: TouchEvent) => any;
+        onTouchEnded: ISprite["onTouchEnded"];
         constructor(attrs?: ISprite);
         protected _init(attrs?: ISprite): void;
         width: number;
@@ -517,7 +532,7 @@ declare namespace canvas2d {
         originY: number;
         rotation: number;
         texture: Texture | string;
-        parent: Sprite;
+        parent: Sprite<any>;
         alignX: AlignType;
         alignY: AlignType;
         _update(deltaTime: number): void;
@@ -529,8 +544,8 @@ declare namespace canvas2d {
         protected _drawBgColor(context: CanvasRenderingContext2D): void;
         protected _drawBorder(context: CanvasRenderingContext2D): void;
         protected draw(context: CanvasRenderingContext2D): void;
-        addChild(target: Sprite, position?: number): void;
-        removeChild(target: Sprite): void;
+        addChild(target: Sprite<any>, position?: number): void;
+        removeChild(target: Sprite<any>): void;
         removeAllChildren(recusive?: boolean): void;
         release(recusive?: boolean): void;
         init(): any;
@@ -578,7 +593,7 @@ declare namespace canvas2d {
         readonly height: number;
         readonly canvas: HTMLCanvasElement;
         readonly context: CanvasRenderingContext2D;
-        readonly sprite: Sprite;
+        readonly sprite: Sprite<{}>;
         readonly visibleRect: VisibleRect;
         readonly scale: number;
         scaleMode: ScaleMode;
@@ -598,11 +613,11 @@ declare namespace canvas2d {
         /**
          * Add sprite to the stage
          */
-        addChild(child: Sprite, position?: number): void;
+        addChild(child: Sprite<any>, position?: number): void;
         /**
          * Remove sprite from the stage
          */
-        removeChild(child: Sprite): void;
+        removeChild(child: Sprite<any>): void;
         /**
          * Remove all sprites from the stage
          * @param  recusive  Recusize remove all the children
@@ -614,32 +629,36 @@ declare namespace canvas2d {
     }
 
 
+    type FontWeight = "lighter" | "normal" | "bold" | "bolder";
+    type FontStyle = "oblique" | "normal" | "italic";
+    type TextAlign = "left" | "right" | "center" | "start" | "end";
+
     interface ITextLabel extends ISprite {
         text?: string;
         fontName?: string;
-        textAlign?: string;
-        fontColor?: string;
+        textAlign?: TextAlign;
+        fontColor?: Color;
         fontSize?: number;
         lineSpace?: number;
-        fontStyle?: string;
-        fontWeight?: string;
+        fontStyle?: FontStyle;
+        fontWeight?: FontWeight;
         maxWidth?: number;
         stroke?: {
-            color: string;
+            color: Color;
             width: number;
         };
     }
-    class TextLabel extends Sprite {
+    class TextLabel extends Sprite<ITextLabel> {
         maxWidth: number;
         fontName: string;
-        textAlign: string;
-        fontColor: string;
+        textAlign: TextAlign;
+        fontColor: Color;
         fontSize: number;
-        fontWeight: string;
-        fontStyle: string;
+        fontWeight: FontWeight;
+        fontStyle: FontStyle;
         lineSpace: number;
         stroke: {
-            color: string;
+            color: Color;
             width: number;
         };
         private _lines;
@@ -656,6 +675,7 @@ declare namespace canvas2d {
     interface IEventListener {
         (...args: any[]): any;
     }
+
     /**
      * EventEmitter
      */
@@ -669,15 +689,14 @@ declare namespace canvas2d {
         emit(type: string, ...args: any[]): this;
     }
 
-
-
     interface IBMFontLabel extends ISprite {
         textureMap: {
             [word: string]: Texture;
         };
         text?: string;
     }
-    class BMFontLabel extends Sprite {
+
+    class BMFontLabel extends Sprite<IBMFontLabel> {
         private _text;
         private _words;
         private _textureMap;
@@ -756,4 +775,42 @@ declare namespace canvas2d {
         private _play();
     }
 
+    interface Ref<T> {
+        ref?(instance: T): any;
+    }
+    type SpriteProps = ISprite & Ref<Sprite<{}>>;
+    type TextProps = ITextLabel & Ref<TextLabel>;
+    type BMFontProps = IBMFontLabel & Ref<BMFontLabel>;
+    type SpriteClass<T, U> = new (attrs?: T & ISprite) => U;
+    type StageProps = {
+        width: number;
+        height: number;
+        canvas: HTMLCanvasElement;
+        scaleMode: ScaleMode;
+        autoAdjustCanvasSize?: boolean;
+        touchEnabled?: boolean;
+        mouseEnabled?: boolean;
+        keyboardEnabled?: boolean;
+        useExternalTimer?: boolean;
+    } & Ref<Stage>;
+    function createSprite<T, U>(type: "sprite", props: SpriteProps, ...children: any[]): Sprite<{}>;
+    function createSprite<T, U>(type: "text", props: TextProps, ...children: any[]): TextLabel;
+    function createSprite<T, U>(type: "bmfont", props: BMFontProps, ...children: any[]): BMFontLabel;
+    function createSprite<T, U>(type: "stage", props: StageProps, ...children: any[]): Stage;
+    function createSprite<T, U>(type: SpriteClass<T, U>, props: T & SpriteProps, ...children: any[]): U;
+
+}
+
+declare global {
+    namespace JSX {
+        interface Element extends canvas2d.Sprite<any> { }
+        interface ElementAttributesProperty { _props: {}; }
+        interface IntrinsicClassAttributes<T> extends canvas2d.Ref<T> { }
+        interface IntrinsicElements {
+            sprite: canvas2d.SpriteProps;
+            text: canvas2d.TextProps;
+            bmfont: canvas2d.BMFontProps;
+            stage: canvas2d.StageProps;
+        }
+    }
 }

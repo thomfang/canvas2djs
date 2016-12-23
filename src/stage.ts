@@ -23,7 +23,7 @@ export default class Stage {
     private _isRunning: boolean;
     private _width: number = 0;
     private _height: number = 0;
-    private _rootSprite: Sprite;
+    private _rootSprite: Sprite<{}>;
     private _visibleRect: VisibleRect;
     private _canvasScale: number;
     private _scaleMode: ScaleMode;
@@ -70,7 +70,7 @@ export default class Stage {
         return this._renderContext;
     }
 
-    get sprite(): Sprite {
+    get sprite(): Sprite<{}> {
         return this._rootSprite;
     }
 
@@ -266,14 +266,14 @@ export default class Stage {
     /**
      * Add sprite to the stage
      */
-    addChild(child: Sprite, position?: number): void {
+    addChild(child: Sprite<any>, position?: number): void {
         this._rootSprite.addChild(child, position);
     }
 
     /**
      * Remove sprite from the stage
      */
-    removeChild(child: Sprite): void {
+    removeChild(child: Sprite<any>): void {
         this._rootSprite.removeChild(child);
     }
 

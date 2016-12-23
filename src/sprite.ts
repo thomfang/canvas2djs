@@ -1,5 +1,5 @@
 import { IEventHelper } from './UIEvent';
-import * as util from './Util';
+import { Color, normalizeColor, uid } from './Util';
 import Action from './Action';
 import Texture from './Texture';
 import EventEmitter from './EventEmitter';
@@ -24,11 +24,11 @@ export interface ISprite {
     scaleY?: number;
     originX?: number;
     originY?: number;
-    bgColor?: string;
+    bgColor?: Color;
     radius?: number;
     border?: {
         width: number;
-        color: string;
+        color: Color;
     };
     texture?: Texture | string;
     rotation?: number;
@@ -88,37 +88,47 @@ export interface ISprite {
     /**
      * Click event handler
      */
-    onclick?(e: IEventHelper, event: MouseEvent): any;
+    onClick?(e: IEventHelper, event: MouseEvent): any;
 
     /**
      * Mouse begin event handler
      */
-    onmousebegin?(e: IEventHelper, event: MouseEvent): any;
+    onMouseBegin?(e: IEventHelper, event: MouseEvent): any;
 
     /**
      * Mouse moved event handler
      */
-    onmousemoved?(e: IEventHelper, event: MouseEvent): any;
+    onMouseMoved?(e: IEventHelper, event: MouseEvent): any;
 
     /**
      * Mouse ended event handler
      */
-    onmouseended?(e: IEventHelper, event: MouseEvent): any;
+    onMouseEnded?(e: IEventHelper, event: MouseEvent): any;
 
     /**
      * Touch begin event handler
      */
-    ontouchbegin?(touches: IEventHelper[], event: TouchEvent): any;
+    onTouchBegin?(touches: IEventHelper[], event: TouchEvent): any;
 
     /**
      * Touch moved event handler
      */
-    ontouchmoved?(touches: IEventHelper[], event: TouchEvent): any;
+    onTouchMoved?(touches: IEventHelper[], event: TouchEvent): any;
 
     /**
      * Touch ended event hadndler
      */
-    ontouchended?(touches: IEventHelper[], event: TouchEvent): any;
+    onTouchEnded?(touches: IEventHelper[], event: TouchEvent): any;
+
+    /**
+     * KeyDown event handler
+     */
+    onKeyDown?(event: KeyboardEvent): any;
+
+    /**
+     * KeyUp event handler
+     */
+    onKeyUp?(event: KeyboardEvent): any;
 }
 
 export const RAD_PER_DEG: number = Math.PI / 180;
@@ -126,7 +136,7 @@ export const RAD_PER_DEG: number = Math.PI / 180;
 /**
  * Sprite as the base element
  */
-export default class Sprite extends EventEmitter implements ISprite {
+export default class Sprite<T extends ISprite> extends EventEmitter {
     protected _width: number = 0;
     protected _height: number = 0;
     protected _originX: number = 0.5;
@@ -136,7 +146,9 @@ export default class Sprite extends EventEmitter implements ISprite {
     protected _texture: Texture;
     protected _alignX: AlignType;
     protected _alignY: AlignType;
-    protected _parent: Sprite;
+    protected _parent: Sprite<T>;
+
+    protected _props: T & ISprite; // Use for tsx
 
     _originPixelX: number = 0;
     _originPixelY: number = 0;
@@ -159,52 +171,62 @@ export default class Sprite extends EventEmitter implements ISprite {
     flippedY: boolean = false;
     visible: boolean = true;
     clipOverflow: boolean = false;
-    bgColor: string;
+    bgColor: Color;
     border: {
         width: number;
-        color: string;
+        color: Color;
     };
-    children: Sprite[];
+    children: Sprite<any>[];
 
     touchEnabled: boolean = true;
     mouseEnabled: boolean = true;
     keyboardEnabled: boolean = true;
 
-    onclick: (e: IEventHelper, event: MouseEvent) => any;
+    onClick: ISprite["onClick"];
 
     /**
      * Mouse begin event handler
      */
-    onmousebegin: (e: IEventHelper, event: MouseEvent) => any;
+    onMouseBegin: ISprite["onMouseBegin"];
 
     /**
      * Mouse moved event handler
      */
-    onmousemoved: (e: IEventHelper, event: MouseEvent) => any;
+    onMouseMoved: ISprite["onMouseMoved"];
 
     /**
      * Mouse ended event handler
      */
-    onmouseended: (e: IEventHelper, event: MouseEvent) => any;
+    onMouseEnded: ISprite["onMouseEnded"];
 
     /**
      * Touch begin event handler
      */
-    ontouchbegin: (touches: IEventHelper[], event: TouchEvent) => any;
+    onTouchBegin: ISprite["onTouchBegin"];
 
     /**
      * Touch moved event handler
      */
-    ontouchmoved: (touches: IEventHelper[], event: TouchEvent) => any;
+    onTouchMoved: ISprite["onTouchMoved"];
+
+    /**
+     * KeyDown event handler
+     */
+    onKeyDown: ISprite["onKeyDown"];
+
+    /**
+     * KeyUp event handler
+     */
+    onKeyUp: ISprite["onKeyUp"];
 
     /**
      * Touch ended event hadndler
      */
-    ontouchended: (touches: IEventHelper[], event: TouchEvent) => any;
+    onTouchEnded: ISprite["onTouchEnded"];
 
     constructor(attrs?: ISprite) {
         super();
-        this.id = util.uid(this);
+        this.id = uid(this);
         this._init(attrs);
     }
 
@@ -330,7 +352,7 @@ export default class Sprite extends EventEmitter implements ISprite {
         return this._texture;
     }
 
-    set parent(sprite: Sprite) {
+    set parent(sprite: Sprite<any>) {
         if (sprite === this._parent) {
             return;
         }
@@ -505,24 +527,26 @@ export default class Sprite extends EventEmitter implements ISprite {
     }
 
     protected _drawBgColor(context: CanvasRenderingContext2D): void {
-        if (typeof this.bgColor === 'string') {
-            context.fillStyle = this.bgColor;
-            context.beginPath();
-            if (this.radius > 0) {
-                context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
-            }
-            else {
-                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
-            }
-            context.closePath();
-            context.fill();
+        if (this.bgColor == null) {
+            return;
         }
+
+        context.fillStyle = normalizeColor(this.bgColor);
+        context.beginPath();
+        if (this.radius > 0) {
+            context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
+        }
+        else {
+            context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
+        }
+        context.closePath();
+        context.fill();
     }
 
     protected _drawBorder(context: CanvasRenderingContext2D): void {
         if (this.border) {
             context.lineWidth = this.border.width;
-            context.strokeStyle = this.border.color;
+            context.strokeStyle = normalizeColor(this.border.color);
             context.beginPath();
             if (this.radius > 0) {
                 context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -554,7 +578,7 @@ export default class Sprite extends EventEmitter implements ISprite {
         }
     }
 
-    addChild(target: Sprite, position?: number): void {
+    addChild(target: Sprite<any>, position?: number): void {
         if (target.parent) {
             throw new Error("Sprite has been added");
         }
@@ -563,7 +587,7 @@ export default class Sprite extends EventEmitter implements ISprite {
             this.children = [];
         }
 
-        var children: Sprite[] = this.children;
+        var children: Sprite<any>[] = this.children;
 
         if (children.indexOf(target) === -1) {
             if (position > -1 && position < children.length) {
@@ -576,7 +600,7 @@ export default class Sprite extends EventEmitter implements ISprite {
         }
     }
 
-    removeChild(target: Sprite): void {
+    removeChild(target: Sprite<any>): void {
         if (!this.children || !this.children.length) {
             return;
         }
@@ -593,7 +617,7 @@ export default class Sprite extends EventEmitter implements ISprite {
         }
 
         while (this.children.length) {
-            var sprite: Sprite = this.children[0];
+            var sprite: Sprite<any> = this.children[0];
 
             if (recusive) {
                 sprite.removeAllChildren(true);
@@ -633,10 +657,10 @@ export default class Sprite extends EventEmitter implements ISprite {
     }
 }
 
-let releaseSpritePool: Sprite[] = [];
+let releaseSpritePool: Sprite<any>[] = [];
 let timerId: number;
 
-function addToReleasePool(sprite: Sprite) {
+function addToReleasePool(sprite: Sprite<any>) {
     releaseSpritePool.push(sprite);
 
     if (timerId != null) {

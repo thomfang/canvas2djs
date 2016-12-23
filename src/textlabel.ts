@@ -1,36 +1,41 @@
 ﻿import Sprite, { ISprite } from './sprite';
+import { normalizeColor, Color } from './Util';
 
 var measureContext = document.createElement("canvas").getContext("2d");
 var regEnter = /\n/;
 
+export type FontWeight = "lighter" | "normal" | "bold" | "bolder";
+export type FontStyle = "oblique" | "normal" | "italic";
+export type TextAlign = "left" | "right" | "center" | "start" | "end";
+
 export interface ITextLabel extends ISprite {
     text?: string;
     fontName?: string;
-    textAlign?: string;
-    fontColor?: string;
+    textAlign?: TextAlign;
+    fontColor?: Color;
     fontSize?: number;
     lineSpace?: number;
-    fontStyle?: string;
-    fontWeight?: string;
+    fontStyle?: FontStyle;
+    fontWeight?: FontWeight;
     maxWidth?: number;
     stroke?: {
-        color: string;
+        color: Color;
         width: number;
     };
 }
 
-export default class TextLabel extends Sprite {
+export default class TextLabel extends Sprite<ITextLabel> {
 
     maxWidth: number;
     fontName: string = 'sans-serif';
-    textAlign: string = 'center';
-    fontColor: string = '#000';
+    textAlign: TextAlign = 'center';
+    fontColor: Color = 0x000;
     fontSize: number = 20;
-    fontWeight: string = 'normal';
-    fontStyle: string = 'normal';
+    fontWeight: FontWeight = 'normal';
+    fontStyle: FontStyle = 'normal';
     lineSpace: number = 5;
     stroke: {
-        color: string;
+        color: Color;
         width: number;
     };
 
@@ -86,11 +91,11 @@ export default class TextLabel extends Sprite {
     }
 
     addChild(): void {
-        throw new Error("TextLabel cannot not have children");
+        throw new Error("canvas2d: TextLabel cannot have children");
     }
 
     removeChild(): void {
-        throw new Error("TextLabel has no child");
+        throw new Error("canvas2d: TextLabel has no children");
     }
 
     protected draw(context: CanvasRenderingContext2D): void {
@@ -102,13 +107,13 @@ export default class TextLabel extends Sprite {
         }
 
         context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
-        context.fillStyle = this.fontColor;
+        context.fillStyle = normalizeColor(this.fontColor);
         context.textAlign = this.textAlign;
         context.textBaseline = 'middle';
         context.lineJoin = 'round';
 
         if (this.stroke) {
-            context.strokeStyle = this.stroke.color;
+            context.strokeStyle = normalizeColor(this.stroke.color);
             context.lineWidth = this.stroke.width * 2;
         }
 

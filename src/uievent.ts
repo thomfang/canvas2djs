@@ -18,8 +18,8 @@ export interface IEventHelper {
     stageX?: number;
     stageY?: number;
     _moved?: boolean;
-    beginTarget?: Sprite;
-    target?: Sprite;
+    beginTarget?: Sprite<any>;
+    target?: Sprite<any>;
     cancelBubble: boolean;
 }
 
@@ -34,17 +34,17 @@ const mouseBegin = "mousedown";
 const mouseMoved = "mousemove";
 const mouseEnded = "mouseup";
 
-const onclick = "onclick";
-const onkeyup = "onkeyup";
-const onkeydown = "onkeydown";
+const onclick = "onClick";
+const onkeyup = "onKeyUp";
+const onkeydown = "onKeyDown";
 
-const ontouchbegin = "ontouchbegin";
-const ontouchmoved = "ontouchmoved";
-const ontouchended = "ontouchended";
+const ontouchbegin = "onTouchBegin";
+const ontouchmoved = "onTouchMoved";
+const ontouchended = "onTouchEnded";
 
-const onmousebegin = "onmousebegin";
-const onmousemoved = "onmousemoved";
-const onmouseended = "onmouseended";
+const onmousebegin = "onMouseBegin";
+const onmousemoved = "onMouseMoved";
+const onmouseended = "onMouseEnded";
 
 export default class UIEvent {
 
@@ -307,7 +307,7 @@ export default class UIEvent {
     }
 
     private _dispatchTouch(
-        sprite: Sprite,
+        sprite: Sprite<any>,
         offsetX: number,
         offsetY: number,
         helpers: IEventHelper[],
@@ -390,7 +390,7 @@ export default class UIEvent {
     }
 
     private _dispatchMouse(
-        sprite: Sprite,
+        sprite: Sprite<any>,
         offsetX: number,
         offsetY: number,
         helper: IEventHelper,
@@ -451,7 +451,7 @@ export default class UIEvent {
         }
     }
 
-    private _dispatchKeyboard(sprite: Sprite, keyCode: number, event, methodName: string) {
+    private _dispatchKeyboard(sprite: Sprite<any>, keyCode: number, event, methodName: string) {
         if (sprite.keyboardEnabled === false) {
             return;
         }
@@ -485,6 +485,6 @@ function isMovedSmallRange(e: IEventHelper) {
     return x <= 5 && y <= 5;
 }
 
-function hasImplements(sprite: Sprite, methodName: string) {
+function hasImplements(sprite: Sprite<any>, methodName: string) {
     return sprite[methodName] !== Sprite.prototype[methodName] && typeof sprite[methodName] === 'function';
 }
