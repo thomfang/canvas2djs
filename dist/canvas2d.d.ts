@@ -660,6 +660,7 @@ declare namespace canvas2d {
         private _lines;
         private _text;
         constructor(attrs?: ITextLabel);
+        protected _init(attrs?: ISprite): void;
         text: string;
         private _resize();
         addChild(): void;

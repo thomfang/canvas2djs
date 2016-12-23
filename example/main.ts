@@ -19,7 +19,7 @@ namespace demo {
             bgColor: 'red',
             alignX: canvas2d.AlignType.CENTER,
             y: 200,
-            onclick: function () {
+            onClick: function () {
                 console.log('clicked')
             }
         });
@@ -44,7 +44,7 @@ namespace demo {
         var santa = new canvas2d.Sprite({
             alignX: canvas2d.AlignType.CENTER,
             alignY: canvas2d.AlignType.CENTER,
-            onclick() {
+            onClick() {
                 new canvas2d.Action(this).by({ y: -200 }, 0.3).by({ y: 200 }, 0.3).start();
             }
         });

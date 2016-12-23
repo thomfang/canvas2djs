@@ -2622,7 +2622,7 @@ var regEnter = /\n/;
 var TextLabel = (function (_super) {
     __extends(TextLabel, _super);
     function TextLabel(attrs) {
-        var _this = _super.call(this, attrs) || this;
+        var _this = _super.call(this) || this;
         _this.fontName = 'sans-serif';
         _this.textAlign = 'center';
         _this.fontColor = 0x000;
@@ -2631,8 +2631,11 @@ var TextLabel = (function (_super) {
         _this.fontStyle = 'normal';
         _this.lineSpace = 5;
         _this._text = '';
+        _super.prototype._init.call(_this, attrs);
         return _this;
     }
+    TextLabel.prototype._init = function (attrs) {
+    };
     Object.defineProperty(TextLabel.prototype, "text", {
         get: function () {
             return this._text;
