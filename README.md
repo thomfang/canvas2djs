@@ -132,7 +132,7 @@ Quick start
         let propOptions = {
             scaleX: 2, // will use default easing function
             scaleY: {
-                dest: 2,
+                value: 2,
                 easing: canvas2d.Tween.easeInOutQuad
             }
         };
@@ -157,3 +157,131 @@ Quick start
 
     scale();
     ```
+
+canvas2djs with TypeScript and tsx
+===
+
+`tsconfig.json`
+
+```json
+{
+    "compilerOptions": {
+        // ...
+        "jsx": "react",
+        "jsxFactory": "canvas2d.createSprite"
+    }
+}
+```
+
+Import canvas2djs declaration in .tsx files:
+
+```typescript
+// test.tsx
+
+// use ref
+/// <reference types="canvas2djs" />
+
+
+// or import as a module
+import * as canvas2d from 'canvas2djs';
+```
+
+canvas2djs support 4 base tags: `<stage />`, `<sprite />`, `<text />`, `<bmfont />`, 
+
+```tsx
+// index.tsx
+/// <reference types="canvas2djs" />
+/// <reference path="./Scene.tsx" />
+
+namespace demo {
+
+    const STAGE_WIDTH = window.innerWidth;
+    const STAGE_HEIGHT = window.innerHeight;
+
+    var stage: canvas2d.Stage;
+
+    <stage
+        canvas={document.querySelector('canvas')}
+        width={STAGE_WIDTH}
+        height={STAGE_HEIGHT}
+        scaleMode={canvas2d.ScaleMode.SHOW_ALL}
+        autoAdjustCanvasSize
+        touchEnabled
+        mouseEnabled
+        ref={e => stage = e}>
+        <Scene stageWidth={STAGE_WIDTH} stageHeight={STAGE_HEIGHT} />
+    </stage>
+}
+```
+
+```tsx
+// Scene.tsx
+/// <reference types="canvas2djs" />
+
+namespace demo {
+    export type SceneProps = {
+        stageWidth: number;
+        stageHeight: number;
+    }
+
+    export class Scene extends canvas2d.Sprite<SceneProps> {
+
+        private box: canvas2d.Sprite<{}>;
+        private text: canvas2d.TextLabel;
+        private action: canvas2d.Action;
+
+        constructor(...args: any[]) {
+            super(...args);
+
+            this.addChild(
+                <sprite
+                    originX={0}
+                    originY={0}
+                    width={this.stageWidth}
+                    height={this.stageHeight}
+                    bgColor={0x000}>
+                    <text
+                        alignX={canvas2d.AlignType.CENTER}
+                        stroke={{ color: 0x00f, width: 3 }}
+                        y={20}
+                        fontColor={0xfff}>
+                        Hello, canvas2d!
+                    </text>
+
+                    <sprite
+                        ref={e => this.box = e}
+                        width={100}
+                        height={100}
+                        bgColor={0xf00}
+                        alignX={canvas2d.AlignType.CENTER}
+                        alignY={canvas2d.AlignType.CENTER}
+                        onClick={() => this.toggleColor()}>
+                        <text
+                            ref={e => this.text = e}
+                            alignX={canvas2d.AlignType.CENTER}
+                            alignY={canvas2d.AlignType.CENTER}
+                            fontColor={0xfff}>
+                            Click me!
+                        </text>
+                    </sprite>
+                </sprite>
+            );
+        }
+
+        toggleColor() {
+            this.box.bgColor = this.box.bgColor == 0xf00 ? 0xfff : 0xf00;
+            this.text.fontColor = this.text.fontColor == 0xfff ? 0xf00 : 0xfff;
+
+            if (this.action) {
+                this.action.stop();
+            }
+            this.action = new canvas2d.Action(this.box).by({
+                rotation: {
+                    value: 360,
+                    easing: canvas2d.Tween.linear
+                }
+            }, 0.5).start();
+        }
+    }
+}
+```
