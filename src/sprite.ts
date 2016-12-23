@@ -75,11 +75,6 @@ export interface ISprite {
     keyboardEnabled?: boolean;
 
     /**
-     * Sprite initialize method
-     */
-    init?(): any;
-
-    /**
      * Sprite would call this method each frame
      * @param  deltaTime  Duration between now and last frame
      */
@@ -234,7 +229,6 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
         if (attrs) {
             Object.keys(attrs).forEach(name => this[name] = attrs[name]);
         }
-        this.init();
     }
 
     set width(value: number) {
@@ -646,10 +640,6 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
         }
 
         addToReleasePool(this);
-    }
-
-    init(): any {
-
     }
 
     update(deltaTime: number): any {

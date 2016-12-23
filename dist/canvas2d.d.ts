@@ -401,10 +401,7 @@ declare namespace canvas2d {
         touchEnabled?: boolean;
         mouseEnabled?: boolean;
         keyboardEnabled?: boolean;
-        /**
-         * Sprite initialize method
-         */
-        init?(): any;
+        
         /**
          * Sprite would call this method each frame
          * @param  deltaTime  Duration between now and last frame
@@ -548,7 +545,6 @@ declare namespace canvas2d {
         removeChild(target: Sprite<any>): void;
         removeAllChildren(recusive?: boolean): void;
         release(recusive?: boolean): void;
-        init(): any;
         update(deltaTime: number): any;
     }
 
@@ -664,7 +660,6 @@ declare namespace canvas2d {
         private _lines;
         private _text;
         constructor(attrs?: ITextLabel);
-        protected _init(attrs?: ISprite): void;
         text: string;
         private _resize();
         addChild(): void;

@@ -43,12 +43,7 @@ export default class TextLabel extends Sprite<ITextLabel> {
     private _text: string = '';
 
     constructor(attrs?: ITextLabel) {
-        super();
-        super._init(attrs);
-    }
-
-    protected _init(attrs?: ISprite) {
-
+        super(attrs);
     }
 
     set text(content: string) {
