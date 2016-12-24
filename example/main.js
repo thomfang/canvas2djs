@@ -1,79 +1,77 @@
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 /// <reference path="../dist/canvas2d.d.ts" />
 var demo;
 (function (demo) {
     var canvas = document.querySelector('canvas');
-    var stage;
-    function createStage() {
-        stage = new canvas2d.Stage(canvas, window.innerWidth, window.innerHeight, canvas2d.ScaleMode.SHOW_ALL, true);
-        stage.mouseEnabled = true;
-        stage.touchEnabled = true;
-        stage.start();
+    var stageProps = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        scaleMode: canvas2d.ScaleMode.SHOW_ALL,
+        autoAdjustCanvasSize: true,
+        touchEnabled: true,
+        mouseEnabled: true,
+        canvas: canvas,
+    };
+    var sceneProps = {
+        originX: 0,
+        originY: 0,
+        width: stageProps.width,
+        height: stageProps.height
+    };
+    var titleProps = {
+        y: 30,
+        alignX: canvas2d.AlignType.CENTER,
+        fontName: 'Arial',
+        fontSize: 30,
+        fontColor: 0xfff,
+        stroke: {
+            color: 0x00f,
+            width: 2
+        },
+    };
+    var santaFrames = [];
+    for (var i = 0; i < 11; i++) {
+        santaFrames.push("img/Run_" + i + ".png");
     }
-    function createTextLabel() {
-        var container = new canvas2d.Sprite({
-            width: 100,
-            height: 40,
-            bgColor: 'red',
-            alignX: canvas2d.AlignType.CENTER,
-            y: 200,
-            onclick: function () {
-                console.log('clicked');
-            }
-        });
-        var label = new canvas2d.TextLabel({
-            text: 'canvas2djs',
-            fontName: 'arial',
-            fontSize: 18,
-            fontColor: '#fff',
-            stroke: {
-                color: '#000',
-                width: 2
-            },
-            alignX: canvas2d.AlignType.CENTER,
-            alignY: canvas2d.AlignType.CENTER
-        });
-        container.addChild(label);
-        stage.addChild(container);
-    }
-    function createSanta() {
-        var santa = new canvas2d.Sprite({
-            alignX: canvas2d.AlignType.CENTER,
-            alignY: canvas2d.AlignType.CENTER,
-            onclick: function () {
-                new canvas2d.Action(this).by({ y: -200 }, 0.3).by({ y: 200 }, 0.3).start();
-            }
-        });
-        stage.addChild(santa);
-        var frameRate = 20; // frame per second
-        var frameList = [];
-        for (var i = 0; i < 11; i++) {
-            frameList.push(new canvas2d.Texture("img/Run_" + i + ".png"));
+    demo.santaProps = {
+        alignX: canvas2d.AlignType.CENTER,
+        alignY: canvas2d.AlignType.CENTER,
+        actions: [
+            [{
+                    type: canvas2d.ActionType.ANIM,
+                    frameList: santaFrames,
+                    frameRate: 20
+                }]
+        ]
+    };
+    var action;
+    function santaJump() {
+        if (action) {
+            return;
         }
-        new canvas2d.Action(santa).animate(frameList, frameRate).start();
+        action = new canvas2d.Action(demo.santa)
+            .by({
+            y: {
+                value: -200,
+                easing: canvas2d.Tween.easeOutQuad
+            }
+        }, 0.3)
+            .to({
+            y: demo.santa.y
+        }, 0.2)
+            .then(function () { return action = null; })
+            .start();
     }
-    function createBallWithAction() {
-        var ball = new canvas2d.Sprite({
-            bgColor: 'red',
-            x: stage.width * 0.5,
-            y: stage.height * 0.5,
-            radius: 20
-        });
-        stage.addChild(ball);
-        new canvas2d.Action(ball)
-            .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5)
-            .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5)
-            .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5)
-            .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5)
-            .then(function () {
-            console.log('This is a callback action');
-        })
-            .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5)
-            .to({ y: ball.y - 100 }, 0.5)
-            .by({ x: 100 }, 0.5).by({ x: -100 }, 0.5).start();
-    }
-    createStage();
-    createTextLabel();
-    createSanta();
-    // createBallWithAction();
+    canvas2d.createSprite("stage", __assign({}, stageProps, { ref: function (e) { return demo.stage = e; } }),
+        canvas2d.createSprite("sprite", __assign({}, sceneProps),
+            canvas2d.createSprite("text", __assign({}, titleProps), "canvas2djs"),
+            canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; }, onClick: santaJump }))));
 })(demo || (demo = {}));
 //# sourceMappingURL=main.js.map

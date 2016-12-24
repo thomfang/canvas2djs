@@ -2,6 +2,8 @@
     "compilerOptions": {
         "sourceMap": true,
         "target": "es5",
-        "outFile": "main.js"
+        "outFile": "main.js",
+        "jsx": "react",
+        "jsxFactory": "canvas2d.createSprite"
     }
 }
