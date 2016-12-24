@@ -1,7 +1,7 @@
 import { uid, addArrayItem, removeArrayItem, normalizeColor } from './Util';
 import Keys from './Keys';
 import Tween from './Tween';
-import Action from './Action';
+import Action, { ActionType } from './Action';
 import EventEmitter from './EventEmitter';
 import { HTMLAudio, WebAudio } from './Audio';
 import Sound from './Sound';
@@ -23,6 +23,7 @@ export default {
     Keys: Keys,
     Tween: Tween,
     Action: Action,
+    ActionType: ActionType,
     EventEmitter: EventEmitter,
     HTMLAudio: HTMLAudio,
     WebAudio: WebAudio,

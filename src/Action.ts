@@ -7,6 +7,43 @@ export interface IActionListener {
     any(callback: Function): IActionListener;
 }
 
+export type TransitionToAttrs = {
+    [name: string]: number | { dest: number; easing: IEasingFunction; }
+}
+
+export type TransitionByAttrs = {
+    [name: string]: number | { value: number; easing: IEasingFunction; }
+}
+
+export enum ActionType {
+    TO,
+    BY,
+    ANIM,
+    WAIT,
+    CALLBACK,
+}
+
+export type ActionQueue = Array<{
+    type: ActionType.TO;
+    options: TransitionToAttrs;
+    duration: number;
+} | {
+    type: ActionType.BY;
+    options: TransitionByAttrs;
+    duration: number;
+} | {
+    type: ActionType.ANIM;
+    frameList: Array<Texture | string>;
+    frameRate: number;
+    repetitions?: number;
+} | {
+    type: ActionType.WAIT;
+    duration: number;
+} | {
+    type: ActionType.CALLBACK;
+    callback: Function;
+}>
+
 interface IAction {
     immediate?: boolean;
     done: boolean;
@@ -86,7 +123,7 @@ class Transition implements IAction {
         }
     }
 
-    private _initAsTransitionTo(options: { [name: string]: number | { dest: number; easing: IEasingFunction } }) {
+    private _initAsTransitionTo(options: TransitionToAttrs) {
         Object.keys(options).forEach(name => {
             let info = options[name];
             let easing: IEasingFunction;
@@ -104,7 +141,7 @@ class Transition implements IAction {
         });
     }
 
-    private _initAsTransitionBy(options: { [name: string]: number | { value: number; easing: IEasingFunction } }) {
+    private _initAsTransitionBy(options: TransitionByAttrs) {
         let deltaValue = this.deltaValue;
 
         Object.keys(options).forEach(name => {
@@ -182,10 +219,10 @@ class Animation implements IAction {
     count: number = 0;
     frameIndex: number = 0;
     interval: number;
-    frameList: Texture[];
+    frameList: Array<Texture | string>;
     repetitions: number;
 
-    constructor(frameList: Texture[], frameRate: number, repetitions?: number) {
+    constructor(frameList: Array<Texture | string>, frameRate: number, repetitions?: number) {
         this.frameList = frameList;
         this.repetitions = repetitions;
         this.interval = 1 / frameRate;
@@ -285,23 +322,6 @@ class ActionListener implements IActionListener {
  */
 export default class Action {
 
-    static _actionList: Array<Action> = [];
-    static _listenerList: Array<IActionListener> = [];
-
-    private _queue: Array<IAction> = [];
-
-    _done: boolean = false;
-
-    /**
-     * Action running state
-     */
-    isRunning: boolean = false;
-    target: any;
-
-    constructor(target: any) {
-        this.target = target;
-    }
-
     /**
      * Stop action by target
      */
@@ -331,32 +351,49 @@ export default class Action {
             }
         });
 
-        Action._listenerList.slice().forEach((listener) => {
-            (listener as ActionListener)._step();
+        Action._listenerList.slice().forEach((listener: ActionListener) => {
+            listener._step();
         });
     }
 
-    private _step(deltaTime: number): void {
-        if (!this._queue.length) {
-            return;
-        }
+    static _actionList: Array<Action> = [];
+    static _listenerList: Array<IActionListener> = [];
 
-        var action = this._queue[0];
+    private _queue: Array<IAction> = [];
 
-        action.step(deltaTime, this.target);
+    _done: boolean = false;
 
-        if (action.done) {
-            this._queue.shift();
+    /**
+     * Action running state
+     */
+    isRunning: boolean = false;
+    target: any;
 
-            if (!this._queue.length) {
-                this._done = true;
-                this.isRunning = false;
-                this.target = null;
+    constructor(target: any) {
+        this.target = target;
+    }
+
+    queue(actions: ActionQueue) {
+        actions.forEach(action => {
+            switch (action.type) {
+                case ActionType.ANIM:
+                    this.animate(action.frameList, action.frameRate, action.repetitions);
+                    break;
+                case ActionType.BY:
+                    this.by(action.options, action.duration);
+                    break;
+                case ActionType.TO:
+                    this.to(action.options, action.duration);
+                    break;
+                case ActionType.WAIT:
+                    this.wait(action.duration);
+                    break;
+                case ActionType.CALLBACK:
+                    this.then(action.callback);
+                    break;
             }
-            else if (action.immediate) {
-                this._step(deltaTime);
-            }
-        }
+        });
+        return this;
     }
 
     /**
@@ -378,7 +415,7 @@ export default class Action {
     /**
      * Add a animation action
      */
-    animate(frameList: Array<Texture>, frameRate: number, repetitions?: number): Action {
+    animate(frameList: Array<Texture | string>, frameRate: number, repetitions?: number): Action {
         var anim = new Animation(frameList, frameRate, repetitions);
         this._queue.push(anim);
         anim.step(anim.interval, this.target);
@@ -387,10 +424,8 @@ export default class Action {
 
     /**
      * TransitionTo action
-     * @param  attrs     Transition attributes map
-     * @param  duration  Transition duration
      */
-    to(attrs: { [name: string]: number | { dest: number; easing: IEasingFunction; } }, duration: number): Action {
+    to(attrs: TransitionToAttrs, duration: number): Action {
         this._queue.push(new Transition(attrs, duration));
         return this;
     }
@@ -398,7 +433,7 @@ export default class Action {
     /**
      * TransitionBy action
      */
-    by(attrs: { [name: string]: number | { value: number; easing: IEasingFunction; } }, duration: number): Action {
+    by(attrs: TransitionByAttrs, duration: number): Action {
         this._queue.push(new Transition(attrs, duration, true));
         return this;
     }
@@ -423,5 +458,28 @@ export default class Action {
         this._queue.length = 0;
 
         Util.removeArrayItem(Action._actionList, this);
+    }
+
+    private _step(deltaTime: number): void {
+        if (!this._queue.length) {
+            return;
+        }
+
+        var action = this._queue[0];
+
+        action.step(deltaTime, this.target);
+
+        if (action.done) {
+            this._queue.shift();
+
+            if (!this._queue.length) {
+                this._done = true;
+                this.isRunning = false;
+                this.target = null;
+            }
+            else if (action.immediate) {
+                this._step(deltaTime);
+            }
+        }
     }
 }

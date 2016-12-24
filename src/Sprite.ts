@@ -3,6 +3,7 @@ import { Color, normalizeColor, uid } from './Util';
 import Action from './Action';
 import Texture from './Texture';
 import EventEmitter from './EventEmitter';
+import addToReleasePool from './ReleasePool';
 
 export enum AlignType {
     TOP,
@@ -645,26 +646,4 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
     update(deltaTime: number): any {
 
     }
-}
-
-let releaseSpritePool: Sprite<any>[] = [];
-let timerId: number;
-
-function addToReleasePool(sprite: Sprite<any>) {
-    releaseSpritePool.push(sprite);
-
-    if (timerId != null) {
-        return;
-    }
-
-    setTimeout(() => {
-        releaseSpritePool.forEach(e => {
-            for (let i in e) {
-                delete e[i];
-            }
-        });
-
-        timerId = null;
-        releaseSpritePool.length = 0;
-    }, 0);
 }

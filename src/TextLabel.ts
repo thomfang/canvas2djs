@@ -51,6 +51,10 @@ export default class TextLabel extends Sprite<ITextLabel> {
 
     }
 
+    set texture(value: any) {
+        throw new Error(`canvas2d: TextLabel cannot set texture.`);
+    }
+
     set text(content: string) {
         if (this._text !== content) {
             this._text = content;
