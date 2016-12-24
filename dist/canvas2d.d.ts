@@ -17,6 +17,43 @@ declare namespace canvas2d {
         any(callback: Function): IActionListener;
     }
 
+    type TransitionToAttrs = {
+        [name: string]: number | { dest: number; easing: IEasingFunction; }
+    }
+
+    type TransitionByAttrs = {
+        [name: string]: number | { value: number; easing: IEasingFunction; }
+    }
+
+    enum ActionType {
+        TO = 0,
+        BY = 0,
+        ANIM = 0,
+        WAIT = 0,
+        CALLBACK = 0,
+    }
+
+    type ActionQueue = Array<{
+        type: ActionType.TO;
+        options: TransitionToAttrs;
+        duration: number;
+    } | {
+            type: ActionType.BY;
+            options: TransitionByAttrs;
+            duration: number;
+        } | {
+            type: ActionType.ANIM;
+            frameList: Array<Texture | string>;
+            frameRate: number;
+            repetitions?: number;
+        } | {
+            type: ActionType.WAIT;
+            duration: number;
+        } | {
+            type: ActionType.CALLBACK;
+            callback: Function;
+        }>
+
     /**
      * Action manager
      */
@@ -41,6 +78,12 @@ declare namespace canvas2d {
         static listen(actions: Array<Action>): IActionListener;
         static step(deltaTime: number): void;
         private _step(deltaTime);
+
+        /**
+         * Create a queue of action list.
+         */
+        queue(actions: ActionQueue): Action;
+
         /**
          * Add a callback, it will exec after previous action is done.
          */
@@ -58,21 +101,11 @@ declare namespace canvas2d {
          * @param  attrs     Transition attributes map
          * @param  duration  Transition duration
          */
-        to(attrs: {
-            [name: string]: number | {
-                dest: number;
-                easing: IEasingFunction;
-            };
-        }, duration: number): Action;
+        to(attrs: TransitionToAttrs, duration: number): Action;
         /**
          * TransitionBy action
          */
-        by(attrs: {
-            [name: string]: number | {
-                value: number;
-                easing: IEasingFunction;
-            };
-        }, duration: number): Action;
+        by(attrs: TransitionByAttrs, duration: number): Action;
         /**
          * Start the action
          */
@@ -401,7 +434,7 @@ declare namespace canvas2d {
         touchEnabled?: boolean;
         mouseEnabled?: boolean;
         keyboardEnabled?: boolean;
-        
+
         /**
          * Sprite would call this method each frame
          * @param  deltaTime  Duration between now and last frame
@@ -774,9 +807,12 @@ declare namespace canvas2d {
     interface Ref<T> {
         ref?(instance: T): any;
     }
-    type SpriteProps = ISprite & Ref<Sprite<{}>>;
-    type TextProps = ITextLabel & Ref<TextLabel>;
-    type BMFontProps = IBMFontLabel & Ref<BMFontLabel>;
+
+    type ActionProps = { actions?: ActionQueue[] };
+
+    type SpriteProps = ISprite & Ref<Sprite<{}>> & ActionProps;
+    type TextProps = ITextLabel & Ref<TextLabel> & ActionProps;
+    type BMFontProps = IBMFontLabel & Ref<BMFontLabel> & ActionProps;
     type SpriteClass<T, U> = new (attrs?: T & ISprite) => U;
     type StageProps = {
         width: number;

@@ -132,7 +132,7 @@ Quick start
         let propOptions = {
             scaleX: 2, // will use default easing function
             scaleY: {
-                value: 2,
+                dest: 2,
                 easing: canvas2d.Tween.easeInOutQuad
             }
         };

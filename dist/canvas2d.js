@@ -370,6 +370,14 @@ var Tween = {
     }
 };
 
+var ActionType;
+(function (ActionType) {
+    ActionType[ActionType["TO"] = 0] = "TO";
+    ActionType[ActionType["BY"] = 1] = "BY";
+    ActionType[ActionType["ANIM"] = 2] = "ANIM";
+    ActionType[ActionType["WAIT"] = 3] = "WAIT";
+    ActionType[ActionType["CALLBACK"] = 4] = "CALLBACK";
+})(ActionType || (ActionType = {}));
 var Callback = (function () {
     function Callback(func) {
         this.done = false;
@@ -625,23 +633,28 @@ var Action = (function () {
             listener._step();
         });
     };
-    Action.prototype._step = function (deltaTime) {
-        if (!this._queue.length) {
-            return;
-        }
-        var action = this._queue[0];
-        action.step(deltaTime, this.target);
-        if (action.done) {
-            this._queue.shift();
-            if (!this._queue.length) {
-                this._done = true;
-                this.isRunning = false;
-                this.target = null;
+    Action.prototype.queue = function (actions) {
+        var _this = this;
+        actions.forEach(function (action) {
+            switch (action.type) {
+                case ActionType.ANIM:
+                    _this.animate(action.frameList, action.frameRate, action.repetitions);
+                    break;
+                case ActionType.BY:
+                    _this.by(action.options, action.duration);
+                    break;
+                case ActionType.TO:
+                    _this.to(action.options, action.duration);
+                    break;
+                case ActionType.WAIT:
+                    _this.wait(action.duration);
+                    break;
+                case ActionType.CALLBACK:
+                    _this.then(action.callback);
+                    break;
             }
-            else if (action.immediate) {
-                this._step(deltaTime);
-            }
-        }
+        });
+        return this;
     };
     /**
      * Add a callback, it will exec after previous action is done.
@@ -668,8 +681,6 @@ var Action = (function () {
     };
     /**
      * TransitionTo action
-     * @param  attrs     Transition attributes map
-     * @param  duration  Transition duration
      */
     Action.prototype.to = function (attrs, duration) {
         this._queue.push(new Transition(attrs, duration));
@@ -700,6 +711,24 @@ var Action = (function () {
         this.isRunning = false;
         this._queue.length = 0;
         removeArrayItem(Action._actionList, this);
+    };
+    Action.prototype._step = function (deltaTime) {
+        if (!this._queue.length) {
+            return;
+        }
+        var action = this._queue[0];
+        action.step(deltaTime, this.target);
+        if (action.done) {
+            this._queue.shift();
+            if (!this._queue.length) {
+                this._done = true;
+                this.isRunning = false;
+                this.target = null;
+            }
+            else if (action.immediate) {
+                this._step(deltaTime);
+            }
+        }
     };
     return Action;
 }());
@@ -1382,6 +1411,25 @@ function createCanvas(image, rect) {
     return canvas;
 }
 
+var releasePool = [];
+var timerId;
+function addToReleasePool(obj) {
+    releasePool.push(obj);
+    if (timerId != null) {
+        return;
+    }
+    timerId = setTimeout(release, 0);
+}
+function release() {
+    releasePool.forEach(function (obj) {
+        for (var key in obj) {
+            delete obj[key];
+        }
+    });
+    timerId = null;
+    releasePool.length = 0;
+}
+
 var AlignType;
 (function (AlignType) {
     AlignType[AlignType["TOP"] = 0] = "TOP";
@@ -1808,23 +1856,6 @@ var Sprite = (function (_super) {
     };
     return Sprite;
 }(EventEmitter));
-var releaseSpritePool = [];
-var timerId;
-function addToReleasePool(sprite) {
-    releaseSpritePool.push(sprite);
-    if (timerId != null) {
-        return;
-    }
-    setTimeout(function () {
-        releaseSpritePool.forEach(function (e) {
-            for (var i in e) {
-                delete e[i];
-            }
-        });
-        timerId = null;
-        releaseSpritePool.length = 0;
-    }, 0);
-}
 
 var keyDown = "keydown";
 var keyUp = "keyup";
@@ -2185,7 +2216,7 @@ var RAD_PER_DEG$1 = Math.PI / 180;
 /**
  * Sprite as the base element
  */
-var Sprite$2 = (function (_super) {
+var Sprite$1 = (function (_super) {
     __extends(Sprite, _super);
     function Sprite(attrs) {
         var _this = _super.call(this) || this;
@@ -2593,29 +2624,12 @@ var Sprite$2 = (function (_super) {
         if (this.parent) {
             this.parent.removeChild(this);
         }
-        addToReleasePool$1(this);
+        addToReleasePool(this);
     };
     Sprite.prototype.update = function (deltaTime) {
     };
     return Sprite;
 }(EventEmitter));
-var releaseSpritePool$1 = [];
-var timerId$1;
-function addToReleasePool$1(sprite) {
-    releaseSpritePool$1.push(sprite);
-    if (timerId$1 != null) {
-        return;
-    }
-    setTimeout(function () {
-        releaseSpritePool$1.forEach(function (e) {
-            for (var i in e) {
-                delete e[i];
-            }
-        });
-        timerId$1 = null;
-        releaseSpritePool$1.length = 0;
-    }, 0);
-}
 
 var measureContext = document.createElement("canvas").getContext("2d");
 var regEnter = /\n/;
@@ -2636,6 +2650,13 @@ var TextLabel = (function (_super) {
     }
     TextLabel.prototype._init = function (attrs) {
     };
+    Object.defineProperty(TextLabel.prototype, "texture", {
+        set: function (value) {
+            throw new Error("canvas2d: TextLabel cannot set texture.");
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(TextLabel.prototype, "text", {
         get: function () {
             return this._text;
@@ -2705,7 +2726,7 @@ var TextLabel = (function (_super) {
         });
     };
     return TextLabel;
-}(Sprite$2));
+}(Sprite$1));
 
 var BMFontLabel = (function (_super) {
     __extends(BMFontLabel, _super);
@@ -3067,7 +3088,7 @@ function createSprite(type, props) {
         children[_i - 2] = arguments[_i];
     }
     var sprite;
-    var ref = props.ref, options = __rest(props, ["ref"]);
+    var ref = props.ref, actions = props.actions, options = __rest(props, ["ref", "actions"]);
     if (typeof type === 'function') {
         sprite = new type(options);
     }
@@ -3080,44 +3101,53 @@ function createSprite(type, props) {
                 }
                 break;
             case "text":
-                sprite = new TextLabel(options);
-                if (children.length && ensureString(children)) {
-                    sprite.text = children.join('');
-                }
+                sprite = createLabel(type, TextLabel, options, children);
                 break;
             case "bmfont":
-                sprite = new BMFontLabel(options);
-                if (children.length && ensureString(children)) {
-                    sprite.text = children.join('');
-                }
+                sprite = createLabel(type, BMFontLabel, options, children);
                 break;
             case 'stage':
-                var _a = options, canvas = _a.canvas, width = _a.width, height = _a.height, scaleMode = _a.scaleMode, autoAdjustCanvasSize = _a.autoAdjustCanvasSize, useExternalTimer = _a.useExternalTimer, touchEnabled = _a.touchEnabled, mouseEnabled = _a.mouseEnabled, keyboardEnabled = _a.keyboardEnabled;
-                var stage_1 = sprite = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize);
-                stage_1.touchEnabled = touchEnabled;
-                stage_1.mouseEnabled = mouseEnabled;
-                stage_1.keyboardEnabled = keyboardEnabled;
-                stage_1.start(useExternalTimer);
-                if (children.length) {
-                    children.forEach(function (child) { return child && stage_1.addChild(child); });
-                }
+                sprite = createStage(options, children);
                 break;
         }
     }
     if (sprite == null) {
         console.error("canvas2d.createSprite: unknown type", type);
     }
+    else if (actions && actions.length) {
+        actions.forEach(function (queue) {
+            new Action(sprite).queue(queue).start();
+        });
+    }
     if (ref) {
         ref.call(undefined, sprite);
     }
     return sprite;
 }
-function ensureString(list) {
-    var isString = list.every(function (item) { return typeof item === 'string'; });
-    if (!isString) {
-        throw new Error("canvas2d: <text> only can add string children");
+function createLabel(tag, ctor, props, children) {
+    var sprite = new ctor(props);
+    if (children.length) {
+        if (!ensureString(children)) {
+            throw new Error("canvas2d: <" + tag + "> only can add string child");
+        }
+        sprite.text = children.join('');
     }
-    return true;
+    return sprite;
+}
+function createStage(props, children) {
+    var canvas = props.canvas, width = props.width, height = props.height, scaleMode = props.scaleMode, autoAdjustCanvasSize = props.autoAdjustCanvasSize, useExternalTimer = props.useExternalTimer, touchEnabled = props.touchEnabled, mouseEnabled = props.mouseEnabled, keyboardEnabled = props.keyboardEnabled;
+    var stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize);
+    stage.touchEnabled = touchEnabled;
+    stage.mouseEnabled = mouseEnabled;
+    stage.keyboardEnabled = keyboardEnabled;
+    stage.start(useExternalTimer);
+    if (children.length) {
+        children.forEach(function (child) { return child && stage.addChild(child); });
+    }
+    return stage;
+}
+function ensureString(list) {
+    return list.every(function (item) { return typeof item === 'string'; });
 }
 
 var canvas2d = {
@@ -3130,6 +3160,7 @@ var canvas2d = {
     Keys: Keys,
     Tween: Tween,
     Action: Action,
+    ActionType: ActionType,
     EventEmitter: EventEmitter,
     HTMLAudio: HTMLAudio,
     WebAudio: WebAudio,

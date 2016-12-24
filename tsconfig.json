@@ -15,13 +15,13 @@
         "src/UIEvent.ts",
         "src/Keys.ts",
         "src/Texture.ts",
+        "src/ReleasePool.ts",
         "src/Sprite.ts",
         "src/Stage.ts",
         "src/TextLabel.ts",
         "src/EventEmitter.ts",
         "src/BMFontLabel.ts",
         "src/Audio.ts",
-        "src/createSprite.ts",
-        "src/test.tsx"
+        "src/createSprite.ts"
     ]
 }
