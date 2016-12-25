@@ -90,6 +90,9 @@ export default class UIEvent {
     }
 
     unregister(): void {
+        if (!this._registered) {
+            return;
+        }
         var element = this.element;
 
         element.removeEventListener(touchBegin, this._touchBeginHandler, false);
@@ -106,6 +109,15 @@ export default class UIEvent {
 
         this._mouseBeginHelper = this._mouseMovedHelper = null;
         this._registered = false;
+    }
+
+    release(): void {
+        this.unregister();
+        this._mouseBeginHandler = this._mouseMovedHandler = this._mouseEndedHandler = null;
+        this._touchBeginHandler = this._touchMovedHandler = this._touchEndedHandler = null;
+        this._keyUpHandler = this._keyDownHandler = null;
+        this._touchHelperMap = null;
+        this.element = this.stage = null;
     }
 
     transformLocation(event) {

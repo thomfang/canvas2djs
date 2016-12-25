@@ -575,7 +575,7 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
 
     addChild(target: Sprite<any>, position?: number): void {
         if (target.parent) {
-            throw new Error("Sprite has been added");
+            throw new Error("canvas2d.Sprite.addChild(): Child has been added.");
         }
 
         if (!this.children) {

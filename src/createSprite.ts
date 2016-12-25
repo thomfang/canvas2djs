@@ -59,7 +59,7 @@ function createSprite<T, U>(type: any, props: any, ...children: any[]): any {
     }
 
     if (sprite == null) {
-        console.error(`canvas2d.createSprite: unknown type`, type);
+        console.error(`canvas2d.createSprite(): Unknown sprite type`, type);
     }
     else if (actions && actions.length) {
         (<ActionQueue[]>actions).forEach(queue => {

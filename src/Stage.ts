@@ -136,6 +136,7 @@ export default class Stage {
         this._width = canvas.width = this._bufferCanvas.width = width;
         this._height = canvas.height = this._bufferCanvas.height = height;
 
+        this._canvasScale = 1;
         this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
         this.autoAdjustCanvasSize = autoAdjustCanvasSize;
 
@@ -287,6 +288,7 @@ export default class Stage {
 
     release() {
         this.stop(true);
+        this._uiEvent.release();
         this._rootSprite.release(true);
         this._rootSprite = this._uiEvent = this._canvasElement = this._renderContext = this._bufferCanvas = this._bufferContext = null;
     }

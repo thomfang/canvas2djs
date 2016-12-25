@@ -220,6 +220,7 @@ declare namespace canvas2d {
         constructor(stage: Stage);
         register(): void;
         unregister(): void;
+        release(): void;
         transformLocation(event: any): {
             x: number;
             y: number;

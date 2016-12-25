@@ -50,7 +50,7 @@ export default class BMFontLabel extends Sprite<IBMFontLabel> {
         else {
             this._words = words.map(word => {
                 if (!this._textureMap[word]) {
-                    console.error(word + ': texture of the word not found');
+                    console.error(`canvas2d.BMFontLabel: Texture of the word "${word}" not found`);
                 }
                 return this._textureMap[word];
             });
@@ -78,6 +78,7 @@ export default class BMFontLabel extends Sprite<IBMFontLabel> {
     }
 
     addChild() {
-        throw new Error('BMFontLabel:addChild is not callable!');
+        throw new Error('canvas2d.BMFontLabel.addChild(): This method cannot be called.');
     }
+    
 }

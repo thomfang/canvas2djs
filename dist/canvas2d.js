@@ -1,5 +1,5 @@
 /**
- * canvas2djs v0.2.4
+ * canvas2djs v0.2.6
  * Copyright (c) 2013-present Todd Fon
  * All rights reserved.
  */
@@ -52,7 +52,7 @@ function normalizeColor(color) {
     }
     if (typeof color === 'string') {
         if (color[0] != '#' || (color.length != 4 && color.length != 7)) {
-            throw new Error("canvas2d: \"" + color + "\" is not a valid color string");
+            throw new Error("canvas2d: Invalid color string \"" + color + "\".");
         }
         cachedColor[color] = color;
         return color;
@@ -63,7 +63,7 @@ function normalizeColor(color) {
             result = '0' + result;
         }
         if (result.length !== 3 && result.length !== 6) {
-            throw new Error("canvas2d: \"0x" + result + "\" is not a valid hex number color");
+            throw new Error("canvas2d: Invalid hex color \"0x" + result + "\".");
         }
         result = cachedColor[color] = '#' + result;
         return result;
@@ -1353,9 +1353,9 @@ var Texture = (function () {
         var img = new Image();
         img.onload = function () {
             _this._createByImage(img, rect);
-            if (!loaded[path]) {
-                console.log("Loaded: " + path);
-            }
+            // if (!loaded[path]) {
+            //     console.log("canvas2d: \"" + path + "\" loaded.");
+            // }
             loaded[path] = true;
             if (_this._readyCallbacks.length) {
                 var size_1 = { width: _this.width, height: _this.height };
@@ -1368,11 +1368,11 @@ var Texture = (function () {
         };
         img.onerror = function () {
             img = null;
-            console.warn('Texture creating fail, error in loading source "' + path + '"');
+            console.warn("canvas2d: Texture creating fail, error loading source \"" + path + "\".");
         };
-        if (!loading[path]) {
-            console.log("Start to load: " + path);
-        }
+        // if (!loading[path]) {
+        //     console.log("canvas2d: Start to load: \"" + path + "\".");
+        // }
         img.src = path;
         loading[path] = true;
     };
@@ -1797,7 +1797,7 @@ var Sprite = (function (_super) {
     };
     Sprite.prototype.addChild = function (target, position) {
         if (target.parent) {
-            throw new Error("Sprite has been added");
+            throw new Error("canvas2d.Sprite.addChild(): Child has been added.");
         }
         if (!this.children) {
             this.children = [];
@@ -2021,6 +2021,9 @@ var UIEvent = (function () {
         this._registered = true;
     };
     UIEvent.prototype.unregister = function () {
+        if (!this._registered) {
+            return;
+        }
         var element = this.element;
         element.removeEventListener(touchBegin, this._touchBeginHandler, false);
         element.removeEventListener(touchMoved, this._touchMovedHandler, false);
@@ -2032,6 +2035,14 @@ var UIEvent = (function () {
         document.removeEventListener(keyUp, this._keyUpHandler, false);
         this._mouseBeginHelper = this._mouseMovedHelper = null;
         this._registered = false;
+    };
+    UIEvent.prototype.release = function () {
+        this.unregister();
+        this._mouseBeginHandler = this._mouseMovedHandler = this._mouseEndedHandler = null;
+        this._touchBeginHandler = this._touchMovedHandler = this._touchEndedHandler = null;
+        this._keyUpHandler = this._keyDownHandler = null;
+        this._touchHelperMap = null;
+        this.element = this.stage = null;
     };
     UIEvent.prototype.transformLocation = function (event) {
         var clientReact = this.element.getBoundingClientRect();
@@ -2204,433 +2215,6 @@ function hasImplements(sprite, methodName) {
     return sprite[methodName] !== Sprite.prototype[methodName] && typeof sprite[methodName] === 'function';
 }
 
-var AlignType$1;
-(function (AlignType) {
-    AlignType[AlignType["TOP"] = 0] = "TOP";
-    AlignType[AlignType["RIGHT"] = 1] = "RIGHT";
-    AlignType[AlignType["BOTTOM"] = 2] = "BOTTOM";
-    AlignType[AlignType["LEFT"] = 3] = "LEFT";
-    AlignType[AlignType["CENTER"] = 4] = "CENTER";
-})(AlignType$1 || (AlignType$1 = {}));
-var RAD_PER_DEG$1 = Math.PI / 180;
-/**
- * Sprite as the base element
- */
-var Sprite$1 = (function (_super) {
-    __extends(Sprite, _super);
-    function Sprite(attrs) {
-        var _this = _super.call(this) || this;
-        _this._width = 0;
-        _this._height = 0;
-        _this._originX = 0.5;
-        _this._originY = 0.5;
-        _this._rotation = 0;
-        _this._rotationRad = 0;
-        _this._originPixelX = 0;
-        _this._originPixelY = 0;
-        _this.x = 0;
-        _this.y = 0;
-        _this.scaleX = 1;
-        _this.scaleY = 1;
-        _this.radius = 0;
-        _this.opacity = 1;
-        _this.sourceX = 0;
-        _this.sourceY = 0;
-        _this.lighterMode = false;
-        _this.autoResize = true;
-        _this.flippedX = false;
-        _this.flippedY = false;
-        _this.visible = true;
-        _this.clipOverflow = false;
-        _this.touchEnabled = true;
-        _this.mouseEnabled = true;
-        _this.keyboardEnabled = true;
-        _this.id = uid(_this);
-        _this._init(attrs);
-        return _this;
-    }
-    Sprite.prototype._init = function (attrs) {
-        var _this = this;
-        if (attrs) {
-            Object.keys(attrs).forEach(function (name) { return _this[name] = attrs[name]; });
-        }
-    };
-    Object.defineProperty(Sprite.prototype, "width", {
-        get: function () {
-            return this._width;
-        },
-        set: function (value) {
-            if (this._width === value) {
-                return;
-            }
-            this._width = value;
-            this._originPixelX = this._width * this._originX;
-            this.adjustAlignX();
-            this.children && this.children.forEach(function (sprite) { return sprite.adjustAlignX(); });
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Sprite.prototype, "height", {
-        get: function () {
-            return this._height;
-        },
-        set: function (value) {
-            if (this._height === value) {
-                return;
-            }
-            this._height = value;
-            this._originPixelY = this._height * this._originY;
-            this.adjustAlignY();
-            this.children && this.children.forEach(function (sprite) { return sprite.adjustAlignY(); });
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Sprite.prototype, "originX", {
-        get: function () {
-            return this._originX;
-        },
-        set: function (value) {
-            if (this._originX === value) {
-                return;
-            }
-            this._originX = value;
-            this._originPixelX = this._originX * this._width;
-            this.adjustAlignX();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Sprite.prototype, "originY", {
-        get: function () {
-            return this._originY;
-        },
-        set: function (value) {
-            if (this._originY === value) {
-                return;
-            }
-            this._originY = value;
-            this._originPixelY = this._originY * this._height;
-            this.adjustAlignY();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Sprite.prototype, "rotation", {
-        get: function () {
-            return this._rotation;
-        },
-        set: function (value) {
-            if (this._rotation === value) {
-                return;
-            }
-            this._rotation = value;
-            this._rotationRad = this._rotation * RAD_PER_DEG$1;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Sprite.prototype, "texture", {
-        get: function () {
-            return this._texture;
-        },
-        set: function (value) {
-            var _this = this;
-            var texture;
-            if (typeof value === 'string') {
-                texture = Texture.create(value);
-            }
-            else {
-                texture = value;
-            }
-            if (texture === this._texture) {
-                return;
-            }
-            this._texture = texture;
-            if (!this.autoResize) {
-                return;
-            }
-            if (texture) {
-                if (texture.ready) {
-                    this.width = texture.width;
-                    this.height = texture.height;
-                }
-                else {
-                    texture.onReady(function (size) {
-                        _this.width = size.width;
-                        _this.height = size.height;
-                    });
-                }
-            }
-            else {
-                this.width = 0;
-                this.height = 0;
-            }
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Sprite.prototype, "parent", {
-        get: function () {
-            return this._parent;
-        },
-        set: function (sprite) {
-            if (sprite === this._parent) {
-                return;
-            }
-            this._parent = sprite;
-            if (sprite) {
-                this.adjustAlignX();
-                this.adjustAlignY();
-            }
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Sprite.prototype, "alignX", {
-        get: function () {
-            return this._alignX;
-        },
-        set: function (value) {
-            if (this._alignX === value || value === AlignType$1.BOTTOM || value === AlignType$1.TOP) {
-                return;
-            }
-            this._alignX = value;
-            this.adjustAlignX();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Sprite.prototype, "alignY", {
-        get: function () {
-            return this._alignY;
-        },
-        set: function (value) {
-            if (this._alignY === value || value === AlignType$1.LEFT || value === AlignType$1.RIGHT) {
-                return;
-            }
-            this._alignY = value;
-            this.adjustAlignY();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Sprite.prototype._update = function (deltaTime) {
-        this.update(deltaTime);
-        if (this.children && this.children.length) {
-            this.children.slice().forEach(function (child) {
-                child._update(deltaTime);
-            });
-        }
-    };
-    Sprite.prototype._visit = function (context) {
-        if (!this.visible || this.opacity === 0) {
-            return;
-        }
-        var sx = this.scaleX;
-        var sy = this.scaleY;
-        context.save();
-        if (this.lighterMode) {
-            context.globalCompositeOperation = "lighter";
-        }
-        if (this.x !== 0 || this.y !== 0) {
-            context.translate(this.x, this.y);
-        }
-        if (this.opacity !== 1) {
-            context.globalAlpha = this.opacity;
-        }
-        if (this.flippedX) {
-            sx = -sx;
-        }
-        if (this.flippedY) {
-            sy = -sy;
-        }
-        if (sx !== 1 || sy !== 1) {
-            context.scale(sx, sy);
-        }
-        var rotationRad = this._rotationRad % 360;
-        if (rotationRad !== 0) {
-            context.rotate(rotationRad);
-        }
-        if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
-            this.draw(context);
-        }
-        this._visitAllChildren(context);
-        context.restore();
-    };
-    Sprite.prototype.adjustAlignX = function () {
-        if (!this.parent || this._alignX == null) {
-            return;
-        }
-        var x;
-        var ox = this._originPixelX;
-        switch (this._alignX) {
-            case AlignType$1.LEFT:
-                x = ox;
-                break;
-            case AlignType$1.RIGHT:
-                x = this.parent.width - (this.width - ox);
-                break;
-            case AlignType$1.CENTER:
-                x = this.parent.width * 0.5 + ox - this.width * 0.5;
-                break;
-        }
-        if (x != null) {
-            this.x = x;
-        }
-    };
-    Sprite.prototype.adjustAlignY = function () {
-        if (!this.parent || this._alignY == null) {
-            return;
-        }
-        var y;
-        var oy = this._originPixelY;
-        switch (this._alignY) {
-            case AlignType$1.TOP:
-                y = oy;
-                break;
-            case AlignType$1.BOTTOM:
-                y = this.parent.height - (this.height - oy);
-                break;
-            case AlignType$1.CENTER:
-                y = this.parent.height * 0.5 + oy - this.height * 0.5;
-                break;
-        }
-        if (y != null) {
-            this.y = y;
-        }
-    };
-    Sprite.prototype._visitAllChildren = function (context) {
-        if (!this.children || !this.children.length) {
-            return;
-        }
-        if (this._originPixelX !== 0 || this._originPixelY !== 0) {
-            context.translate(-this._originPixelX, -this._originPixelY);
-        }
-        this.children.forEach(function (child) {
-            child._visit(context);
-        });
-    };
-    Sprite.prototype._clip = function (context) {
-        if (!this.clipOverflow) {
-            return;
-        }
-        context.beginPath();
-        if (this.radius > 0) {
-            context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
-        }
-        else {
-            context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
-        }
-        context.closePath();
-        context.clip();
-    };
-    Sprite.prototype._drawBgColor = function (context) {
-        if (this.bgColor == null) {
-            return;
-        }
-        context.fillStyle = normalizeColor(this.bgColor);
-        context.beginPath();
-        if (this.radius > 0) {
-            context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
-        }
-        else {
-            context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
-        }
-        context.closePath();
-        context.fill();
-    };
-    Sprite.prototype._drawBorder = function (context) {
-        if (this.border) {
-            context.lineWidth = this.border.width;
-            context.strokeStyle = normalizeColor(this.border.color);
-            context.beginPath();
-            if (this.radius > 0) {
-                context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
-            }
-            else {
-                context.rect(-this._originPixelX, -this._originPixelY, this._width, this._height);
-            }
-            context.closePath();
-            context.stroke();
-        }
-    };
-    Sprite.prototype.draw = function (context) {
-        this._clip(context);
-        this._drawBgColor(context);
-        this._drawBorder(context);
-        var texture = this._texture;
-        if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
-            var sx = this.sourceX;
-            var sy = this.sourceY;
-            var sw = this.sourceWidth == null ? texture.width : this.sourceWidth;
-            var sh = this.sourceHeight == null ? texture.height : this.sourceHeight;
-            context.drawImage(texture.source, sx, sy, sw, sh, -this._originPixelX, -this._originPixelY, this.width, this.height);
-        }
-    };
-    Sprite.prototype.addChild = function (target, position) {
-        if (target.parent) {
-            throw new Error("Sprite has been added");
-        }
-        if (!this.children) {
-            this.children = [];
-        }
-        var children = this.children;
-        if (children.indexOf(target) === -1) {
-            if (position > -1 && position < children.length) {
-                children.splice(position, 0, target);
-            }
-            else {
-                children.push(target);
-            }
-            target.parent = this;
-        }
-    };
-    Sprite.prototype.removeChild = function (target) {
-        if (!this.children || !this.children.length) {
-            return;
-        }
-        var index = this.children.indexOf(target);
-        if (index > -1) {
-            this.children.splice(index, 1);
-            target.parent = null;
-        }
-    };
-    Sprite.prototype.removeAllChildren = function (recusive) {
-        if (!this.children || !this.children.length) {
-            return;
-        }
-        while (this.children.length) {
-            var sprite = this.children[0];
-            if (recusive) {
-                sprite.removeAllChildren(true);
-                Action.stop(sprite);
-            }
-            this.removeChild(sprite);
-        }
-        this.children = null;
-    };
-    Sprite.prototype.release = function (recusive) {
-        Action.stop(this);
-        if (recusive && this.children) {
-            while (this.children.length) {
-                this.children[0].release(recusive);
-            }
-        }
-        else {
-            this.removeAllChildren();
-        }
-        if (this.parent) {
-            this.parent.removeChild(this);
-        }
-        addToReleasePool(this);
-    };
-    Sprite.prototype.update = function (deltaTime) {
-    };
-    return Sprite;
-}(EventEmitter));
-
 var measureContext = document.createElement("canvas").getContext("2d");
 var regEnter = /\n/;
 var TextLabel = (function (_super) {
@@ -2726,7 +2310,7 @@ var TextLabel = (function (_super) {
         });
     };
     return TextLabel;
-}(Sprite$1));
+}(Sprite));
 
 var BMFontLabel = (function (_super) {
     __extends(BMFontLabel, _super);
@@ -2770,7 +2354,7 @@ var BMFontLabel = (function (_super) {
         else {
             this._words = words.map(function (word) {
                 if (!_this._textureMap[word]) {
-                    console.error(word + ': texture of the word not found');
+                    console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" not found");
                 }
                 return _this._textureMap[word];
             });
@@ -2793,7 +2377,7 @@ var BMFontLabel = (function (_super) {
         }
     };
     BMFontLabel.prototype.addChild = function () {
-        throw new Error('BMFontLabel:addChild is not callable!');
+        throw new Error('canvas2d.BMFontLabel.addChild(): This method cannot be called.');
     };
     return BMFontLabel;
 }(Sprite));
@@ -2898,6 +2482,7 @@ var Stage = (function () {
         this._bufferContext = this._bufferCanvas.getContext("2d");
         this._width = canvas.width = this._bufferCanvas.width = width;
         this._height = canvas.height = this._bufferCanvas.height = height;
+        this._canvasScale = 1;
         this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
         this.autoAdjustCanvasSize = autoAdjustCanvasSize;
         this._uiEvent = new UIEvent(this);
@@ -3057,6 +2642,7 @@ var Stage = (function () {
     };
     Stage.prototype.release = function () {
         this.stop(true);
+        this._uiEvent.release();
         this._rootSprite.release(true);
         this._rootSprite = this._uiEvent = this._canvasElement = this._renderContext = this._bufferCanvas = this._bufferContext = null;
     };
@@ -3112,7 +2698,7 @@ function createSprite(type, props) {
         }
     }
     if (sprite == null) {
-        console.error("canvas2d.createSprite: unknown type", type);
+        console.error("canvas2d.createSprite(): Unknown sprite type", type);
     }
     else if (actions && actions.length) {
         actions.forEach(function (queue) {

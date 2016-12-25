@@ -30,7 +30,7 @@ export function normalizeColor(color: string | number): string {
     }
     if (typeof color === 'string') {
         if (color[0] != '#' || (color.length != 4 && color.length != 7)) {
-            throw new Error(`canvas2d: "${color}" is not a valid color string`);
+            throw new Error(`canvas2d: Invalid color string "${color}".`);
         }
         cachedColor[color] = color;
         return color;
@@ -41,7 +41,7 @@ export function normalizeColor(color: string | number): string {
             result = '0' + result;
         }
         if (result.length !== 3 && result.length !== 6) {
-            throw new Error(`canvas2d: "0x${result}" is not a valid hex number color`);
+            throw new Error(`canvas2d: Invalid hex color "0x${result}".`);
         }
         result = cachedColor[color] = '#' + result;
         return result;

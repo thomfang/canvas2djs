@@ -85,9 +85,9 @@ export default class Texture {
         img.onload = () => {
             this._createByImage(img, rect);
 
-            if (!loaded[path]) {
-                console.log("Loaded: " + path);
-            }
+            // if (!loaded[path]) {
+            //     console.log(`canvas2d: "${path}" loaded.`);
+            // }
             loaded[path] = true;
 
             if (this._readyCallbacks.length) {
@@ -102,12 +102,12 @@ export default class Texture {
 
         img.onerror = () => {
             img = null;
-            console.warn('Texture creating fail, error in loading source "' + path + '"');
+            console.warn(`canvas2d: Texture creating fail, error loading source "${path}".`);
         };
 
-        if (!loading[path]) {
-            console.log("Start to load: " + path);
-        }
+        // if (!loading[path]) {
+        //     console.log(`canvas2d: Start to load: "${path}".`);
+        // }
 
         img.src = path;
         loading[path] = true;
