@@ -1,41 +1,66 @@
-import { uid, addArrayItem, removeArrayItem, normalizeColor } from './Util';
+import * as Util from './Util';
 import Keys from './Keys';
-import Tween from './Tween';
-import Action, { ActionType } from './Action';
-import EventEmitter from './EventEmitter';
+import Tween, { IEasingFunction } from './Tween';
+import Action, { ActionType, IActionListener, TransitionByProps, TransitionToProps } from './Action';
+import EventEmitter, { IEventListener } from './EventEmitter';
 import { HTMLAudio, WebAudio } from './Audio';
 import Sound from './Sound';
 import Texture from './Texture';
-import UIEvent from './UIEvent';
-import Sprite, { AlignType, RAD_PER_DEG } from './Sprite';
-import TextLabel from './TextLabel';
-import BMFontLabel from './BMFontLabel';
+import UIEvent, { IEventHelper } from './UIEvent';
+import Sprite, { AlignType, RAD_PER_DEG, ISprite } from './Sprite';
+import TextLabel, { ITextLabel } from './TextLabel';
+import BMFontLabel, { IBMFontLabel } from './BMFontLabel';
 import Stage, { ScaleMode } from './Stage';
-import createSprite from './createSprite';
+import createSprite, { ActionProps, StageProps, SpriteProps, TextProps, BMFontProps, SpriteClass, Ref } from './createSprite';
 
-export default {
-    Util: {
-        uid: uid,
-        addArrayItem: addArrayItem,
-        removeArrayItem: removeArrayItem,
-        normalizeColor: normalizeColor,
-    },
-    Keys: Keys,
-    Tween: Tween,
-    Action: Action,
-    ActionType: ActionType,
-    EventEmitter: EventEmitter,
-    HTMLAudio: HTMLAudio,
-    WebAudio: WebAudio,
-    Sound: Sound,
-    Texture: Texture,
-    UIEvent: UIEvent,
-    Sprite: Sprite,
-    TextLabel: TextLabel,
-    BMFontLabel: BMFontLabel,
-    Stage: Stage,
-    AlignType: AlignType,
-    RAD_PER_DEG: RAD_PER_DEG,
-    ScaleMode: ScaleMode,
-    createSprite: createSprite,
+export {
+    Util,
+    Keys,
+    Tween,
+    Action,
+    EventEmitter,
+    HTMLAudio,
+    WebAudio,
+    Sound,
+    Texture,
+    UIEvent,
+    Sprite,
+    AlignType,
+    RAD_PER_DEG,
+    TextLabel,
+    BMFontLabel,
+    createSprite,
+    Stage,
+    ScaleMode,
+    ISprite,
+    ITextLabel,
+    IEventHelper,
+    IEventListener,
+    IBMFontLabel,
+    IEasingFunction,
+    IActionListener,
+    ActionType,
+    TransitionByProps,
+    TransitionToProps,
+    StageProps,
+    SpriteProps,
+    TextProps,
+    BMFontProps,
+    ActionProps,
+    SpriteClass,
+    Ref,
+}
+
+declare global {
+    namespace JSX {
+        interface Element extends Sprite<any> { }
+        interface ElementAttributesProperty { _props: {}; }
+        interface IntrinsicClassAttributes<T> extends Ref<T> { }
+        interface IntrinsicElements {
+            sprite: SpriteProps;
+            text: TextProps;
+            bmfont: BMFontProps;
+            stage: StageProps;
+        }
+    }
 }

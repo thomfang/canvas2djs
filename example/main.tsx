@@ -1,4 +1,4 @@
-/// <reference path="../dist/canvas2d.d.ts" />
+/// <reference path="../declarations/canvas2d.d.ts" />
 
 namespace demo {
 
@@ -81,5 +81,6 @@ namespace demo {
             <sprite {...santaProps} ref={e => santa = e} onClick={santaJump} />
         </sprite>
     </stage>;
+
 
 }

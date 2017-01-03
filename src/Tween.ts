@@ -2,7 +2,7 @@
     (percent: number, ...args: any[]): number;
 }
 
-var Tween = {
+export default {
     easeInQuad(pos) {
         return Math.pow(pos, 2);
     },
@@ -251,5 +251,3 @@ var Tween = {
         return 1
     }
 }
-
-export default Tween;

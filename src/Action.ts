@@ -7,11 +7,11 @@ export interface IActionListener {
     any(callback: Function): IActionListener;
 }
 
-export type TransitionToAttrs = {
+export type TransitionToProps = {
     [name: string]: number | { dest: number; easing: IEasingFunction; }
 }
 
-export type TransitionByAttrs = {
+export type TransitionByProps = {
     [name: string]: number | { value: number; easing: IEasingFunction; }
 }
 
@@ -25,11 +25,11 @@ export enum ActionType {
 
 export type ActionQueue = Array<{
     type: ActionType.TO;
-    options: TransitionToAttrs;
+    options: TransitionToProps;
     duration: number;
 } | {
     type: ActionType.BY;
-    options: TransitionByAttrs;
+    options: TransitionByProps;
     duration: number;
 } | {
     type: ActionType.ANIM;
@@ -123,7 +123,7 @@ class Transition implements IAction {
         }
     }
 
-    private _initAsTransitionTo(options: TransitionToAttrs) {
+    private _initAsTransitionTo(options: TransitionToProps) {
         Object.keys(options).forEach(name => {
             let info = options[name];
             let easing: IEasingFunction;
@@ -141,7 +141,7 @@ class Transition implements IAction {
         });
     }
 
-    private _initAsTransitionBy(options: TransitionByAttrs) {
+    private _initAsTransitionBy(options: TransitionByProps) {
         let deltaValue = this.deltaValue;
 
         Object.keys(options).forEach(name => {
@@ -425,7 +425,7 @@ export default class Action {
     /**
      * TransitionTo action
      */
-    to(attrs: TransitionToAttrs, duration: number): Action {
+    to(attrs: TransitionToProps, duration: number): Action {
         this._queue.push(new Transition(attrs, duration));
         return this;
     }
@@ -433,7 +433,7 @@ export default class Action {
     /**
      * TransitionBy action
      */
-    by(attrs: TransitionByAttrs, duration: number): Action {
+    by(attrs: TransitionByProps, duration: number): Action {
         this._queue.push(new Transition(attrs, duration, true));
         return this;
     }

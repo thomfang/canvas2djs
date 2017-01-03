@@ -18,6 +18,7 @@ module.exports = {
     dest: 'dist/canvas2d.js',
     plugins: [
         typescript({
+            typescript: require('typescript'),
             tsconfig: false,
             target: 'es5'
         })
