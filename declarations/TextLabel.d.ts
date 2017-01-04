@@ -1,5 +1,5 @@
-import Sprite, { ISprite } from './sprite';
 import { Color } from './Util';
+import Sprite, { ISprite } from './Sprite';
 export declare type FontWeight = "lighter" | "normal" | "bold" | "bolder";
 export declare type FontStyle = "oblique" | "normal" | "italic";
 export declare type TextAlign = "left" | "right" | "center" | "start" | "end";
@@ -33,12 +33,11 @@ export default class TextLabel extends Sprite<ITextLabel> {
     };
     private _lines;
     private _text;
-    constructor(attrs?: ITextLabel);
-    protected _init(attrs?: ISprite): void;
+    constructor(props?: ITextLabel);
+    protected _init(props?: ISprite): void;
     texture: any;
     text: string;
     private _resize();
     addChild(): void;
-    removeChild(): void;
     protected draw(context: CanvasRenderingContext2D): void;
 }

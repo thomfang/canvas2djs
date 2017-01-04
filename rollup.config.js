@@ -4,7 +4,7 @@ var pkg = require('./package.json');
 var banner =
 `/**
  * ${pkg.name} v${pkg.version}
- * Copyright (c) 2013-present ${pkg.author}
+ * Copyright (c) 2013-present ${pkg.author.name} <${pkg.author.email}>
  * All rights reserved.
  */
 `;

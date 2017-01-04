@@ -78,7 +78,7 @@ function createLabel<T>(tag: string, ctor: any, props: any, children: any[]): T 
     let sprite = new ctor(props);
     if (children.length) {
         if (!ensureString(children)) {
-            throw new Error(`canvas2d: <${tag}> only can add string child`);
+            throw new Error(`canvas2d: <${tag}> only support string children.`);
         }
         sprite.text = children.join('');
     }

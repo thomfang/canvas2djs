@@ -1,5 +1,5 @@
-﻿import Sprite, { ISprite } from './sprite';
-import { normalizeColor, Color } from './Util';
+﻿import { normalizeColor, Color } from './Util';
+import Sprite, { ISprite } from './Sprite';
 
 var measureContext = document.createElement("canvas").getContext("2d");
 var regEnter = /\n/;
@@ -42,12 +42,12 @@ export default class TextLabel extends Sprite<ITextLabel> {
     private _lines: string[];
     private _text: string = '';
 
-    constructor(attrs?: ITextLabel) {
+    constructor(props?: ITextLabel) {
         super();
-        super._init(attrs);
+        super._init(props);
     }
 
-    protected _init(attrs?: ISprite) {
+    protected _init(props?: ISprite) {
 
     }
 
@@ -95,11 +95,7 @@ export default class TextLabel extends Sprite<ITextLabel> {
     }
 
     addChild(): void {
-        throw new Error("canvas2d: TextLabel cannot have children");
-    }
-
-    removeChild(): void {
-        throw new Error("canvas2d: TextLabel has no children");
+        throw new Error(`canvas2d.TextLabel.addChild(): Don't call this method.`);
     }
 
     protected draw(context: CanvasRenderingContext2D): void {

@@ -3,7 +3,7 @@
   "version": "0.2.7",
   "description": "HTML5 canvas based game engine",
   "main": "dist/canvas2d.js",
-  "types": "dist/canvas2d.d.ts",
+  "types": "declarations/canvas2d.d.ts",
   "scripts": {
     
   },
@@ -14,9 +14,12 @@
   "keywords": [
     "HTML5",
     "game engine",
-    "typescript"
+    "TypeScript"
   ],
-  "author": "Todd Fon",
+  "author": {
+    "name": "Todd Fon",
+    "email": "tilfon@live.com"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/tilfon/canvas2djs/issues"

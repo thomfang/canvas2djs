@@ -1,4 +1,4 @@
-declare const Keys: {
+declare var _default: {
     MOUSE_LEFT: number;
     MOUSE_MID: number;
     MOUSE_RIGHT: number;
@@ -91,4 +91,4 @@ declare const Keys: {
     F11: number;
     F12: number;
 };
-export default Keys;
+export default _default;

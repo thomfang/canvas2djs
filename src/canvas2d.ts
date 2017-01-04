@@ -5,12 +5,12 @@ import Action, { ActionType, IActionListener, TransitionByProps, TransitionToPro
 import EventEmitter, { IEventListener } from './EventEmitter';
 import { HTMLAudio, WebAudio } from './Audio';
 import Sound from './Sound';
-import Texture from './Texture';
+import Texture, { Rect } from './Texture';
 import UIEvent, { IEventHelper } from './UIEvent';
 import Sprite, { AlignType, RAD_PER_DEG, ISprite } from './Sprite';
 import TextLabel, { ITextLabel } from './TextLabel';
 import BMFontLabel, { IBMFontLabel } from './BMFontLabel';
-import Stage, { ScaleMode } from './Stage';
+import Stage, { ScaleMode, VisibleRect } from './Stage';
 import createSprite, { ActionProps, StageProps, SpriteProps, TextProps, BMFontProps, SpriteClass, Ref } from './createSprite';
 
 export {
@@ -26,12 +26,13 @@ export {
     UIEvent,
     Sprite,
     AlignType,
+    ActionType,
     RAD_PER_DEG,
     TextLabel,
     BMFontLabel,
-    createSprite,
     Stage,
     ScaleMode,
+    createSprite,
     ISprite,
     ITextLabel,
     IEventHelper,
@@ -39,7 +40,6 @@ export {
     IBMFontLabel,
     IEasingFunction,
     IActionListener,
-    ActionType,
     TransitionByProps,
     TransitionToProps,
     StageProps,
@@ -49,6 +49,8 @@ export {
     ActionProps,
     SpriteClass,
     Ref,
+    VisibleRect,
+    Rect,
 }
 
 declare global {

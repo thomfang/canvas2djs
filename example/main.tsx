@@ -81,6 +81,4 @@ namespace demo {
             <sprite {...santaProps} ref={e => santa = e} onClick={santaJump} />
         </sprite>
     </stage>;
-
-
 }

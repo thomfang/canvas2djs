@@ -189,99 +189,90 @@ import * as canvas2d from 'canvas2djs';
 canvas2djs support 4 base tags: `<stage />`, `<sprite />`, `<text />`, `<bmfont />`, 
 
 ```tsx
-// index.tsx
-/// <reference types="canvas2djs" />
-/// <reference path="./Scene.tsx" />
-
-namespace demo {
-
-    const STAGE_WIDTH = window.innerWidth;
-    const STAGE_HEIGHT = window.innerHeight;
-
-    var stage: canvas2d.Stage;
-
-    <stage
-        canvas={document.querySelector('canvas')}
-        width={STAGE_WIDTH}
-        height={STAGE_HEIGHT}
-        scaleMode={canvas2d.ScaleMode.SHOW_ALL}
-        autoAdjustCanvasSize
-        touchEnabled
-        mouseEnabled
-        ref={e => stage = e}>
-        <Scene stageWidth={STAGE_WIDTH} stageHeight={STAGE_HEIGHT} />
-    </stage>
-}
-```
-
-```tsx
-// Scene.tsx
+// example:
 /// <reference types="canvas2djs" />
 
 namespace demo {
-    export type SceneProps = {
-        stageWidth: number;
-        stageHeight: number;
+
+    var canvas = document.querySelector('canvas');
+
+    export var stage: canvas2d.Stage;
+    export var santa: canvas2d.Sprite<any>;
+
+    var stageProps: canvas2d.StageProps = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        scaleMode: canvas2d.ScaleMode.SHOW_ALL,
+        autoAdjustCanvasSize: true,
+        touchEnabled: true,
+        mouseEnabled: true,
+        canvas,
+    };
+    var sceneProps: canvas2d.SpriteProps = {
+        originX: 0,
+        originY: 0,
+        width: stageProps.width,
+        height: stageProps.height
+    };
+    var titleProps: canvas2d.TextProps = {
+        y: 30,
+        alignX: canvas2d.AlignType.CENTER,
+        fontName: 'Arial',
+        fontSize: 30,
+        fontColor: 0xfff,
+        stroke: {
+            color: 0x00f,
+            width: 2
+        },
+    };
+
+    var santaFrames = [];
+
+    for (let i = 0; i < 11; i++) {
+        santaFrames.push(`img/Run_${i}.png`);
     }
 
-    export class Scene extends canvas2d.Sprite<SceneProps> {
+    export var santaProps: canvas2d.SpriteProps = {
+        alignX: canvas2d.AlignType.CENTER,
+        alignY: canvas2d.AlignType.CENTER,
+        actions: [
+            [{
+                type: canvas2d.ActionType.ANIM,
+                frameList: santaFrames,
+                frameRate: 20
+            }]
+        ]
+    };
 
-        private box: canvas2d.Sprite<{}>;
-        private text: canvas2d.TextLabel;
-        private action: canvas2d.Action;
+    var action: canvas2d.Action;
 
-        constructor(...args: any[]) {
-            super(...args);
-
-            this.addChild(
-                <sprite
-                    originX={0}
-                    originY={0}
-                    width={this.stageWidth}
-                    height={this.stageHeight}
-                    bgColor={0x000}>
-                    <text
-                        alignX={canvas2d.AlignType.CENTER}
-                        stroke={{ color: 0x00f, width: 3 }}
-                        y={20}
-                        fontColor={0xfff}>
-                        Hello, canvas2d!
-                    </text>
-
-                    <sprite
-                        ref={e => this.box = e}
-                        width={100}
-                        height={100}
-                        bgColor={0xf00}
-                        alignX={canvas2d.AlignType.CENTER}
-                        alignY={canvas2d.AlignType.CENTER}
-                        onClick={() => this.toggleColor()}>
-                        <text
-                            ref={e => this.text = e}
-                            alignX={canvas2d.AlignType.CENTER}
-                            alignY={canvas2d.AlignType.CENTER}
-                            fontColor={0xfff}>
-                            Click me!
-                        </text>
-                    </sprite>
-                </sprite>
-            );
+    function santaJump() {
+        if (action) {
+            return;
         }
 
-        toggleColor() {
-            this.box.bgColor = this.box.bgColor == 0xf00 ? 0xfff : 0xf00;
-            this.text.fontColor = this.text.fontColor == 0xfff ? 0xf00 : 0xfff;
-
-            if (this.action) {
-                this.action.stop();
-            }
-            this.action = new canvas2d.Action(this.box).by({
-                rotation: {
-                    value: 360,
-                    easing: canvas2d.Tween.linear
+        action = new canvas2d.Action(santa)
+            .by({
+                y: {
+                    value: -200,
+                    easing: canvas2d.Tween.easeOutQuad
                 }
-            }, 0.5).start();
-        }
+            }, 0.3)
+            .to({
+                y: santa.y
+            }, 0.2)
+            .then(() => action = null)
+            .start();
     }
+
+    <stage {...stageProps} ref={e => stage = e} >
+        <sprite {...sceneProps}>
+            <text {...titleProps}>
+                canvas2djs
+            </text>
+            <sprite {...santaProps} ref={e => santa = e} onClick={santaJump} />
+        </sprite>
+    </stage>;
 }
+
 ```

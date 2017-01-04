@@ -4,13 +4,13 @@ export interface IActionListener {
     all(callback: Function): IActionListener;
     any(callback: Function): IActionListener;
 }
-export declare type TransitionToAttrs = {
+export declare type TransitionToProps = {
     [name: string]: number | {
         dest: number;
         easing: IEasingFunction;
     };
 };
-export declare type TransitionByAttrs = {
+export declare type TransitionByProps = {
     [name: string]: number | {
         value: number;
         easing: IEasingFunction;
@@ -25,11 +25,11 @@ export declare enum ActionType {
 }
 export declare type ActionQueue = Array<{
     type: ActionType.TO;
-    options: TransitionToAttrs;
+    options: TransitionToProps;
     duration: number;
 } | {
     type: ActionType.BY;
-    options: TransitionByAttrs;
+    options: TransitionByProps;
     duration: number;
 } | {
     type: ActionType.ANIM;
@@ -82,11 +82,11 @@ export default class Action {
     /**
      * TransitionTo action
      */
-    to(attrs: TransitionToAttrs, duration: number): Action;
+    to(attrs: TransitionToProps, duration: number): Action;
     /**
      * TransitionBy action
      */
-    by(attrs: TransitionByAttrs, duration: number): Action;
+    by(attrs: TransitionByProps, duration: number): Action;
     /**
      * Start the action
      */
