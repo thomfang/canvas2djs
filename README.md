@@ -186,7 +186,7 @@ Import canvas2djs declaration in .tsx files:
 import * as canvas2d from 'canvas2djs';
 ```
 
-canvas2djs support 4 base tags: `<stage />`, `<sprite />`, `<text />`, `<bmfont />`, 
+canvas2djs supports these 4 tags: `<stage />`, `<sprite />`, `<text />`, `<bmfont />`, 
 
 ```tsx
 // example:
@@ -220,7 +220,7 @@ namespace demo {
         fontName: 'Arial',
         fontSize: 30,
         fontColor: 0xfff,
-        stroke: {
+        fontStroke: {
             color: 0x00f,
             width: 2
         },
