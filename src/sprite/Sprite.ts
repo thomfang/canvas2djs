@@ -1,9 +1,11 @@
-import { IEventHelper } from './UIEvent';
-import { Color, normalizeColor, uid } from './Util';
-import Action from './Action';
-import Texture from './Texture';
-import EventEmitter from './EventEmitter';
-import addToReleasePool from './ReleasePool';
+import { EventHelper } from '../UIEvent';
+import { Color, normalizeColor, uid } from '../Util';
+import { Action } from '../action/Action';
+import { Texture } from '../Texture';
+import { EventEmitter } from '../EventEmitter';
+import { ReleasePool } from '../ReleasePool';
+
+export const RAD_PER_DEG: number = Math.PI / 180;
 
 export enum AlignType {
     TOP,
@@ -13,126 +15,8 @@ export enum AlignType {
     CENTER
 }
 
-/**
- * Sprite attributes
- */
-export interface ISprite {
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-    scaleX?: number;
-    scaleY?: number;
-    originX?: number;
-    originY?: number;
-    bgColor?: Color;
-    radius?: number;
-    border?: {
-        width: number;
-        color: Color;
-    };
-    texture?: Texture | string;
-    rotation?: number;
-    opacity?: number;
-    visible?: boolean;
-    alignX?: AlignType,
-    alignY?: AlignType,
-    flippedX?: boolean;
-    flippedY?: boolean;
-    clipOverflow?: boolean;
+export class Sprite<T extends ISprite> extends EventEmitter {
 
-    /**
-     * Position X of the clipping rect on texture
-     */
-    sourceX?: number;
-
-    /**
-     * Position Y of the clipping rect on texture
-     */
-    sourceY?: number;
-
-    /**
-     * Width of the clipping rect on texture
-     */
-    sourceWidth?: number;
-
-    /**
-     * Height of the clipping rect on texture
-     */
-    sourceHeight?: number;
-
-    /**
-     * Use lighter mode
-     */
-    lighterMode?: boolean;
-
-    /**
-     * Auto resize by the texture
-     */
-    autoResize?: boolean;
-
-    touchEnabled?: boolean;
-    mouseEnabled?: boolean;
-    keyboardEnabled?: boolean;
-
-    /**
-     * Sprite would call this method each frame
-     * @param  deltaTime  Duration between now and last frame
-     */
-    update?(deltaTime: number): any;
-
-    /**
-     * Click event handler
-     */
-    onClick?(e: IEventHelper, event: MouseEvent): any;
-
-    /**
-     * Mouse begin event handler
-     */
-    onMouseBegin?(e: IEventHelper, event: MouseEvent): any;
-
-    /**
-     * Mouse moved event handler
-     */
-    onMouseMoved?(e: IEventHelper, event: MouseEvent): any;
-
-    /**
-     * Mouse ended event handler
-     */
-    onMouseEnded?(e: IEventHelper, event: MouseEvent): any;
-
-    /**
-     * Touch begin event handler
-     */
-    onTouchBegin?(touches: IEventHelper[], event: TouchEvent): any;
-
-    /**
-     * Touch moved event handler
-     */
-    onTouchMoved?(touches: IEventHelper[], event: TouchEvent): any;
-
-    /**
-     * Touch ended event hadndler
-     */
-    onTouchEnded?(touches: IEventHelper[], event: TouchEvent): any;
-
-    /**
-     * KeyDown event handler
-     */
-    onKeyDown?(event: KeyboardEvent): any;
-
-    /**
-     * KeyUp event handler
-     */
-    onKeyUp?(event: KeyboardEvent): any;
-}
-
-export const RAD_PER_DEG: number = Math.PI / 180;
-
-/**
- * Sprite as the base element
- */
-export default class Sprite<T extends ISprite> extends EventEmitter {
     protected _width: number = 0;
     protected _height: number = 0;
     protected _originX: number = 0.5;
@@ -144,7 +28,7 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
     protected _alignY: AlignType;
     protected _parent: Sprite<T>;
 
-    protected _props: T & ISprite; // Use for tsx
+    protected _props: T & ISprite; // Define for tsx
 
     _originPixelX: number = 0;
     _originPixelY: number = 0;
@@ -167,11 +51,9 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
     flippedY: boolean = false;
     visible: boolean = true;
     clipOverflow: boolean = false;
-    bgColor: Color;
-    border: {
-        width: number;
-        color: Color;
-    };
+    fillColor: Color;
+    strokeColor: Color;
+    strokeWidth: number;
     children: Sprite<any>[];
 
     touchEnabled: boolean = true;
@@ -522,11 +404,11 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     protected _drawBgColor(context: CanvasRenderingContext2D): void {
-        if (this.bgColor == null) {
+        if (this.fillColor == null) {
             return;
         }
 
-        context.fillStyle = normalizeColor(this.bgColor);
+        context.fillStyle = normalizeColor(this.fillColor);
         context.beginPath();
         if (this.radius > 0) {
             context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -539,9 +421,9 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     protected _drawBorder(context: CanvasRenderingContext2D): void {
-        if (this.border) {
-            context.lineWidth = this.border.width;
-            context.strokeStyle = normalizeColor(this.border.color);
+        if (this.strokeWidth != null) {
+            context.lineWidth = this.strokeWidth;
+            context.strokeStyle = normalizeColor(this.strokeColor || 0x000);
             context.beginPath();
             if (this.radius > 0) {
                 context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -640,10 +522,119 @@ export default class Sprite<T extends ISprite> extends EventEmitter {
             this.parent.removeChild(this);
         }
 
-        addToReleasePool(this);
+        ReleasePool.instance.add(this);
     }
 
     update(deltaTime: number): any {
 
     }
+}
+
+export interface ISprite {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    scaleX?: number;
+    scaleY?: number;
+    originX?: number;
+    originY?: number;
+    fillColor?: Color;
+    radius?: number;
+    strokeWidth?: number;
+    strokeColor?: Color;
+    texture?: Texture | string;
+    rotation?: number;
+    opacity?: number;
+    visible?: boolean;
+    alignX?: AlignType,
+    alignY?: AlignType,
+    flippedX?: boolean;
+    flippedY?: boolean;
+    clipOverflow?: boolean;
+
+    /**
+     * Position X of the clipping rect on texture
+     */
+    sourceX?: number;
+
+    /**
+     * Position Y of the clipping rect on texture
+     */
+    sourceY?: number;
+
+    /**
+     * Width of the clipping rect on texture
+     */
+    sourceWidth?: number;
+
+    /**
+     * Height of the clipping rect on texture
+     */
+    sourceHeight?: number;
+
+    /**
+     * Use lighter mode
+     */
+    lighterMode?: boolean;
+
+    /**
+     * Auto resize by the texture
+     */
+    autoResize?: boolean;
+
+    touchEnabled?: boolean;
+    mouseEnabled?: boolean;
+    keyboardEnabled?: boolean;
+
+    /**
+     * Sprite would call this method each frame
+     * @param  deltaTime  Duration between now and last frame
+     */
+    update?(deltaTime: number): any;
+
+    /**
+     * Click event handler
+     */
+    onClick?(e: EventHelper, event: MouseEvent): any;
+
+    /**
+     * Mouse begin event handler
+     */
+    onMouseBegin?(e: EventHelper, event: MouseEvent): any;
+
+    /**
+     * Mouse moved event handler
+     */
+    onMouseMoved?(e: EventHelper, event: MouseEvent): any;
+
+    /**
+     * Mouse ended event handler
+     */
+    onMouseEnded?(e: EventHelper, event: MouseEvent): any;
+
+    /**
+     * Touch begin event handler
+     */
+    onTouchBegin?(touches: EventHelper[], event: TouchEvent): any;
+
+    /**
+     * Touch moved event handler
+     */
+    onTouchMoved?(touches: EventHelper[], event: TouchEvent): any;
+
+    /**
+     * Touch ended event hadndler
+     */
+    onTouchEnded?(touches: EventHelper[], event: TouchEvent): any;
+
+    /**
+     * KeyDown event handler
+     */
+    onKeyDown?(event: KeyboardEvent): any;
+
+    /**
+     * KeyUp event handler
+     */
+    onKeyUp?(event: KeyboardEvent): any;
 }

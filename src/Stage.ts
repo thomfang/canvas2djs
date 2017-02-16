@@ -1,6 +1,6 @@
-﻿import UIEvent from './UIEvent';
-import Sprite from './Sprite';
-import Action from './Action';
+﻿import { UIEvent } from './UIEvent';
+import { Sprite } from './sprite/Sprite';
+import { Action } from './action/Action';
 
 export enum ScaleMode {
     SHOW_ALL,
@@ -16,7 +16,7 @@ export type VisibleRect = {
     bottom: number;
 };
 
-export default class Stage {
+export class Stage {
 
     private _fps: number = 30;
     private _frameRate: number = 1000 / this._fps;
@@ -300,7 +300,7 @@ export default class Stage {
             }
 
             var deltaTime: number = this._getDeltaTime();
-            Action.step(deltaTime);
+            Action.schedule(deltaTime);
             this._rootSprite._update(deltaTime);
             this.render();
             this._startTimer();

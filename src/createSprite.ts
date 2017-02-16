@@ -1,9 +1,9 @@
-import Sprite, { ISprite } from './Sprite';
-import TextLabel, { ITextLabel } from './TextLabel';
-import BMFontLabel, { IBMFontLabel } from './BMFontLabel';
-import Stage, { ScaleMode } from './Stage';
-import Texture from './Texture';
-import Action, { ActionQueue } from './Action';
+import { Sprite, ISprite } from './sprite/Sprite';
+import { TextLabel, ITextLabel } from './sprite/TextLabel';
+import { BMFontLabel, IBMFontLabel } from './sprite/BMFontLabel';
+import { Stage, ScaleMode } from './Stage';
+import { Texture } from './Texture';
+import { Action, ActionQueue } from './action/Action';
 
 export interface Ref<T> {
     ref?(instance: T): any;
@@ -26,12 +26,12 @@ export type StageProps = {
     useExternalTimer?: boolean;
 } & Ref<Stage>;
 
-function createSprite<T, U>(type: "sprite", props: SpriteProps, ...children: any[]): Sprite<{}>;
-function createSprite<T, U>(type: "text", props: TextProps, ...children: any[]): TextLabel;
-function createSprite<T, U>(type: "bmfont", props: BMFontProps, ...children: any[]): BMFontLabel;
-function createSprite<T, U>(type: "stage", props: StageProps, ...children: any[]): Stage;
-function createSprite<T, U>(type: SpriteClass<T, U>, props: T & SpriteProps, ...children: any[]): U;
-function createSprite<T, U>(type: any, props: any, ...children: any[]): any {
+export function createSprite<T, U>(type: "sprite", props: SpriteProps, ...children: any[]): Sprite<{}>;
+export function createSprite<T, U>(type: "text", props: TextProps, ...children: any[]): TextLabel;
+export function createSprite<T, U>(type: "bmfont", props: BMFontProps, ...children: any[]): BMFontLabel;
+export function createSprite<T, U>(type: "stage", props: StageProps, ...children: any[]): Stage;
+export function createSprite<T, U>(type: SpriteClass<T, U>, props: T & SpriteProps, ...children: any[]): U;
+export function createSprite<T, U>(type: any, props: any, ...children: any[]): any {
     let sprite: any;
     let {ref, actions, ...options} = props;
 
@@ -104,5 +104,3 @@ function createStage(props: StageProps, children: Sprite<any>[]) {
 function ensureString(list: any[]) {
     return list.every(item => typeof item === 'string');
 }
-
-export default createSprite;

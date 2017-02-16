@@ -1,8 +1,6 @@
-﻿export interface IEasingFunction {
-    (percent: number, ...args: any[]): number;
-}
+﻿export type EasingFunc = (percent: number, ...args: any[]) => number;
 
-export default {
+export const Tween = {
     easeInQuad(pos) {
         return Math.pow(pos, 2);
     },

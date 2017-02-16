@@ -7,7 +7,7 @@ export declare type Rect = {
 /**
  * Sprite texture
  */
-export default class Texture {
+export declare class Texture {
     private _readyCallbacks;
     /**
      * Texture resource loading state

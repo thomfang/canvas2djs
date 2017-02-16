@@ -1,14 +1,15 @@
-var key = '__CANVAS2D_UUID__';
+const Key = 'canvas2d.uid';
+
 var counter = 0;
 var cachedColor: { [key: string]: string } = {};
 
 export type Color = string | number;
 
 export function uid(target: any) {
-    if (typeof target[key] === 'undefined') {
-        Object.defineProperty(target, key, { value: counter++ });
+    if (typeof target[Key] === 'undefined') {
+        Object.defineProperty(target, Key, { value: counter++ });
     }
-    return target[key];
+    return target[Key];
 }
 
 export function addArrayItem(array: any[], item: any) {

@@ -1,4 +1,4 @@
-﻿export default {
+﻿export const Keys = {
     MOUSE_LEFT: 1,
     MOUSE_MID: 2,
     MOUSE_RIGHT: 3,

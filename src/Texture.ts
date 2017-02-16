@@ -12,7 +12,7 @@ export type Rect = {
 /**
  * Sprite texture
  */
-export default class Texture {
+export class Texture {
 
     private _readyCallbacks: any[] = [];
 
@@ -50,7 +50,7 @@ export default class Texture {
      */
     constructor(source: string | HTMLCanvasElement | HTMLImageElement, rect?: Rect) {
         var name: any = getName(source, rect);
-        
+
         if (cache[name]) {
             return cache[name];
         }

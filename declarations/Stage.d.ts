@@ -1,4 +1,4 @@
-import Sprite from './Sprite';
+import { Sprite } from './sprite/Sprite';
 export declare enum ScaleMode {
     SHOW_ALL = 0,
     NO_BORDER = 1,
@@ -11,7 +11,7 @@ export declare type VisibleRect = {
     top: number;
     bottom: number;
 };
-export default class Stage {
+export declare class Stage {
     private _fps;
     private _frameRate;
     private _isRunning;

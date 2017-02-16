@@ -1,8 +1,8 @@
-import Sprite, { ISprite } from './Sprite';
-import TextLabel, { ITextLabel } from './TextLabel';
-import BMFontLabel, { IBMFontLabel } from './BMFontLabel';
-import Stage, { ScaleMode } from './Stage';
-import { ActionQueue } from './Action';
+import { Sprite, ISprite } from './sprite/Sprite';
+import { TextLabel, ITextLabel } from './sprite/TextLabel';
+import { BMFontLabel, IBMFontLabel } from './sprite/BMFontLabel';
+import { Stage, ScaleMode } from './Stage';
+import { ActionQueue } from './action/Action';
 export interface Ref<T> {
     ref?(instance: T): any;
 }
@@ -24,9 +24,8 @@ export declare type StageProps = {
     keyboardEnabled?: boolean;
     useExternalTimer?: boolean;
 } & Ref<Stage>;
-declare function createSprite<T, U>(type: "sprite", props: SpriteProps, ...children: any[]): Sprite<{}>;
-declare function createSprite<T, U>(type: "text", props: TextProps, ...children: any[]): TextLabel;
-declare function createSprite<T, U>(type: "bmfont", props: BMFontProps, ...children: any[]): BMFontLabel;
-declare function createSprite<T, U>(type: "stage", props: StageProps, ...children: any[]): Stage;
-declare function createSprite<T, U>(type: SpriteClass<T, U>, props: T & SpriteProps, ...children: any[]): U;
-export default createSprite;
+export declare function createSprite<T, U>(type: "sprite", props: SpriteProps, ...children: any[]): Sprite<{}>;
+export declare function createSprite<T, U>(type: "text", props: TextProps, ...children: any[]): TextLabel;
+export declare function createSprite<T, U>(type: "bmfont", props: BMFontProps, ...children: any[]): BMFontLabel;
+export declare function createSprite<T, U>(type: "stage", props: StageProps, ...children: any[]): Stage;
+export declare function createSprite<T, U>(type: SpriteClass<T, U>, props: T & SpriteProps, ...children: any[]): U;

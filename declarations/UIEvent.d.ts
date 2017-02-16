@@ -1,6 +1,6 @@
-import Sprite from './Sprite';
-import Stage from './Stage';
-export interface IEventHelper {
+import { Stage } from './Stage';
+import { Sprite } from './sprite/Sprite';
+export declare type EventHelper = {
     identifier?: number;
     beginX: number;
     beginY: number;
@@ -12,8 +12,8 @@ export interface IEventHelper {
     beginTarget?: Sprite<any>;
     target?: Sprite<any>;
     cancelBubble: boolean;
-}
-export default class UIEvent {
+};
+export declare class UIEvent {
     static supportTouch: boolean;
     private _registered;
     private _touchHelperMap;

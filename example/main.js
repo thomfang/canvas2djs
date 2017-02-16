@@ -1,13 +1,12 @@
-var __assign = (this && this.__assign) || Object.assign || function (t) {
+var __assign = (this && this.__assign) || Object.assign || function(t) {
     for (var s, i = 1, n = arguments.length; i < n; i++) {
         s = arguments[i];
-        for (var p in s)
-            if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
     }
     return t;
 };
-/// <reference path="../dist/canvas2d.d.ts" />
+/// <reference path="../declarations/canvas2d.d.ts" />
 var demo;
 (function (demo) {
     var canvas = document.querySelector('canvas');
@@ -24,7 +23,7 @@ var demo;
         originX: 0,
         originY: 0,
         width: stageProps.width,
-        height: stageProps.height
+        height: stageProps.height,
     };
     var titleProps = {
         y: 30,
@@ -32,7 +31,7 @@ var demo;
         fontName: 'Arial',
         fontSize: 30,
         fontColor: 0xfff,
-        stroke: {
+        fontStroke: {
             color: 0x00f,
             width: 2
         },
@@ -46,28 +45,27 @@ var demo;
         alignY: canvas2d.AlignType.CENTER,
         actions: [
             [{
-                type: canvas2d.ActionType.ANIM,
-                frameList: santaFrames,
-                frameRate: 20
-            }]
+                    type: canvas2d.ActionType.ANIM,
+                    frameList: santaFrames,
+                    frameRate: 20
+                }]
         ]
     };
     var action;
-
     function santaJump() {
         if (action) {
             return;
         }
         action = new canvas2d.Action(demo.santa)
             .by({
-                y: {
-                    value: -200,
-                    easing: canvas2d.Tween.easeOutQuad
-                }
-            }, 0.3)
+            y: {
+                value: -200,
+                easing: canvas2d.Tween.easeOutQuad
+            }
+        }, 0.3)
             .to({
-                y: demo.santa.y
-            }, 0.2)
+            y: demo.santa.y
+        }, 0.2)
             .then(function () { return action = null; })
             .start();
     }

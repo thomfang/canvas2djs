@@ -1,12 +1,12 @@
-import Texture from './Texture';
-import Sprite, { ISprite } from './Sprite';
+import { Texture } from '../Texture';
+import { Sprite, ISprite } from './Sprite';
 export interface IBMFontLabel extends ISprite {
     textureMap: {
         [word: string]: Texture;
     };
     text?: string;
 }
-export default class BMFontLabel extends Sprite<IBMFontLabel> {
+export declare class BMFontLabel extends Sprite<IBMFontLabel> {
     private _text;
     private _words;
     private _textureMap;

@@ -1,21 +1,6 @@
-import { IEasingFunction } from './Tween';
-import Texture from './Texture';
-export interface IActionListener {
-    all(callback: Function): IActionListener;
-    any(callback: Function): IActionListener;
-}
-export declare type TransitionToProps = {
-    [name: string]: number | {
-        dest: number;
-        easing: IEasingFunction;
-    };
-};
-export declare type TransitionByProps = {
-    [name: string]: number | {
-        value: number;
-        easing: IEasingFunction;
-    };
-};
+import { Texture } from '../Texture';
+import { IActionListener } from './ActionListener';
+import { TransByProps, TransToProps } from './Transition';
 export declare enum ActionType {
     TO = 0,
     BY = 1,
@@ -25,11 +10,11 @@ export declare enum ActionType {
 }
 export declare type ActionQueue = Array<{
     type: ActionType.TO;
-    options: TransitionToProps;
+    options: TransToProps;
     duration: number;
 } | {
     type: ActionType.BY;
-    options: TransitionByProps;
+    options: TransByProps;
     duration: number;
 } | {
     type: ActionType.ANIM;
@@ -43,10 +28,13 @@ export declare type ActionQueue = Array<{
     type: ActionType.CALLBACK;
     callback: Function;
 }>;
-/**
- * Action manager
- */
-export default class Action {
+export interface IAction {
+    immediate?: boolean;
+    done: boolean;
+    step(deltaTime: number, target: any): void;
+    end(target: any): void;
+}
+export declare class Action {
     /**
      * Stop action by target
      */
@@ -55,7 +43,7 @@ export default class Action {
      * Listen a action list, when all actions are done then publish to listener
      */
     static listen(actions: Array<Action>): IActionListener;
-    static step(deltaTime: number): void;
+    static schedule(deltaTime: number): void;
     static _actionList: Array<Action>;
     static _listenerList: Array<IActionListener>;
     private _queue;
@@ -82,11 +70,11 @@ export default class Action {
     /**
      * TransitionTo action
      */
-    to(attrs: TransitionToProps, duration: number): Action;
+    to(attrs: TransToProps, duration: number): Action;
     /**
      * TransitionBy action
      */
-    by(attrs: TransitionByProps, duration: number): Action;
+    by(attrs: TransByProps, duration: number): Action;
     /**
      * Start the action
      */

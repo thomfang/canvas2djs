@@ -1,23 +1,30 @@
-var releasePool: Object[] = [];
-var timerId: number;
+var instance: ReleasePool;
 
-export default function addToReleasePool(obj: Object) {
-    releasePool.push(obj);
+export class ReleasePool {
 
-    if (timerId != null) {
-        return;
+    private _objs: Object[] = [];
+    private _timerId: number;
+
+    add(obj: Object) {
+        this._objs.push(obj);
+        if (this._timerId != null) {
+            return;
+        }
+        this._timerId = setTimeout(() => this._release(), 0);
     }
 
-    timerId = setTimeout(release, 0);
-}
+    private _release() {
+        this._objs.forEach(obj => {
+            Object.keys(obj).forEach(key => delete obj[key]);
+        });
+        this._timerId = null;
+        this._objs.length = 0;
+    }
 
-function release() {
-    releasePool.forEach(obj => {
-        for (let key in obj) {
-            delete obj[key];
+    static get instance() {
+        if (!instance) {
+            instance = new ReleasePool();
         }
-    });
-
-    timerId = null;
-    releasePool.length = 0;
+        return instance;
+    }
 }

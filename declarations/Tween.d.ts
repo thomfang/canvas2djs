@@ -1,7 +1,5 @@
-export interface IEasingFunction {
-    (percent: number, ...args: any[]): number;
-}
-declare var _default: {
+export declare type EasingFunc = (percent: number, ...args: any[]) => number;
+export declare const Tween: {
     easeInQuad(pos: any): number;
     easeOutQuad(pos: any): number;
     easeInOutQuad(pos: any): number;
@@ -48,4 +46,3 @@ declare var _default: {
     none(pos: any): number;
     full(pos: any): number;
 };
-export default _default;

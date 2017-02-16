@@ -20,7 +20,7 @@ namespace demo {
         originX: 0,
         originY: 0,
         width: stageProps.width,
-        height: stageProps.height
+        height: stageProps.height,
     };
     var titleProps: canvas2d.TextProps = {
         y: 30,
@@ -28,7 +28,7 @@ namespace demo {
         fontName: 'Arial',
         fontSize: 30,
         fontColor: 0xfff,
-        stroke: {
+        fontStroke: {
             color: 0x00f,
             width: 2
         },

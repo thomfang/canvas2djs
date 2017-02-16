@@ -1,57 +1,49 @@
-import * as Util from './Util';
-import Keys from './Keys';
-import Tween, { IEasingFunction } from './Tween';
-import Action, { ActionType, IActionListener, TransitionByProps, TransitionToProps } from './Action';
-import EventEmitter, { IEventListener } from './EventEmitter';
-import { HTMLAudio, WebAudio } from './Audio';
-import Sound from './Sound';
-import Texture, { Rect } from './Texture';
-import UIEvent, { IEventHelper } from './UIEvent';
-import Sprite, { AlignType, RAD_PER_DEG, ISprite } from './Sprite';
-import TextLabel, { ITextLabel } from './TextLabel';
-import BMFontLabel, { IBMFontLabel } from './BMFontLabel';
-import Stage, { ScaleMode, VisibleRect } from './Stage';
-import createSprite, { ActionProps, StageProps, SpriteProps, TextProps, BMFontProps, SpriteClass, Ref } from './createSprite';
+export { Keys } from './Keys';
 
 export {
-    Util,
-    Keys,
     Tween,
-    Action,
-    EventEmitter,
-    HTMLAudio,
-    WebAudio,
-    Sound,
+    // EasingFunc
+} from './Tween';
+
+export {
     Texture,
-    UIEvent,
-    Sprite,
-    AlignType,
-    ActionType,
-    RAD_PER_DEG,
-    TextLabel,
-    BMFontLabel,
+    // Rect
+} from './Texture';
+
+export {
+    Action,
+    ActionType
+} from './action/Action';
+
+export {
     Stage,
     ScaleMode,
+    // VisibleRect
+} from './Stage';
+
+export { EventEmitter } from './EventEmitter';
+export { Sound } from './sound/Sound';
+export { UIEvent } from './UIEvent';
+export { TextLabel } from './sprite/TextLabel';
+export { BMFontLabel } from './sprite/BMFontLabel';
+
+import { Sprite, AlignType, RAD_PER_DEG } from './sprite/Sprite';
+import { createSprite, ActionProps, StageProps, SpriteProps, TextProps, BMFontProps, SpriteClass, Ref } from './createSprite';
+
+export {
+    Sprite,
+    AlignType,
+    RAD_PER_DEG,
     createSprite,
-    ISprite,
-    ITextLabel,
-    IEventHelper,
-    IEventListener,
-    IBMFontLabel,
-    IEasingFunction,
-    IActionListener,
-    TransitionByProps,
-    TransitionToProps,
-    StageProps,
-    SpriteProps,
-    TextProps,
-    BMFontProps,
-    ActionProps,
-    SpriteClass,
-    Ref,
-    VisibleRect,
-    Rect,
+    // ActionProps,
+    // StageProps,
+    // SpriteProps,
+    // TextProps,
+    // BMFontProps,
+    // SpriteClass,
+    // Ref
 }
+
 
 declare global {
     namespace JSX {

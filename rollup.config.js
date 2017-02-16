@@ -1,4 +1,4 @@
-var typescript = require('rollup-plugin-typescript');
+var typescript = require('@alexlur/rollup-plugin-typescript');
 var pkg = require('./package.json');
 
 var banner =

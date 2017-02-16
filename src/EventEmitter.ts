@@ -1,46 +1,34 @@
-import * as Util from './Util';
+import { uid, addArrayItem, removeArrayItem } from './Util';
 
 var counter = 0;
-var prefix = '__CANVAS2D_ONCE__';
+var eventCache: { [id: number]: { [type: string]: EventListener[] } } = {};
 
-export interface IEventListener {
-    (...args: any[]): any;
-}
+export type EventListener = (...args: any[]) => any;
 
-/**
- * EventEmitter
- */
-export default class EventEmitter {
+export class EventEmitter {
 
-    private static _cache: { [id: number]: { [type: string]: IEventListener[] } } = {};
-
-    addListener(type: string, listener: IEventListener) {
-        let id = Util.uid(this);
-        if (!EventEmitter._cache[id]) {
-            EventEmitter._cache[id] = {};
+    addListener(type: string, listener: EventListener) {
+        let id = uid(this);
+        if (!eventCache[id]) {
+            eventCache[id] = {};
         }
-        if (!EventEmitter._cache[id][type]) {
-            EventEmitter._cache[id][type] = [];
+        if (!eventCache[id][type]) {
+            eventCache[id][type] = [];
         }
 
-        Util.addArrayItem(EventEmitter._cache[id][type], listener);
+        addArrayItem(eventCache[id][type], listener);
         return this;
     }
 
-    on(type: string, listener: IEventListener) {
+    on(type: string, listener: EventListener) {
         return this.addListener(type, listener);
     }
 
-    once(type: string, listener: IEventListener) {
-        listener[prefix + Util.uid(this)] = true;
-        return this.addListener(type, listener);
-    }
-
-    removeListener(type: string, listener: IEventListener) {
-        let cache = EventEmitter._cache[Util.uid(this)];
+    removeListener(type: string, listener: EventListener) {
+        let cache = eventCache[uid(this)];
 
         if (cache && cache[type]) {
-            Util.removeArrayItem(cache[type], listener);
+            removeArrayItem(cache[type], listener);
             if (!cache[type].length) {
                 delete cache[type];
             }
@@ -49,8 +37,8 @@ export default class EventEmitter {
     }
 
     removeAllListeners(type?: string) {
-        let id = Util.uid(this);
-        let cache = EventEmitter._cache[id];
+        let id = uid(this);
+        let cache = eventCache[id];
 
         if (cache) {
             if (type == null) {
@@ -64,17 +52,12 @@ export default class EventEmitter {
     }
 
     emit(type: string, ...args: any[]) {
-        let id = Util.uid(this);
-        let cache = EventEmitter._cache[id];
-        let onceKey = prefix + id;
+        let id = uid(this);
+        let cache = eventCache[id];
 
         if (cache && cache[type]) {
             cache[type].slice().forEach(listener => {
                 listener.apply(this, args);
-                if (listener[onceKey]) {
-                    this.removeListener(type, listener);
-                    listener[onceKey] = null;
-                }
             });
         }
         return this;

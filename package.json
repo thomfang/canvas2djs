@@ -1,19 +1,17 @@
 {
   "name": "canvas2djs",
-  "version": "0.2.7",
+  "version": "1.0.0",
   "description": "HTML5 canvas based game engine",
   "main": "dist/canvas2d.js",
   "types": "declarations/canvas2d.d.ts",
-  "scripts": {
-    
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/tilfon/canvas2djs.git"
   },
   "keywords": [
     "HTML5",
-    "game engine",
+    "Game engine",
     "TypeScript"
   ],
   "author": {
@@ -27,8 +25,8 @@
   "homepage": "https://github.com/tilfon/canvas2djs",
   "dependencies": {},
   "devDependencies": {
-    "rollup-plugin-typescript": "^0.8.1",
+    "@alexlur/rollup-plugin-typescript": "^1.0.2",
     "tslib": "^1.4.0",
-    "typescript": "^2.1.4"
+    "typescript": "^2.1.6"
   }
 }

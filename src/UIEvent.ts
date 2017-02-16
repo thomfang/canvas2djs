@@ -1,15 +1,9 @@
-﻿import * as Util from './Util';
-import Sprite from './Sprite';
-import Stage from './Stage';
+﻿import { Rect } from './Texture';
+import { Stage } from './Stage';
+import { Sprite } from './sprite/Sprite';
+import { addArrayItem } from './Util';
 
-type Rect = {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
-
-export interface IEventHelper {
+export type EventHelper = {
     identifier?: number;
     beginX: number;
     beginY: number;
@@ -34,26 +28,26 @@ const mouseBegin = "mousedown";
 const mouseMoved = "mousemove";
 const mouseEnded = "mouseup";
 
-const onclick = "onClick";
-const onkeyup = "onKeyUp";
-const onkeydown = "onKeyDown";
+const onClick = "onClick";
+const onKeyUp = "onKeyUp";
+const onKeyDown = "onKeyDown";
 
-const ontouchbegin = "onTouchBegin";
-const ontouchmoved = "onTouchMoved";
-const ontouchended = "onTouchEnded";
+const onTouchBegin = "onTouchBegin";
+const onTouchMoved = "onTouchMoved";
+const onTouchEnded = "onTouchEnded";
 
-const onmousebegin = "onMouseBegin";
-const onmousemoved = "onMouseMoved";
-const onmouseended = "onMouseEnded";
+const onMouseBegin = "onMouseBegin";
+const onMouseMoved = "onMouseMoved";
+const onMouseEnded = "onMouseEnded";
 
-export default class UIEvent {
+export class UIEvent {
 
     public static supportTouch: boolean = "ontouchend" in window;
 
     private _registered: boolean;
-    private _touchHelperMap: { [index: number]: IEventHelper } = {};
-    private _mouseBeginHelper: IEventHelper;
-    private _mouseMovedHelper: IEventHelper;
+    private _touchHelperMap: { [index: number]: EventHelper } = {};
+    private _mouseBeginHelper: EventHelper;
+    private _mouseMovedHelper: EventHelper;
 
     stage: Stage;
     element: HTMLElement;
@@ -128,8 +122,8 @@ export default class UIEvent {
         return { x, y };
     }
 
-    private _transformTouches(touches, justGet?: boolean): IEventHelper[] {
-        var helpers: IEventHelper[] = [];
+    private _transformTouches(touches, justGet?: boolean): EventHelper[] {
+        var helpers: EventHelper[] = [];
         var rect = this.element.getBoundingClientRect();
         var scale = this.stage.scale;
         var touchHelperMap = this._touchHelperMap;
@@ -171,7 +165,7 @@ export default class UIEvent {
 
         var helpers = this._transformTouches(event.changedTouches);
 
-        this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, ontouchbegin);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin);
 
         helpers.forEach((touch) => {
             touch.beginTarget = touch.target;
@@ -189,7 +183,7 @@ export default class UIEvent {
 
         var helpers = this._transformTouches(event.changedTouches);
 
-        this._dispatchTouch(stage.sprite, 0, 0, helpers, event, ontouchmoved);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved);
 
         event.preventDefault();
     }
@@ -200,7 +194,7 @@ export default class UIEvent {
         if (stage.isRunning && stage.touchEnabled) {
             var helpers = this._transformTouches(event.changedTouches, true);
 
-            this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, ontouchended, true);
+            this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, true);
 
             helpers.forEach(helper => {
                 // target = helper.target;
@@ -229,7 +223,7 @@ export default class UIEvent {
         }
 
         var location = this.transformLocation(event);
-        var helper: IEventHelper = {
+        var helper: EventHelper = {
             beginX: location.x,
             beginY: location.y,
             stageX: location.x,
@@ -237,7 +231,7 @@ export default class UIEvent {
             cancelBubble: false
         };
 
-        this._dispatchMouse(stage.sprite, 0, 0, helper, event, onmousebegin);
+        this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseBegin);
 
         if (helper.target) {
             helper.beginTarget = helper.target;
@@ -260,7 +254,7 @@ export default class UIEvent {
             mouseBeginHelper.stageX = location.x;
             mouseBeginHelper.stageY = location.y;
             mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
-            this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onmousemoved);
+            this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved);
         }
         else {
             let mouseMovedHelper = this._mouseMovedHelper = {
@@ -270,7 +264,7 @@ export default class UIEvent {
                 stageY: location.y,
                 cancelBubble: false
             };
-            this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onmousemoved);
+            this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved);
         }
 
         event.preventDefault();
@@ -292,7 +286,7 @@ export default class UIEvent {
             // }
 
             var triggerClick = !helper._moved || isMovedSmallRange(helper);
-            this._dispatchMouse(stage.sprite, 0, 0, helper, event, onmouseended, triggerClick);
+            this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, triggerClick);
 
             // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
             //     target[ON_CLICK](helper, event);
@@ -307,7 +301,7 @@ export default class UIEvent {
         if (!stage.isRunning || !stage.keyboardEnabled) {
             return;
         }
-        this._dispatchKeyboard(stage.sprite, event.keyCode, event, onkeydown);
+        this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyDown);
     }
 
     private _keyUpHandler = (event: KeyboardEvent) => {
@@ -315,14 +309,14 @@ export default class UIEvent {
         if (!stage.isRunning || !stage.keyboardEnabled) {
             return;
         }
-        this._dispatchKeyboard(stage.sprite, event.keyCode, event, onkeyup);
+        this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyUp);
     }
 
     private _dispatchTouch(
         sprite: Sprite<any>,
         offsetX: number,
         offsetY: number,
-        helpers: IEventHelper[],
+        helpers: EventHelper[],
         event: TouchEvent,
         methodName: string,
         needTriggerClick?: boolean
@@ -335,9 +329,9 @@ export default class UIEvent {
         offsetY += sprite.y - sprite._originPixelY;
 
         var children = sprite.children;
-        var tmpHelpers: IEventHelper[] = helpers.slice();
-        var triggerreds: IEventHelper[] = [];
-        var result: IEventHelper[];
+        var tmpHelpers: EventHelper[] = helpers.slice();
+        var triggerreds: EventHelper[] = [];
+        var result: EventHelper[];
 
         var callback = helper => result.indexOf(helper) === -1;
 
@@ -360,7 +354,7 @@ export default class UIEvent {
             }
         }
 
-        var hits: IEventHelper[] = triggerreds.filter(helper => !helper.cancelBubble);
+        var hits: EventHelper[] = triggerreds.filter(helper => !helper.cancelBubble);
         var rect: Rect = {
             x: offsetX,
             y: offsetY,
@@ -369,7 +363,7 @@ export default class UIEvent {
         };
         var count = 0;
 
-        for (let i = 0, helper: IEventHelper; helper = tmpHelpers[i]; i++) {
+        for (let i = 0, helper: EventHelper; helper = tmpHelpers[i]; i++) {
             if (isRectContainPoint(rect, helper)) {
                 if (!helper.target) {
                     helper.target = sprite;
@@ -385,7 +379,7 @@ export default class UIEvent {
 
         if (hits.length) {
             var hasMethod: boolean = hasImplements(sprite, methodName);
-            var hasClickHandler: boolean = hasImplements(sprite, onclick);
+            var hasClickHandler: boolean = hasImplements(sprite, onClick);
 
             if (hasMethod) {
                 sprite[methodName](hits, event);
@@ -394,8 +388,8 @@ export default class UIEvent {
 
             // Click event would just trigger by only a touch
             if (hasClickHandler && needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
-                sprite[onclick](hits[0], event as any);
-                Util.addArrayItem(triggerreds, hits[0]);
+                sprite[onClick](hits[0], event as any);
+                addArrayItem(triggerreds, hits[0]);
             }
         }
         return triggerreds;
@@ -405,7 +399,7 @@ export default class UIEvent {
         sprite: Sprite<any>,
         offsetX: number,
         offsetY: number,
-        helper: IEventHelper,
+        helper: EventHelper,
         event: MouseEvent,
         methodName: string,
         triggerClick?: boolean
@@ -444,7 +438,7 @@ export default class UIEvent {
 
         if (triggerred || isRectContainPoint(rect, helper)) {
             var hasMethod: boolean = hasImplements(sprite, methodName);
-            var hasClickHandler: boolean = hasImplements(sprite, onclick);
+            var hasClickHandler: boolean = hasImplements(sprite, onClick);
 
             if (!helper.target) {
                 helper.target = sprite;
@@ -456,7 +450,7 @@ export default class UIEvent {
                 sprite[methodName](helper, event);
             }
             if (hasClickHandler && triggerClick) {
-                sprite[onclick](helper, event);
+                sprite[onClick](helper, event);
             }
 
             return true;
@@ -482,12 +476,12 @@ export default class UIEvent {
     }
 }
 
-function isRectContainPoint(rect: Rect, p: IEventHelper) {
+function isRectContainPoint(rect: Rect, p: EventHelper) {
     return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
         rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
 }
 
-function isMovedSmallRange(e: IEventHelper) {
+function isMovedSmallRange(e: EventHelper) {
     if (e.beginX == null && e.beginY == null) {
         return false;
     }

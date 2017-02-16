@@ -1,12 +1,12 @@
-import Texture from './Texture';
-import Sprite, { ISprite } from './Sprite';
+import { Texture } from '../Texture';
+import { Sprite, ISprite } from './Sprite';
 
 export interface IBMFontLabel extends ISprite {
     textureMap: { [word: string]: Texture };
     text?: string;
 }
 
-export default class BMFontLabel extends Sprite<IBMFontLabel> {
+export class BMFontLabel extends Sprite<IBMFontLabel> {
 
     private _text: string;
     private _words: Texture[];
@@ -80,5 +80,5 @@ export default class BMFontLabel extends Sprite<IBMFontLabel> {
     addChild() {
         throw new Error(`canvas2d.BMFontLabel.addChild(): Don't call this method.`);
     }
-    
+
 }

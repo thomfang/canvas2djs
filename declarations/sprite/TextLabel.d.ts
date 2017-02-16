@@ -1,5 +1,5 @@
-import { Color } from './Util';
-import Sprite, { ISprite } from './Sprite';
+import { Color } from '../Util';
+import { Sprite, ISprite } from './Sprite';
 export declare type FontWeight = "lighter" | "normal" | "bold" | "bolder";
 export declare type FontStyle = "oblique" | "normal" | "italic";
 export declare type TextAlign = "left" | "right" | "center" | "start" | "end";
@@ -13,21 +13,21 @@ export interface ITextLabel extends ISprite {
     fontStyle?: FontStyle;
     fontWeight?: FontWeight;
     maxWidth?: number;
-    stroke?: {
+    fontStroke?: {
         color: Color;
         width: number;
     };
 }
-export default class TextLabel extends Sprite<ITextLabel> {
+export declare class TextLabel extends Sprite<ITextLabel> {
     maxWidth: number;
     fontName: string;
     textAlign: TextAlign;
+    lineSpace: number;
     fontColor: Color;
     fontSize: number;
     fontWeight: FontWeight;
     fontStyle: FontStyle;
-    lineSpace: number;
-    stroke: {
+    fontStroke: {
         color: Color;
         width: number;
     };
