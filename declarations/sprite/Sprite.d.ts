@@ -41,9 +41,9 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     flippedY: boolean;
     visible: boolean;
     clipOverflow: boolean;
-    fillColor: Color;
-    strokeColor: Color;
-    strokeWidth: number;
+    bgColor: Color;
+    borderColor: Color;
+    borderWidth: number;
     children: Sprite<any>[];
     touchEnabled: boolean;
     mouseEnabled: boolean;
@@ -116,10 +116,10 @@ export interface ISprite {
     scaleY?: number;
     originX?: number;
     originY?: number;
-    fillColor?: Color;
+    bgColor?: Color;
     radius?: number;
-    strokeWidth?: number;
-    strokeColor?: Color;
+    borderWidth?: number;
+    borderColor?: Color;
     texture?: Texture | string;
     rotation?: number;
     opacity?: number;

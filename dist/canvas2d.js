@@ -1,13 +1,13 @@
 /**
- * canvas2djs v1.0.0
+ * canvas2djs v1.1.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
 
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
-	(factory((global.canvas2d = global.canvas2d || {})));
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
+    (factory((global.canvas2d = global.canvas2d || {})));
 }(this, (function (exports) { 'use strict';
 
 var Keys = {
@@ -517,7 +517,7 @@ function removeArrayItem(array, item) {
         array.splice(index, 1);
     }
 }
-function normalizeColor(color) {
+function convertColor(color) {
     if (cachedColor[color]) {
         return cachedColor[color];
     }
@@ -1295,10 +1295,10 @@ var Sprite = (function (_super) {
         context.clip();
     };
     Sprite.prototype._drawBgColor = function (context) {
-        if (this.fillColor == null) {
+        if (this.bgColor == null) {
             return;
         }
-        context.fillStyle = normalizeColor(this.fillColor);
+        context.fillStyle = convertColor(this.bgColor);
         context.beginPath();
         if (this.radius > 0) {
             context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -1310,9 +1310,9 @@ var Sprite = (function (_super) {
         context.fill();
     };
     Sprite.prototype._drawBorder = function (context) {
-        if (this.strokeWidth != null) {
-            context.lineWidth = this.strokeWidth;
-            context.strokeStyle = normalizeColor(this.strokeColor || 0x000);
+        if (this.borderWidth != null) {
+            context.lineWidth = this.borderWidth;
+            context.strokeStyle = convertColor(this.borderColor || 0x000);
             context.beginPath();
             if (this.radius > 0) {
                 context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -2606,19 +2606,19 @@ var TextLabel = (function (_super) {
             return;
         }
         context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
-        context.fillStyle = normalizeColor(this.fontColor);
+        context.fillStyle = convertColor(this.fontColor);
         context.textAlign = this.textAlign;
         context.textBaseline = 'middle';
         context.lineJoin = 'round';
-        if (this.fontStroke) {
-            context.strokeStyle = normalizeColor(this.fontStroke.color);
-            context.lineWidth = this.fontStroke.width * 2;
+        if (this.strokeWidth) {
+            context.strokeStyle = convertColor(this.strokeColor || 0x000);
+            context.lineWidth = this.strokeWidth * 2;
         }
         var y = 0;
         var h = this.fontSize + this.lineSpace;
         this._lines.forEach(function (text) {
             if (text.length > 0) {
-                if (_this.fontStroke) {
+                if (_this.strokeWidth) {
                     context.strokeText(text, 0, y, 0xffff);
                 }
                 context.fillText(text, 0, y, 0xffff);

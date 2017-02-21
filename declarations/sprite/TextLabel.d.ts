@@ -13,10 +13,8 @@ export interface ITextLabel extends ISprite {
     fontStyle?: FontStyle;
     fontWeight?: FontWeight;
     maxWidth?: number;
-    fontStroke?: {
-        color: Color;
-        width: number;
-    };
+    strokeColor?: Color;
+    strokeWidth?: number;
 }
 export declare class TextLabel extends Sprite<ITextLabel> {
     maxWidth: number;
@@ -27,10 +25,8 @@ export declare class TextLabel extends Sprite<ITextLabel> {
     fontSize: number;
     fontWeight: FontWeight;
     fontStyle: FontStyle;
-    fontStroke: {
-        color: Color;
-        width: number;
-    };
+    strokeColor: Color;
+    strokeWidth: number;
     private _lines;
     private _text;
     constructor(props?: ITextLabel);

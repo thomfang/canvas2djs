@@ -2,12 +2,12 @@ export { Keys } from './Keys';
 
 export {
     Tween,
-    // EasingFunc
+    EasingFunc
 } from './Tween';
 
 export {
     Texture,
-    // Rect
+    Rect
 } from './Texture';
 
 export {
@@ -18,7 +18,7 @@ export {
 export {
     Stage,
     ScaleMode,
-    // VisibleRect
+    VisibleRect
 } from './Stage';
 
 export { EventEmitter } from './EventEmitter';
@@ -35,13 +35,13 @@ export {
     AlignType,
     RAD_PER_DEG,
     createSprite,
-    // ActionProps,
-    // StageProps,
-    // SpriteProps,
-    // TextProps,
-    // BMFontProps,
-    // SpriteClass,
-    // Ref
+    ActionProps,
+    StageProps,
+    SpriteProps,
+    TextProps,
+    BMFontProps,
+    SpriteClass,
+    Ref
 }
 
 

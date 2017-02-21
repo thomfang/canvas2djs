@@ -31,10 +31,8 @@ var demo;
         fontName: 'Arial',
         fontSize: 30,
         fontColor: 0xfff,
-        fontStroke: {
-            color: 0x00f,
-            width: 2
-        },
+        strokeWidth: 2,
+        strokeColor: 0x00f
     };
     var santaFrames = [];
     for (var i = 0; i < 11; i++) {
