@@ -25,7 +25,7 @@ export function removeArrayItem(array: any[], item: any) {
     }
 }
 
-export function normalizeColor(color: string | number): string {
+export function convertColor(color: string | number): string {
     if (cachedColor[color]) {
         return cachedColor[color];
     }
