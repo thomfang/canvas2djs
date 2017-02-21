@@ -1,5 +1,5 @@
 import { EventHelper } from '../UIEvent';
-import { Color, normalizeColor, uid } from '../Util';
+import { Color, convertColor, uid } from '../Util';
 import { Action } from '../action/Action';
 import { Texture } from '../Texture';
 import { EventEmitter } from '../EventEmitter';
@@ -51,9 +51,9 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     flippedY: boolean = false;
     visible: boolean = true;
     clipOverflow: boolean = false;
-    fillColor: Color;
-    strokeColor: Color;
-    strokeWidth: number;
+    bgColor: Color;
+    borderColor: Color;
+    borderWidth: number;
     children: Sprite<any>[];
 
     touchEnabled: boolean = true;
@@ -404,11 +404,11 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     protected _drawBgColor(context: CanvasRenderingContext2D): void {
-        if (this.fillColor == null) {
+        if (this.bgColor == null) {
             return;
         }
 
-        context.fillStyle = normalizeColor(this.fillColor);
+        context.fillStyle = convertColor(this.bgColor);
         context.beginPath();
         if (this.radius > 0) {
             context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -421,9 +421,9 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     protected _drawBorder(context: CanvasRenderingContext2D): void {
-        if (this.strokeWidth != null) {
-            context.lineWidth = this.strokeWidth;
-            context.strokeStyle = normalizeColor(this.strokeColor || 0x000);
+        if (this.borderWidth != null) {
+            context.lineWidth = this.borderWidth;
+            context.strokeStyle = convertColor(this.borderColor || 0x000);
             context.beginPath();
             if (this.radius > 0) {
                 context.arc(0, 0, this.radius, 0, Math.PI * 2, true);
@@ -539,10 +539,10 @@ export interface ISprite {
     scaleY?: number;
     originX?: number;
     originY?: number;
-    fillColor?: Color;
+    bgColor?: Color;
     radius?: number;
-    strokeWidth?: number;
-    strokeColor?: Color;
+    borderWidth?: number;
+    borderColor?: Color;
     texture?: Texture | string;
     rotation?: number;
     opacity?: number;
