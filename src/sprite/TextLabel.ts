@@ -1,4 +1,4 @@
-﻿import { normalizeColor, Color } from '../Util';
+﻿import { convertColor, Color } from '../Util';
 import { Sprite, ISprite } from './Sprite';
 
 var measureContext = document.createElement("canvas").getContext("2d");
@@ -18,10 +18,8 @@ export interface ITextLabel extends ISprite {
     fontStyle?: FontStyle;
     fontWeight?: FontWeight;
     maxWidth?: number;
-    fontStroke?: {
-        color: Color;
-        width: number;
-    };
+    strokeColor?: Color;
+    strokeWidth?: number;
 }
 
 export class TextLabel extends Sprite<ITextLabel> {
@@ -34,10 +32,8 @@ export class TextLabel extends Sprite<ITextLabel> {
     fontSize: number = 20;
     fontWeight: FontWeight = 'normal';
     fontStyle: FontStyle = 'normal';
-    fontStroke: {
-        color: Color;
-        width: number;
-    };
+    strokeColor: Color;
+    strokeWidth: number;
 
     private _lines: string[];
     private _text: string = '';
@@ -107,14 +103,14 @@ export class TextLabel extends Sprite<ITextLabel> {
         }
 
         context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
-        context.fillStyle = normalizeColor(this.fontColor);
+        context.fillStyle = convertColor(this.fontColor);
         context.textAlign = this.textAlign;
         context.textBaseline = 'middle';
         context.lineJoin = 'round';
 
-        if (this.fontStroke) {
-            context.strokeStyle = normalizeColor(this.fontStroke.color);
-            context.lineWidth = this.fontStroke.width * 2;
+        if (this.strokeWidth) {
+            context.strokeStyle = convertColor(this.strokeColor || 0x000);
+            context.lineWidth = this.strokeWidth * 2;
         }
 
         var y = 0;
@@ -122,7 +118,7 @@ export class TextLabel extends Sprite<ITextLabel> {
 
         this._lines.forEach((text) => {
             if (text.length > 0) {
-                if (this.fontStroke) {
+                if (this.strokeWidth) {
                     context.strokeText(text, 0, y, 0xffff);
                 }
                 context.fillText(text, 0, y, 0xffff);
