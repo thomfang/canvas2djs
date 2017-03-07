@@ -64,7 +64,7 @@ export class SoundManager {
             }
         }
 
-        return all;
+        return returnAll ? all : all[0];
     }
 
     load(baseUri: string, name: string, onComplete: () => any, channels = 1) {

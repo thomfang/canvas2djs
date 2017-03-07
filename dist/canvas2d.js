@@ -1,5 +1,5 @@
 /**
- * canvas2djs v1.4.0
+ * canvas2djs v1.5.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1521,6 +1521,9 @@ var UIEvent = (function () {
                 // }
                 var triggerClick = !helper._moved || isMovedSmallRange(helper);
                 _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, triggerClick);
+                // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
+                //     target[ON_CLICK](helper, event);
+                // }
             }
             _this._mouseBeginHelper = helper.target = helper.beginTarget = null;
         };
@@ -2488,7 +2491,7 @@ var SoundManager = (function () {
                 all.push(audio);
             }
         }
-        return all;
+        return returnAll ? all : all[0];
     };
     SoundManager.prototype.load = function (baseUri, name, onComplete, channels) {
         var _this = this;
