@@ -62,7 +62,7 @@ export class UIEvent {
             return;
         }
 
-        var {stage, element} = this;
+        var { stage, element } = this;
 
         if (stage.touchEnabled && UIEvent.supportTouch) {
             element.addEventListener(touchBegin, this._touchBeginHandler, false);
@@ -126,12 +126,19 @@ export class UIEvent {
         var helpers: EventHelper[] = [];
         var rect = this.element.getBoundingClientRect();
         var scale = this.stage.scale;
+        var isPortrait = this.stage.isPortrait;
         var touchHelperMap = this._touchHelperMap;
 
         for (var i: number = 0, x: number, y: number, id: number, helper, touch; touch = touches[i]; i++) {
             id = touch.identifier;
             x = (touch.clientX - rect.left) / scale;
             y = (touch.clientY - rect.top) / scale;
+
+            if (isPortrait) {
+                let tx = x;
+                x = y;
+                y = tx;
+            }
 
             helper = touchHelperMap[id];
 
@@ -361,10 +368,20 @@ export class UIEvent {
             width: sprite.width,
             height: sprite.height
         };
+        var circle = {
+            x: offsetX,
+            y: offsetY,
+            radius: sprite.radius
+        };
         var count = 0;
+        var detect = rect.width === 0 && rect.height === 0 ? (helper: EventHelper) => {
+            return isCircleContainPoint(circle, helper);
+        } : (helper: EventHelper) => {
+            return isRectContainPoint(rect, helper);
+        };
 
         for (let i = 0, helper: EventHelper; helper = tmpHelpers[i]; i++) {
-            if (isRectContainPoint(rect, helper)) {
+            if (detect(helper)) {
                 if (!helper.target) {
                     helper.target = sprite;
                 }
@@ -435,8 +452,18 @@ export class UIEvent {
             width: sprite.width,
             height: sprite.height
         };
+        var circle = {
+            x: offsetX,
+            y: offsetY,
+            radius: sprite.radius
+        };
+        var detect = rect.width === 0 && rect.height === 0 ? (helper: EventHelper) => {
+            return isCircleContainPoint(circle, helper);
+        } : (helper: EventHelper) => {
+            return isRectContainPoint(rect, helper);
+        };
 
-        if (triggerred || isRectContainPoint(rect, helper)) {
+        if (triggerred || detect(helper)) {
             var hasMethod: boolean = hasImplements(sprite, methodName);
             var hasClickHandler: boolean = hasImplements(sprite, onClick);
 
@@ -479,6 +506,12 @@ export class UIEvent {
 function isRectContainPoint(rect: Rect, p: EventHelper) {
     return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
         rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
+}
+
+function isCircleContainPoint(circle: { x: number; y: number; radius: number }, p: EventHelper) {
+    var dx = p.stageX - circle.x;
+    var dy = p.stageY - circle.y;
+    return Math.sqrt(dx * dx + dy * dy) <= circle.radius;
 }
 
 function isMovedSmallRange(e: EventHelper) {

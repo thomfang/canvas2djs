@@ -5,6 +5,10 @@ export declare enum ScaleMode {
     FIX_WIDTH = 2,
     FIX_HEIGHT = 3,
 }
+export declare enum Orientation {
+    LANDSCAPE = 0,
+    PORTRAIT = 1,
+}
 export declare type VisibleRect = {
     left: number;
     right: number;
@@ -20,8 +24,10 @@ export declare class Stage {
     private _rootSprite;
     private _visibleRect;
     private _canvasScale;
+    private _isPortrait;
     private _scaleMode;
     private _autoAdjustCanvasSize;
+    private _orientation;
     private _canvasElement;
     private _renderContext;
     private _bufferCanvas;
@@ -42,15 +48,17 @@ export declare class Stage {
     readonly sprite: Sprite<{}>;
     readonly visibleRect: VisibleRect;
     readonly scale: number;
+    readonly isPortrait: boolean;
     scaleMode: ScaleMode;
     autoAdjustCanvasSize: boolean;
+    orientation: Orientation;
     /**
      * @param  canvas     Canvas element
      * @param  width      Resolution design width
      * @param  height     Resolution design height
      * @param  scaleMode  Adjust resolution design scale mode
      */
-    constructor(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean);
+    constructor(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean, orientation?: Orientation);
     adjustCanvasSize: () => void;
     start(useExternalTimer?: boolean): void;
     step(deltaTime: number): void;

@@ -28,7 +28,45 @@
     <canvas style='background:#000'></canvas>
 <!--</div>-->
 
-<script src="main.js"></script>
+<!--<script src="main.js"></script>-->
+
+<script>
+
+    var stage = new canvas2d.Stage(
+        document.querySelector('canvas'),
+        960,
+        640,
+        canvas2d.ScaleMode.SHOW_ALL,
+        true,
+        canvas2d.Orientation.LANDSCAPE
+    );
+    stage.touchEnabled = true;
+    stage.start();
+
+    var ball = new canvas2d.Sprite({
+        alignX: canvas2d.AlignType.CENTER,
+        alignY: canvas2d.AlignType.CENTER,
+        radius: 50,
+        bgColor: 0xf00,
+        onClick() {
+            console.log('click ball')
+        }
+    });
+
+    var box = new canvas2d.Sprite({
+        alignY: canvas2d.AlignType.CENTER,
+        x: 60,
+        width: 100,
+        height: 100,
+        bgColor: 0xf00,
+        onClick() {
+            console.log('click box')
+        }
+    });
+
+    stage.addChild(box);
+    stage.addChild(ball);
+</script>
 </body>
 
 </html>

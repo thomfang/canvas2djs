@@ -1,7 +1,7 @@
 import { Sprite, ISprite } from './sprite/Sprite';
 import { TextLabel, ITextLabel } from './sprite/TextLabel';
 import { BMFontLabel, IBMFontLabel } from './sprite/BMFontLabel';
-import { Stage, ScaleMode } from './Stage';
+import { Stage, ScaleMode, Orientation } from './Stage';
 import { Texture } from './Texture';
 import { Action, ActionQueue } from './action/Action';
 
@@ -20,6 +20,7 @@ export type StageProps = {
     canvas: HTMLCanvasElement;
     scaleMode: ScaleMode;
     autoAdjustCanvasSize?: boolean;
+    orientation?: Orientation;
     touchEnabled?: boolean;
     mouseEnabled?: boolean;
     keyboardEnabled?: boolean;
@@ -33,7 +34,7 @@ export function createSprite<T, U>(type: "stage", props: StageProps, ...children
 export function createSprite<T, U>(type: SpriteClass<T, U>, props: T & SpriteProps, ...children: any[]): U;
 export function createSprite<T, U>(type: any, props: any, ...children: any[]): any {
     let sprite: any;
-    let {ref, actions, ...options} = props;
+    let { ref, actions, ...options } = props;
 
     if (typeof type === 'function') {
         sprite = new type(options);
@@ -86,8 +87,8 @@ function createLabel<T>(tag: string, ctor: any, props: any, children: any[]): T 
 }
 
 function createStage(props: StageProps, children: Sprite<any>[]) {
-    let {canvas, width, height, scaleMode, autoAdjustCanvasSize, useExternalTimer, touchEnabled, mouseEnabled, keyboardEnabled} = props;
-    let stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize);
+    let { canvas, width, height, scaleMode, autoAdjustCanvasSize, useExternalTimer, touchEnabled, mouseEnabled, keyboardEnabled, orientation } = props;
+    let stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation);
 
     stage.touchEnabled = touchEnabled;
     stage.mouseEnabled = mouseEnabled;

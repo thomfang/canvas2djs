@@ -5,9 +5,9 @@
  */
 
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
-    (factory((global.canvas2d = global.canvas2d || {})));
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
+	(factory((global.canvas2d = global.canvas2d || {})));
 }(this, (function (exports) { 'use strict';
 
 var Keys = {
@@ -691,13 +691,14 @@ var Transition = (function () {
     return Transition;
 }());
 
+var ActionType;
 (function (ActionType) {
     ActionType[ActionType["TO"] = 0] = "TO";
     ActionType[ActionType["BY"] = 1] = "BY";
     ActionType[ActionType["ANIM"] = 2] = "ANIM";
     ActionType[ActionType["WAIT"] = 3] = "WAIT";
     ActionType[ActionType["CALLBACK"] = 4] = "CALLBACK";
-})(exports.ActionType || (exports.ActionType = {}));
+})(ActionType || (ActionType = {}));
 var Action = (function () {
     function Action(target) {
         this._queue = [];
@@ -741,19 +742,19 @@ var Action = (function () {
         var _this = this;
         actions.forEach(function (action) {
             switch (action.type) {
-                case exports.ActionType.ANIM:
+                case ActionType.ANIM:
                     _this.animate(action.frameList, action.frameRate, action.repetitions);
                     break;
-                case exports.ActionType.BY:
+                case ActionType.BY:
                     _this.by(action.options, action.duration);
                     break;
-                case exports.ActionType.TO:
+                case ActionType.TO:
                     _this.to(action.options, action.duration);
                     break;
-                case exports.ActionType.WAIT:
+                case ActionType.WAIT:
                     _this.wait(action.duration);
                     break;
-                case exports.ActionType.CALLBACK:
+                case ActionType.CALLBACK:
                     _this.then(action.callback);
                     break;
             }
@@ -1597,11 +1598,17 @@ var UIEvent = (function () {
         var helpers = [];
         var rect = this.element.getBoundingClientRect();
         var scale = this.stage.scale;
+        var isPortrait = this.stage.isPortrait;
         var touchHelperMap = this._touchHelperMap;
         for (var i = 0, x, y, id, helper, touch; touch = touches[i]; i++) {
             id = touch.identifier;
             x = (touch.clientX - rect.left) / scale;
             y = (touch.clientY - rect.top) / scale;
+            if (isPortrait) {
+                var tx = x;
+                x = y;
+                y = tx;
+            }
             helper = touchHelperMap[id];
             if (!helper) {
                 helper = touchHelperMap[id] = {
@@ -1653,9 +1660,19 @@ var UIEvent = (function () {
             width: sprite.width,
             height: sprite.height
         };
+        var circle = {
+            x: offsetX,
+            y: offsetY,
+            radius: sprite.radius
+        };
         var count = 0;
+        var detect = rect.width === 0 && rect.height === 0 ? function (helper) {
+            return isCircleContainPoint(circle, helper);
+        } : function (helper) {
+            return isRectContainPoint(rect, helper);
+        };
         for (var i = 0, helper = void 0; helper = tmpHelpers[i]; i++) {
-            if (isRectContainPoint(rect, helper)) {
+            if (detect(helper)) {
                 if (!helper.target) {
                     helper.target = sprite;
                 }
@@ -1707,7 +1724,17 @@ var UIEvent = (function () {
             width: sprite.width,
             height: sprite.height
         };
-        if (triggerred || isRectContainPoint(rect, helper)) {
+        var circle = {
+            x: offsetX,
+            y: offsetY,
+            radius: sprite.radius
+        };
+        var detect = rect.width === 0 && rect.height === 0 ? function (helper) {
+            return isCircleContainPoint(circle, helper);
+        } : function (helper) {
+            return isRectContainPoint(rect, helper);
+        };
+        if (triggerred || detect(helper)) {
             var hasMethod = hasImplements(sprite, methodName);
             var hasClickHandler = hasImplements(sprite, onClick);
             if (!helper.target) {
@@ -1745,6 +1772,11 @@ function isRectContainPoint(rect, p) {
     return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
         rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
 }
+function isCircleContainPoint(circle, p) {
+    var dx = p.stageX - circle.x;
+    var dy = p.stageY - circle.y;
+    return Math.sqrt(dx * dx + dy * dy) <= circle.radius;
+}
 function isMovedSmallRange(e) {
     if (e.beginX == null && e.beginY == null) {
         return false;
@@ -1763,6 +1795,11 @@ function hasImplements(sprite, methodName) {
     ScaleMode[ScaleMode["FIX_WIDTH"] = 2] = "FIX_WIDTH";
     ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
 })(exports.ScaleMode || (exports.ScaleMode = {}));
+
+(function (Orientation) {
+    Orientation[Orientation["LANDSCAPE"] = 0] = "LANDSCAPE";
+    Orientation[Orientation["PORTRAIT"] = 1] = "PORTRAIT";
+})(exports.Orientation || (exports.Orientation = {}));
 var Stage = (function () {
     /**
      * @param  canvas     Canvas element
@@ -1770,7 +1807,8 @@ var Stage = (function () {
      * @param  height     Resolution design height
      * @param  scaleMode  Adjust resolution design scale mode
      */
-    function Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize) {
+    function Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation) {
+        if (orientation === void 0) { orientation = exports.Orientation.PORTRAIT; }
         var _this = this;
         this._fps = 30;
         this._frameRate = 1000 / this._fps;
@@ -1782,6 +1820,7 @@ var Stage = (function () {
             var stageHeight = _this._height;
             var currentScaleMode = _this._scaleMode;
             var visibleRect = _this._visibleRect;
+            var orientation = _this._orientation;
             if (!canvasElement || !canvasElement.parentNode) {
                 return;
             }
@@ -1790,6 +1829,12 @@ var Stage = (function () {
                 width: canvasElement.parentElement.offsetWidth,
                 height: canvasElement.parentElement.offsetHeight
             };
+            var isPortrait = container.width < container.height;
+            if (orientation === exports.Orientation.LANDSCAPE && isPortrait) {
+                var tmpHeight = container.height;
+                container.height = container.width;
+                container.width = tmpHeight;
+            }
             var scaleX = container.width / stageWidth;
             var scaleY = container.height / stageHeight;
             var deltaWidth = 0;
@@ -1834,14 +1879,24 @@ var Stage = (function () {
             }
             style.width = width + 'px';
             style.height = height + 'px';
-            style.top = ((container.height - height) * 0.5) + 'px';
-            style.left = ((container.width - width) * 0.5) + 'px';
             style.position = 'absolute';
             visibleRect.left = deltaWidth;
             visibleRect.right = stageWidth - deltaWidth;
             visibleRect.top = deltaHeight;
             visibleRect.bottom = stageHeight - deltaHeight;
+            if (orientation === exports.Orientation.LANDSCAPE && isPortrait) {
+                style.top = ((container.width - width) * 0.5) + 'px';
+                style.left = ((container.height - height) * 0.5) + 'px';
+                style.transformOrigin = style['webkitTransformOrigin'] = '0 0 0';
+                style.transform = style['webkitTransform'] = "translateX(" + height + "px) rotate(90deg)";
+            }
+            else {
+                style.transform = '';
+                style.top = ((container.height - height) * 0.5) + 'px';
+                style.left = ((container.width - width) * 0.5) + 'px';
+            }
             _this._canvasScale = scale;
+            _this._isPortrait = isPortrait;
         };
         this._rootSprite = new Sprite({
             x: width * 0.5,
@@ -1857,7 +1912,9 @@ var Stage = (function () {
         this._width = canvas.width = this._bufferCanvas.width = width;
         this._height = canvas.height = this._bufferCanvas.height = height;
         this._canvasScale = 1;
+        this._isPortrait = false;
         this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
+        this.orientation = orientation;
         this.autoAdjustCanvasSize = autoAdjustCanvasSize;
         this._uiEvent = new UIEvent(this);
     }
@@ -1928,6 +1985,13 @@ var Stage = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(Stage.prototype, "isPortrait", {
+        get: function () {
+            return this._isPortrait;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Stage.prototype, "scaleMode", {
         get: function () {
             return this._scaleMode;
@@ -1955,6 +2019,18 @@ var Stage = (function () {
             else if (!value && this._autoAdjustCanvasSize) {
                 this._autoAdjustCanvasSize = false;
                 window.removeEventListener("resize", this.adjustCanvasSize);
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Stage.prototype, "orientation", {
+        get: function () {
+            return this._orientation;
+        },
+        set: function (orientation) {
+            if (this._orientation != orientation) {
+                this._orientation = orientation;
             }
         },
         enumerable: true,
@@ -2752,8 +2828,8 @@ function createLabel(tag, ctor, props, children) {
     return sprite;
 }
 function createStage(props, children) {
-    var canvas = props.canvas, width = props.width, height = props.height, scaleMode = props.scaleMode, autoAdjustCanvasSize = props.autoAdjustCanvasSize, useExternalTimer = props.useExternalTimer, touchEnabled = props.touchEnabled, mouseEnabled = props.mouseEnabled, keyboardEnabled = props.keyboardEnabled;
-    var stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize);
+    var canvas = props.canvas, width = props.width, height = props.height, scaleMode = props.scaleMode, autoAdjustCanvasSize = props.autoAdjustCanvasSize, useExternalTimer = props.useExternalTimer, touchEnabled = props.touchEnabled, mouseEnabled = props.mouseEnabled, keyboardEnabled = props.keyboardEnabled, orientation = props.orientation;
+    var stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation);
     stage.touchEnabled = touchEnabled;
     stage.mouseEnabled = mouseEnabled;
     stage.keyboardEnabled = keyboardEnabled;

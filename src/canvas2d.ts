@@ -18,6 +18,7 @@ export {
 export {
     Stage,
     ScaleMode,
+    Orientation,
     VisibleRect
 } from './Stage';
 

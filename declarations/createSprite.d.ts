@@ -1,7 +1,7 @@
 import { Sprite, ISprite } from './sprite/Sprite';
 import { TextLabel, ITextLabel } from './sprite/TextLabel';
 import { BMFontLabel, IBMFontLabel } from './sprite/BMFontLabel';
-import { Stage, ScaleMode } from './Stage';
+import { Stage, ScaleMode, Orientation } from './Stage';
 import { ActionQueue } from './action/Action';
 export interface Ref<T> {
     ref?(instance: T): any;
@@ -19,6 +19,7 @@ export declare type StageProps = {
     canvas: HTMLCanvasElement;
     scaleMode: ScaleMode;
     autoAdjustCanvasSize?: boolean;
+    orientation?: Orientation;
     touchEnabled?: boolean;
     mouseEnabled?: boolean;
     keyboardEnabled?: boolean;

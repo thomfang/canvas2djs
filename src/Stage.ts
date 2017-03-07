@@ -9,6 +9,11 @@ export enum ScaleMode {
     FIX_HEIGHT
 }
 
+export enum Orientation {
+    LANDSCAPE,
+    PORTRAIT,
+}
+
 export type VisibleRect = {
     left: number;
     right: number;
@@ -26,8 +31,10 @@ export class Stage {
     private _rootSprite: Sprite<{}>;
     private _visibleRect: VisibleRect;
     private _canvasScale: number;
+    private _isPortrait: boolean;
     private _scaleMode: ScaleMode;
     private _autoAdjustCanvasSize: boolean;
+    private _orientation: Orientation;
     private _canvasElement: HTMLCanvasElement;
     private _renderContext: CanvasRenderingContext2D;
     private _bufferCanvas: HTMLCanvasElement;
@@ -82,6 +89,10 @@ export class Stage {
         return this._canvasScale;
     }
 
+    get isPortrait() {
+        return this._isPortrait;
+    }
+
     get scaleMode(): ScaleMode {
         return this._scaleMode;
     }
@@ -111,13 +122,30 @@ export class Stage {
         }
     }
 
+    get orientation() {
+        return this._orientation;
+    }
+
+    set orientation(orientation: Orientation) {
+        if (this._orientation != orientation) {
+            this._orientation = orientation;
+        }
+    }
+
     /**
      * @param  canvas     Canvas element
      * @param  width      Resolution design width
      * @param  height     Resolution design height
      * @param  scaleMode  Adjust resolution design scale mode 
      */
-    constructor(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean) {
+    constructor(
+        canvas: HTMLCanvasElement,
+        width: number,
+        height: number,
+        scaleMode: ScaleMode,
+        autoAdjustCanvasSize?: boolean,
+        orientation = Orientation.PORTRAIT
+    ) {
         this._rootSprite = new Sprite({
             x: width * 0.5,
             y: height * 0.5,
@@ -137,18 +165,21 @@ export class Stage {
         this._height = canvas.height = this._bufferCanvas.height = height;
 
         this._canvasScale = 1;
+        this._isPortrait = false;
         this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
+        this.orientation = orientation;
         this.autoAdjustCanvasSize = autoAdjustCanvasSize;
 
         this._uiEvent = new UIEvent(this);
     }
 
     adjustCanvasSize = () => {
-        let canvasElement = this._canvasElement;
-        let stageWidth = this._width;
-        let stageHeight = this._height;
-        let currentScaleMode = this._scaleMode;
-        let visibleRect = this._visibleRect;
+        var canvasElement = this._canvasElement;
+        var stageWidth = this._width;
+        var stageHeight = this._height;
+        var currentScaleMode = this._scaleMode;
+        var visibleRect = this._visibleRect;
+        var orientation = this._orientation;
 
         if (!canvasElement || !canvasElement.parentNode) {
             return;
@@ -159,6 +190,14 @@ export class Stage {
             width: canvasElement.parentElement.offsetWidth,
             height: canvasElement.parentElement.offsetHeight
         };
+        var isPortrait = container.width < container.height;
+
+        if (orientation === Orientation.LANDSCAPE && isPortrait) {
+            let tmpHeight = container.height;
+            container.height = container.width;
+            container.width = tmpHeight;
+        }
+
         var scaleX: number = container.width / stageWidth;
         var scaleY: number = container.height / stageHeight;
         var deltaWidth: number = 0;
@@ -205,8 +244,6 @@ export class Stage {
 
         style.width = width + 'px';
         style.height = height + 'px';
-        style.top = ((container.height - height) * 0.5) + 'px';
-        style.left = ((container.width - width) * 0.5) + 'px';
         style.position = 'absolute';
 
         visibleRect.left = deltaWidth;
@@ -214,7 +251,20 @@ export class Stage {
         visibleRect.top = deltaHeight;
         visibleRect.bottom = stageHeight - deltaHeight;
 
+        if (orientation === Orientation.LANDSCAPE && isPortrait) {
+            style.top = ((container.width - width) * 0.5) + 'px';
+            style.left = ((container.height - height) * 0.5) + 'px';
+            style.transformOrigin = style['webkitTransformOrigin'] = '0 0 0';
+            style.transform = style['webkitTransform'] = `translateX(${height}px) rotate(90deg)`;
+        }
+        else {
+            style.transform = '';
+            style.top = ((container.height - height) * 0.5) + 'px';
+            style.left = ((container.width - width) * 0.5) + 'px';
+        }
+
         this._canvasScale = scale;
+        this._isPortrait = isPortrait;
     }
 
     start(useExternalTimer?: boolean): void {
@@ -255,7 +305,7 @@ export class Stage {
             return;
         }
 
-        var {width, height} = this._canvasElement;
+        var { width, height } = this._canvasElement;
 
         this._bufferContext.clearRect(0, 0, width, height);
         this._rootSprite._visit(this._bufferContext);

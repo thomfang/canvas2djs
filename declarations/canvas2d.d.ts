@@ -2,7 +2,7 @@ export { Keys } from './Keys';
 export { Tween, EasingFunc } from './Tween';
 export { Texture, Rect } from './Texture';
 export { Action, ActionType } from './action/Action';
-export { Stage, ScaleMode, VisibleRect } from './Stage';
+export { Stage, ScaleMode, Orientation, VisibleRect } from './Stage';
 export { EventEmitter } from './EventEmitter';
 export { Sound } from './sound/Sound';
 export { UIEvent } from './UIEvent';
