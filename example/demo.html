@@ -48,19 +48,19 @@
         alignY: canvas2d.AlignType.CENTER,
         radius: 50,
         bgColor: 0xf00,
-        onClick() {
-            console.log('click ball')
+        onClick(e) {
+            console.log('click ball', e)
         }
     });
 
     var box = new canvas2d.Sprite({
-        alignY: canvas2d.AlignType.CENTER,
+        y: 60,
         x: 60,
         width: 100,
         height: 100,
         bgColor: 0xf00,
-        onClick() {
-            console.log('click box')
+        onClick(e) {
+            console.log('click box', e)
         }
     });
 

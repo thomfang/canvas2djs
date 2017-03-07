@@ -1,5 +1,5 @@
 /**
- * canvas2djs v1.3.0
+ * canvas2djs v1.4.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1588,32 +1588,38 @@ var UIEvent = (function () {
         this.element = this.stage = null;
     };
     UIEvent.prototype.transformLocation = function (event) {
-        var clientReact = this.element.getBoundingClientRect();
+        var clientRect = this.element.getBoundingClientRect();
         var scale = this.stage.scale;
-        var x = (event.clientX - clientReact.left) / scale;
-        var y = (event.clientY - clientReact.top) / scale;
         var isRotated = this.stage.isPortrait && this.stage.orientation === exports.Orientation.LANDSCAPE;
+        var x;
+        var y;
         if (isRotated) {
-            var tx = x;
-            x = y;
-            y = tx;
+            x = (event.clientY - clientRect.top) / scale;
+            y = this.stage.height - (event.clientX - clientRect.left) / scale;
+        }
+        else {
+            x = (event.clientX - clientRect.left) / scale;
+            y = (event.clientY - clientRect.top) / scale;
         }
         return { x: x, y: y };
     };
     UIEvent.prototype._transformTouches = function (touches, justGet) {
         var helpers = [];
-        var rect = this.element.getBoundingClientRect();
+        var clientRect = this.element.getBoundingClientRect();
         var scale = this.stage.scale;
         var isRotated = this.stage.isPortrait && this.stage.orientation === exports.Orientation.LANDSCAPE;
         var touchHelperMap = this._touchHelperMap;
         for (var i = 0, x, y, id, helper, touch; touch = touches[i]; i++) {
             id = touch.identifier;
-            x = (touch.clientX - rect.left) / scale;
-            y = (touch.clientY - rect.top) / scale;
+            var x;
+            var y;
             if (isRotated) {
-                var tx = x;
-                x = y;
-                y = tx;
+                x = (touch.clientY - clientRect.top) / scale;
+                y = this.stage.height - (touch.clientX - clientRect.left) / scale;
+            }
+            else {
+                x = (touch.clientX - clientRect.left) / scale;
+                y = (touch.clientY - clientRect.top) / scale;
             }
             helper = touchHelperMap[id];
             if (!helper) {
