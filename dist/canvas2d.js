@@ -1,5 +1,5 @@
 /**
- * canvas2djs v1.2.0
+ * canvas2djs v1.3.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1592,19 +1592,25 @@ var UIEvent = (function () {
         var scale = this.stage.scale;
         var x = (event.clientX - clientReact.left) / scale;
         var y = (event.clientY - clientReact.top) / scale;
+        var isRotated = this.stage.isPortrait && this.stage.orientation === exports.Orientation.LANDSCAPE;
+        if (isRotated) {
+            var tx = x;
+            x = y;
+            y = tx;
+        }
         return { x: x, y: y };
     };
     UIEvent.prototype._transformTouches = function (touches, justGet) {
         var helpers = [];
         var rect = this.element.getBoundingClientRect();
         var scale = this.stage.scale;
-        var isPortrait = this.stage.isPortrait;
+        var isRotated = this.stage.isPortrait && this.stage.orientation === exports.Orientation.LANDSCAPE;
         var touchHelperMap = this._touchHelperMap;
         for (var i = 0, x, y, id, helper, touch; touch = touches[i]; i++) {
             id = touch.identifier;
             x = (touch.clientX - rect.left) / scale;
             y = (touch.clientY - rect.top) / scale;
-            if (isPortrait) {
+            if (isRotated) {
                 var tx = x;
                 x = y;
                 y = tx;

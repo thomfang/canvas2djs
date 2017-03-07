@@ -1,5 +1,5 @@
 ﻿import { Rect } from './Texture';
-import { Stage } from './Stage';
+import { Stage, Orientation } from './Stage';
 import { Sprite } from './sprite/Sprite';
 import { addArrayItem } from './Util';
 
@@ -119,6 +119,12 @@ export class UIEvent {
         var scale = this.stage.scale;
         var x = (event.clientX - clientReact.left) / scale;
         var y = (event.clientY - clientReact.top) / scale;
+        var isRotated = this.stage.isPortrait && this.stage.orientation === Orientation.LANDSCAPE;
+        if (isRotated) {
+            let tx = x;
+            x = y;
+            y = tx;
+        }
         return { x, y };
     }
 
@@ -126,7 +132,7 @@ export class UIEvent {
         var helpers: EventHelper[] = [];
         var rect = this.element.getBoundingClientRect();
         var scale = this.stage.scale;
-        var isPortrait = this.stage.isPortrait;
+        var isRotated = this.stage.isPortrait && this.stage.orientation === Orientation.LANDSCAPE;
         var touchHelperMap = this._touchHelperMap;
 
         for (var i: number = 0, x: number, y: number, id: number, helper, touch; touch = touches[i]; i++) {
@@ -134,7 +140,7 @@ export class UIEvent {
             x = (touch.clientX - rect.left) / scale;
             y = (touch.clientY - rect.top) / scale;
 
-            if (isPortrait) {
+            if (isRotated) {
                 let tx = x;
                 x = y;
                 y = tx;
