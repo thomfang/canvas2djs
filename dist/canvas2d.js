@@ -1,5 +1,5 @@
 /**
- * canvas2djs v1.1.0
+ * canvas2djs v1.2.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
