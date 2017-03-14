@@ -70,6 +70,7 @@ var demo;
     canvas2d.createSprite("stage", __assign({}, stageProps, { ref: function (e) { return demo.stage = e; } }),
         canvas2d.createSprite("sprite", __assign({}, sceneProps),
             canvas2d.createSprite("text", __assign({}, titleProps), "canvas2djs"),
-            canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; }, onClick: santaJump }))));
+            canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; }, onClick: santaJump })),
+            canvas2d.createSprite("sprite", null)));
 })(demo || (demo = {}));
 //# sourceMappingURL=main.js.map

@@ -33,6 +33,8 @@ export function createSprite<T, U>(type: "bmfont", props: BMFontProps, ...childr
 export function createSprite<T, U>(type: "stage", props: StageProps, ...children: any[]): Stage;
 export function createSprite<T, U>(type: SpriteClass<T, U>, props: T & SpriteProps, ...children: any[]): U;
 export function createSprite<T, U>(type: any, props: any, ...children: any[]): any {
+    props = props || {};
+    
     let sprite: any;
     let { ref, actions, ...options } = props;
 

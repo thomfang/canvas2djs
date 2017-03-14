@@ -1,6 +1,6 @@
 {
   "name": "canvas2djs",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "HTML5 canvas based game engine",
   "main": "dist/canvas2d.js",
   "types": "declarations/canvas2d.d.ts",

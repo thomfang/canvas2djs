@@ -77,6 +77,7 @@ namespace demo {
                 canvas2djs
             </text>
             <sprite {...santaProps} ref={e => santa = e} onClick={santaJump} />
+            <sprite />
         </sprite>
     </stage>;
 }
