@@ -1,5 +1,5 @@
 /**
- * canvas2djs v1.5.0
+ * canvas2djs v1.6.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -691,14 +691,13 @@ var Transition = (function () {
     return Transition;
 }());
 
-var ActionType;
 (function (ActionType) {
     ActionType[ActionType["TO"] = 0] = "TO";
     ActionType[ActionType["BY"] = 1] = "BY";
     ActionType[ActionType["ANIM"] = 2] = "ANIM";
     ActionType[ActionType["WAIT"] = 3] = "WAIT";
     ActionType[ActionType["CALLBACK"] = 4] = "CALLBACK";
-})(ActionType || (ActionType = {}));
+})(exports.ActionType || (exports.ActionType = {}));
 var Action = (function () {
     function Action(target) {
         this._queue = [];
@@ -742,19 +741,19 @@ var Action = (function () {
         var _this = this;
         actions.forEach(function (action) {
             switch (action.type) {
-                case ActionType.ANIM:
+                case exports.ActionType.ANIM:
                     _this.animate(action.frameList, action.frameRate, action.repetitions);
                     break;
-                case ActionType.BY:
+                case exports.ActionType.BY:
                     _this.by(action.options, action.duration);
                     break;
-                case ActionType.TO:
+                case exports.ActionType.TO:
                     _this.to(action.options, action.duration);
                     break;
-                case ActionType.WAIT:
+                case exports.ActionType.WAIT:
                     _this.wait(action.duration);
                     break;
-                case ActionType.CALLBACK:
+                case exports.ActionType.CALLBACK:
                     _this.then(action.callback);
                     break;
             }
@@ -1521,9 +1520,6 @@ var UIEvent = (function () {
                 // }
                 var triggerClick = !helper._moved || isMovedSmallRange(helper);
                 _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, triggerClick);
-                // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
-                //     target[ON_CLICK](helper, event);
-                // }
             }
             _this._mouseBeginHelper = helper.target = helper.beginTarget = null;
         };
@@ -2051,6 +2047,17 @@ var Stage = (function () {
         enumerable: true,
         configurable: true
     });
+    Stage.prototype.setSize = function (width, height) {
+        this._width = this._canvasElement.width = this._bufferCanvas.width = width;
+        this._height = this._canvasElement.height = this._bufferCanvas.height = height;
+        if (this._autoAdjustCanvasSize) {
+            this.adjustCanvasSize();
+        }
+        this._rootSprite.x = width * 0.5;
+        this._rootSprite.y = height * 0.5;
+        this._rootSprite.width = width;
+        this._rootSprite.height = height;
+    };
     Stage.prototype.start = function (useExternalTimer) {
         if (this._isRunning) {
             return;

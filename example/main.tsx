@@ -17,10 +17,10 @@ namespace demo {
         canvas,
     };
     var sceneProps: canvas2d.SpriteProps = {
-        originX: 0,
-        originY: 0,
         width: stageProps.width,
         height: stageProps.height,
+        alignX: canvas2d.AlignType.CENTER,
+        alignY: canvas2d.AlignType.CENTER,
     };
     var titleProps: canvas2d.TextProps = {
         y: 30,

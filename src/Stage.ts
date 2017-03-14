@@ -173,6 +173,20 @@ export class Stage {
         this._uiEvent = new UIEvent(this);
     }
 
+    setSize(width: number, height: number) {
+        this._width = this._canvasElement.width = this._bufferCanvas.width = width;
+        this._height = this._canvasElement.height = this._bufferCanvas.height = height;
+
+        if (this._autoAdjustCanvasSize) {
+            this.adjustCanvasSize();
+        }
+
+        this._rootSprite.x = width * 0.5;
+        this._rootSprite.y = height * 0.5;
+        this._rootSprite.width = width;
+        this._rootSprite.height = height;
+    }
+
     adjustCanvasSize = () => {
         var canvasElement = this._canvasElement;
         var stageWidth = this._width;

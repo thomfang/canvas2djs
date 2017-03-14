@@ -59,6 +59,7 @@ export declare class Stage {
      * @param  scaleMode  Adjust resolution design scale mode
      */
     constructor(canvas: HTMLCanvasElement, width: number, height: number, scaleMode: ScaleMode, autoAdjustCanvasSize?: boolean, orientation?: Orientation);
+    setSize(width: number, height: number): void;
     adjustCanvasSize: () => void;
     start(useExternalTimer?: boolean): void;
     step(deltaTime: number): void;
