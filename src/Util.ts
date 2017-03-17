@@ -30,6 +30,10 @@ export function convertColor(color: string | number): string {
         return cachedColor[color];
     }
     if (typeof color === 'string') {
+        if (color.indexOf('rgb') === 0) {
+            cachedColor[color] = color;
+            return color;
+        }
         if (color[0] != '#' || (color.length != 4 && color.length != 7)) {
             throw new Error(`canvas2d: Invalid color string "${color}".`);
         }
@@ -48,3 +52,4 @@ export function convertColor(color: string | number): string {
         return result;
     }
 }
+

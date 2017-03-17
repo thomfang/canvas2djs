@@ -1,5 +1,5 @@
 /**
- * canvas2djs v1.7.0
+ * canvas2djs v1.8.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -522,6 +522,10 @@ function convertColor(color) {
         return cachedColor[color];
     }
     if (typeof color === 'string') {
+        if (color.indexOf('rgb') === 0) {
+            cachedColor[color] = color;
+            return color;
+        }
         if (color[0] != '#' || (color.length != 4 && color.length != 7)) {
             throw new Error("canvas2d: Invalid color string \"" + color + "\".");
         }
