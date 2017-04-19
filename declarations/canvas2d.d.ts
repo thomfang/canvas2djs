@@ -1,16 +1,20 @@
-export { Keys } from './Keys';
-export { Tween, EasingFunc } from './Tween';
-export { Texture, Rect } from './Texture';
-export { Action, ActionType } from './action/Action';
-export { Stage, ScaleMode, Orientation, VisibleRect } from './Stage';
-export { EventEmitter } from './EventEmitter';
-export { Sound } from './sound/Sound';
-export { UIEvent } from './UIEvent';
-export { TextLabel } from './sprite/TextLabel';
-export { BMFontLabel } from './sprite/BMFontLabel';
-import { Sprite, AlignType, RAD_PER_DEG } from './sprite/Sprite';
-import { createSprite, ActionProps, StageProps, SpriteProps, TextProps, BMFontProps, SpriteClass, Ref } from './createSprite';
-export { Sprite, AlignType, RAD_PER_DEG, createSprite, ActionProps, StageProps, SpriteProps, TextProps, BMFontProps, SpriteClass, Ref };
+export * from './Keys';
+export * from './Tween';
+export * from './Texture';
+export * from './action/Action';
+export * from './Stage';
+export * from './createSprite';
+export * from './EventEmitter';
+export * from './UIEvent';
+export * from './Util';
+export * from './sound/Sound';
+export * from './sound/HTMLAudio';
+export * from './sound/WebAudio';
+export * from './sprite/Sprite';
+export * from './sprite/BMFontLabel';
+export * from './sprite/TextLabel';
+import { Sprite } from './sprite/Sprite';
+import { Ref, SpriteProps, TextProps, BMFontProps, StageProps } from './createSprite';
 declare global  {
     namespace JSX {
         interface Element extends Sprite<any> {

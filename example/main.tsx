@@ -71,11 +71,17 @@ namespace demo {
             .start();
     }
 
+    var sprites = [
+        <sprite width={100} height={100} bgColor={0xf00} alignY={canvas2d.AlignType.CENTER} x={100} />,
+        <sprite width={100} height={100} bgColor={0xf00} alignY={canvas2d.AlignType.CENTER} x={400} />,
+    ];
+
     <stage {...stageProps} ref={e => stage = e} >
         <sprite {...sceneProps}>
             <text {...titleProps}>
                 canvas2djs
             </text>
+            {sprites}
             <sprite {...santaProps} ref={e => santa = e} onClick={santaJump} />
             <sprite />
         </sprite>

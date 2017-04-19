@@ -67,9 +67,14 @@ var demo;
             .then(function () { return action = null; })
             .start();
     }
+    var sprites = [
+        canvas2d.createSprite("sprite", { width: 100, height: 100, bgColor: 0xf00, alignY: canvas2d.AlignType.CENTER, x: 100 }),
+        canvas2d.createSprite("sprite", { width: 100, height: 100, bgColor: 0xf00, alignY: canvas2d.AlignType.CENTER, x: 400 }),
+    ];
     canvas2d.createSprite("stage", __assign({}, stageProps, { ref: function (e) { return demo.stage = e; } }),
         canvas2d.createSprite("sprite", __assign({}, sceneProps),
             canvas2d.createSprite("text", __assign({}, titleProps), "canvas2djs"),
+            sprites,
             canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; }, onClick: santaJump })),
             canvas2d.createSprite("sprite", null)));
 })(demo || (demo = {}));

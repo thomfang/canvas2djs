@@ -34,7 +34,7 @@ export function createSprite<T, U>(type: "stage", props: StageProps, ...children
 export function createSprite<T, U>(type: SpriteClass<T, U>, props: T & SpriteProps, ...children: any[]): U;
 export function createSprite<T, U>(type: any, props: any, ...children: any[]): any {
     props = props || {};
-    
+
     let sprite: any;
     let { ref, actions, ...options } = props;
 
@@ -45,9 +45,7 @@ export function createSprite<T, U>(type: any, props: any, ...children: any[]): a
         switch (type) {
             case "sprite":
                 sprite = new Sprite(options);
-                if (children.length) {
-                    children.forEach(child => child && sprite.addChild(child));
-                }
+                addChildren(sprite, children);
                 break;
             case "text":
                 sprite = createLabel<TextLabel>(type, TextLabel, options, children);
@@ -106,4 +104,21 @@ function createStage(props: StageProps, children: Sprite<any>[]) {
 
 function ensureString(list: any[]) {
     return list.every(item => typeof item === 'string');
+}
+
+function addChildren(sprite: Sprite<any>, children: any[]) {
+    if (!children.length) {
+        return;
+    }
+    children.forEach(child => {
+        if (!child) {
+            return;
+        }
+        if (Array.isArray(child)) {
+            addChildren(sprite, child);
+        }
+        else {
+            sprite.addChild(child);
+        }
+    });
 }

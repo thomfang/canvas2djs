@@ -1,13 +1,13 @@
 /**
- * canvas2djs v1.8.0
+ * canvas2djs v1.9.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
 
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
-	(factory((global.canvas2d = global.canvas2d || {})));
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
+    (factory((global.canvas2d = global.canvas2d || {})));
 }(this, (function (exports) { 'use strict';
 
 var Keys = {
@@ -887,6 +887,58 @@ function __rest(s, e) {
     return t;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+function __values(o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) return m.call(o);
+    return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+}
+
+function __read(o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+}
+
+
+
+
+
+
+
+function __asyncValues(o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator];
+    return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
+}
+
 var eventCache = {};
 var EventEmitter = (function () {
     function EventEmitter() {
@@ -1524,6 +1576,9 @@ var UIEvent = (function () {
                 // }
                 var triggerClick = !helper._moved || isMovedSmallRange(helper);
                 _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, triggerClick);
+                // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
+                //     target[ON_CLICK](helper, event);
+                // }
             }
             _this._mouseBeginHelper = helper.target = helper.beginTarget = null;
         };
@@ -2144,6 +2199,253 @@ var Stage = (function () {
     return Stage;
 }());
 
+var measureContext = document.createElement("canvas").getContext("2d");
+var regEnter = /\n/;
+var TextLabel = (function (_super) {
+    __extends(TextLabel, _super);
+    function TextLabel(props) {
+        var _this = _super.call(this) || this;
+        _this.fontName = 'sans-serif';
+        _this.textAlign = 'center';
+        _this.lineSpace = 5;
+        _this.fontColor = 0x000;
+        _this.fontSize = 20;
+        _this.fontWeight = 'normal';
+        _this.fontStyle = 'normal';
+        _this._text = '';
+        _super.prototype._init.call(_this, props);
+        return _this;
+    }
+    TextLabel.prototype._init = function (props) {
+    };
+    Object.defineProperty(TextLabel.prototype, "texture", {
+        set: function (value) {
+            throw new Error("canvas2d: TextLabel cannot set texture.");
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "text", {
+        get: function () {
+            return this._text;
+        },
+        set: function (content) {
+            if (this._text !== content) {
+                this._text = content;
+                if (this.autoResize) {
+                    this._resize();
+                }
+                else {
+                    this._lines = content.split(regEnter);
+                }
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    TextLabel.prototype._resize = function () {
+        this._lines = this._text.split(regEnter);
+        var width = 0;
+        var height = 0;
+        var fontSize = this.fontSize;
+        var lineSpace = this.lineSpace;
+        measureContext.save();
+        measureContext.font = this.fontStyle + ' ' + this.fontWeight + ' ' + fontSize + 'px ' + this.fontName;
+        this._lines.forEach(function (text, i) {
+            width = Math.max(width, measureContext.measureText(text).width);
+            height = lineSpace * i + fontSize * (i + 1);
+        });
+        measureContext.restore();
+        this.width = width;
+        this.height = height;
+    };
+    TextLabel.prototype.addChild = function () {
+        throw new Error("canvas2d.TextLabel.addChild(): Don't call this method.");
+    };
+    TextLabel.prototype.draw = function (context) {
+        var _this = this;
+        this._drawBgColor(context);
+        this._drawBorder(context);
+        if (this._text.length === 0) {
+            return;
+        }
+        context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
+        context.fillStyle = convertColor(this.fontColor);
+        context.textAlign = this.textAlign;
+        context.textBaseline = 'middle';
+        context.lineJoin = 'round';
+        if (this.strokeWidth) {
+            context.strokeStyle = convertColor(this.strokeColor || 0x000);
+            context.lineWidth = this.strokeWidth * 2;
+        }
+        var y = 0;
+        var h = this.fontSize + this.lineSpace;
+        this._lines.forEach(function (text) {
+            if (text.length > 0) {
+                if (_this.strokeWidth) {
+                    context.strokeText(text, 0, y, 0xffff);
+                }
+                context.fillText(text, 0, y, 0xffff);
+            }
+            y += h;
+        });
+    };
+    return TextLabel;
+}(Sprite));
+
+var BMFontLabel = (function (_super) {
+    __extends(BMFontLabel, _super);
+    function BMFontLabel(attrs) {
+        return _super.call(this, attrs) || this;
+    }
+    Object.defineProperty(BMFontLabel.prototype, "text", {
+        get: function () {
+            return this._text;
+        },
+        set: function (text) {
+            if (text === this._text) {
+                return;
+            }
+            this.setText(text);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BMFontLabel.prototype, "textureMap", {
+        get: function () {
+            return this._textureMap;
+        },
+        set: function (textureMap) {
+            this._textureMap = textureMap;
+            this.setText(this._text);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    BMFontLabel.prototype.setText = function (text) {
+        var _this = this;
+        this._text = text || '';
+        if (!this.textureMap || !this._text) {
+            return;
+        }
+        var words = this._text.split('');
+        if (!words.length) {
+            this._words.length = 0;
+        }
+        else {
+            this._words = words.map(function (word) {
+                if (!_this._textureMap[word]) {
+                    console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" not found.", _this);
+                }
+                return _this._textureMap[word];
+            });
+        }
+        this.removeAllChildren();
+        if (this._words && this._words.length) {
+            this._words.forEach(function (word, i) {
+                if (!word) {
+                    return;
+                }
+                _super.prototype.addChild.call(_this, new Sprite({
+                    x: i * word.width,
+                    texture: word,
+                    originX: 0,
+                    originY: 0
+                }));
+            });
+            this.width = this._words.length * this._words[0].width;
+            this.height = this._words[0].height;
+        }
+    };
+    BMFontLabel.prototype.addChild = function () {
+        throw new Error("canvas2d.BMFontLabel.addChild(): Don't call this method.");
+    };
+    return BMFontLabel;
+}(Sprite));
+
+function createSprite(type, props) {
+    var children = [];
+    for (var _i = 2; _i < arguments.length; _i++) {
+        children[_i - 2] = arguments[_i];
+    }
+    props = props || {};
+    var sprite;
+    var ref = props.ref, actions = props.actions, options = __rest(props, ["ref", "actions"]);
+    if (typeof type === 'function') {
+        sprite = new type(options);
+    }
+    else {
+        switch (type) {
+            case "sprite":
+                sprite = new Sprite(options);
+                addChildren(sprite, children);
+                break;
+            case "text":
+                sprite = createLabel(type, TextLabel, options, children);
+                break;
+            case "bmfont":
+                sprite = createLabel(type, BMFontLabel, options, children);
+                break;
+            case 'stage':
+                sprite = createStage(options, children);
+                break;
+        }
+    }
+    if (sprite == null) {
+        console.error("canvas2d.createSprite(): Unknown sprite type", type);
+    }
+    else if (actions && actions.length) {
+        actions.forEach(function (queue) {
+            new Action(sprite).queue(queue).start();
+        });
+    }
+    if (ref) {
+        ref.call(undefined, sprite);
+    }
+    return sprite;
+}
+function createLabel(tag, ctor, props, children) {
+    var sprite = new ctor(props);
+    if (children.length) {
+        if (!ensureString(children)) {
+            throw new Error("canvas2d: <" + tag + "> only support string children.");
+        }
+        sprite.text = children.join('');
+    }
+    return sprite;
+}
+function createStage(props, children) {
+    var canvas = props.canvas, width = props.width, height = props.height, scaleMode = props.scaleMode, autoAdjustCanvasSize = props.autoAdjustCanvasSize, useExternalTimer = props.useExternalTimer, touchEnabled = props.touchEnabled, mouseEnabled = props.mouseEnabled, keyboardEnabled = props.keyboardEnabled, orientation = props.orientation;
+    var stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation);
+    stage.touchEnabled = touchEnabled;
+    stage.mouseEnabled = mouseEnabled;
+    stage.keyboardEnabled = keyboardEnabled;
+    stage.start(useExternalTimer);
+    if (children.length) {
+        children.forEach(function (child) { return child && stage.addChild(child); });
+    }
+    return stage;
+}
+function ensureString(list) {
+    return list.every(function (item) { return typeof item === 'string'; });
+}
+function addChildren(sprite, children) {
+    if (!children.length) {
+        return;
+    }
+    children.forEach(function (child) {
+        if (!child) {
+            return;
+        }
+        if (Array.isArray(child)) {
+            addChildren(sprite, child);
+        }
+        else {
+            sprite.addChild(child);
+        }
+    });
+}
+
 var HTMLAudio = (function (_super) {
     __extends(HTMLAudio, _super);
     function HTMLAudio(src) {
@@ -2637,252 +2939,66 @@ var SoundManager = (function () {
 }());
 var Sound = new SoundManager();
 
-var measureContext = document.createElement("canvas").getContext("2d");
-var regEnter = /\n/;
-var TextLabel = (function (_super) {
-    __extends(TextLabel, _super);
-    function TextLabel(props) {
-        var _this = _super.call(this) || this;
-        _this.fontName = 'sans-serif';
-        _this.textAlign = 'center';
-        _this.lineSpace = 5;
-        _this.fontColor = 0x000;
-        _this.fontSize = 20;
-        _this.fontWeight = 'normal';
-        _this.fontStyle = 'normal';
-        _this._text = '';
-        _super.prototype._init.call(_this, props);
-        return _this;
-    }
-    TextLabel.prototype._init = function (props) {
-    };
-    Object.defineProperty(TextLabel.prototype, "texture", {
-        set: function (value) {
-            throw new Error("canvas2d: TextLabel cannot set texture.");
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(TextLabel.prototype, "text", {
-        get: function () {
-            return this._text;
-        },
-        set: function (content) {
-            if (this._text !== content) {
-                this._text = content;
-                if (this.autoResize) {
-                    this._resize();
-                }
-                else {
-                    this._lines = content.split(regEnter);
-                }
-            }
-        },
-        enumerable: true,
-        configurable: true
-    });
-    TextLabel.prototype._resize = function () {
-        this._lines = this._text.split(regEnter);
-        var width = 0;
-        var height = 0;
-        var fontSize = this.fontSize;
-        var lineSpace = this.lineSpace;
-        measureContext.save();
-        measureContext.font = this.fontStyle + ' ' + this.fontWeight + ' ' + fontSize + 'px ' + this.fontName;
-        this._lines.forEach(function (text, i) {
-            width = Math.max(width, measureContext.measureText(text).width);
-            height = lineSpace * i + fontSize * (i + 1);
-        });
-        measureContext.restore();
-        this.width = width;
-        this.height = height;
-    };
-    TextLabel.prototype.addChild = function () {
-        throw new Error("canvas2d.TextLabel.addChild(): Don't call this method.");
-    };
-    TextLabel.prototype.draw = function (context) {
-        var _this = this;
-        this._drawBgColor(context);
-        this._drawBorder(context);
-        if (this._text.length === 0) {
-            return;
-        }
-        context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
-        context.fillStyle = convertColor(this.fontColor);
-        context.textAlign = this.textAlign;
-        context.textBaseline = 'middle';
-        context.lineJoin = 'round';
-        if (this.strokeWidth) {
-            context.strokeStyle = convertColor(this.strokeColor || 0x000);
-            context.lineWidth = this.strokeWidth * 2;
-        }
-        var y = 0;
-        var h = this.fontSize + this.lineSpace;
-        this._lines.forEach(function (text) {
-            if (text.length > 0) {
-                if (_this.strokeWidth) {
-                    context.strokeText(text, 0, y, 0xffff);
-                }
-                context.fillText(text, 0, y, 0xffff);
-            }
-            y += h;
-        });
-    };
-    return TextLabel;
-}(Sprite));
+// export { Keys } from './Keys';
+// export {
+//     Tween,
+//     EasingFunc
+// } from './Tween';
+// export {
+//     Texture,
+//     Rect
+// } from './Texture';
+// export {
+//     Action,
+//     ActionType
+// } from './action/Action';
+// export {
+//     Stage,
+//     ScaleMode,
+//     Orientation,
+//     VisibleRect
+// } from './Stage';
+// export { EventEmitter } from './EventEmitter';
+// export { Sound } from './sound/Sound';
+// export { UIEvent } from './UIEvent';
+// export { TextLabel } from './sprite/TextLabel';
+// export { BMFontLabel } from './sprite/BMFontLabel';
+// import { Sprite, AlignType, RAD_PER_DEG } from './sprite/Sprite';
+// import { createSprite, ActionProps, StageProps, SpriteProps, TextProps, BMFontProps, SpriteClass, Ref } from './createSprite';
+// export {
+//     Sprite,
+//     AlignType,
+//     RAD_PER_DEG,
+//     createSprite,
+//     ActionProps,
+//     StageProps,
+//     SpriteProps,
+//     TextProps,
+//     BMFontProps,
+//     SpriteClass,
+//     Ref
+// }
 
-var BMFontLabel = (function (_super) {
-    __extends(BMFontLabel, _super);
-    function BMFontLabel(attrs) {
-        return _super.call(this, attrs) || this;
-    }
-    Object.defineProperty(BMFontLabel.prototype, "text", {
-        get: function () {
-            return this._text;
-        },
-        set: function (text) {
-            if (text === this._text) {
-                return;
-            }
-            this.setText(text);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(BMFontLabel.prototype, "textureMap", {
-        get: function () {
-            return this._textureMap;
-        },
-        set: function (textureMap) {
-            this._textureMap = textureMap;
-            this.setText(this._text);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    BMFontLabel.prototype.setText = function (text) {
-        var _this = this;
-        this._text = text || '';
-        if (!this.textureMap || !this._text) {
-            return;
-        }
-        var words = this._text.split('');
-        if (!words.length) {
-            this._words.length = 0;
-        }
-        else {
-            this._words = words.map(function (word) {
-                if (!_this._textureMap[word]) {
-                    console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" not found.", _this);
-                }
-                return _this._textureMap[word];
-            });
-        }
-        this.removeAllChildren();
-        if (this._words && this._words.length) {
-            this._words.forEach(function (word, i) {
-                if (!word) {
-                    return;
-                }
-                _super.prototype.addChild.call(_this, new Sprite({
-                    x: i * word.width,
-                    texture: word,
-                    originX: 0,
-                    originY: 0
-                }));
-            });
-            this.width = this._words.length * this._words[0].width;
-            this.height = this._words[0].height;
-        }
-    };
-    BMFontLabel.prototype.addChild = function () {
-        throw new Error("canvas2d.BMFontLabel.addChild(): Don't call this method.");
-    };
-    return BMFontLabel;
-}(Sprite));
-
-function createSprite(type, props) {
-    var children = [];
-    for (var _i = 2; _i < arguments.length; _i++) {
-        children[_i - 2] = arguments[_i];
-    }
-    props = props || {};
-    var sprite;
-    var ref = props.ref, actions = props.actions, options = __rest(props, ["ref", "actions"]);
-    if (typeof type === 'function') {
-        sprite = new type(options);
-    }
-    else {
-        switch (type) {
-            case "sprite":
-                sprite = new Sprite(options);
-                if (children.length) {
-                    children.forEach(function (child) { return child && sprite.addChild(child); });
-                }
-                break;
-            case "text":
-                sprite = createLabel(type, TextLabel, options, children);
-                break;
-            case "bmfont":
-                sprite = createLabel(type, BMFontLabel, options, children);
-                break;
-            case 'stage':
-                sprite = createStage(options, children);
-                break;
-        }
-    }
-    if (sprite == null) {
-        console.error("canvas2d.createSprite(): Unknown sprite type", type);
-    }
-    else if (actions && actions.length) {
-        actions.forEach(function (queue) {
-            new Action(sprite).queue(queue).start();
-        });
-    }
-    if (ref) {
-        ref.call(undefined, sprite);
-    }
-    return sprite;
-}
-function createLabel(tag, ctor, props, children) {
-    var sprite = new ctor(props);
-    if (children.length) {
-        if (!ensureString(children)) {
-            throw new Error("canvas2d: <" + tag + "> only support string children.");
-        }
-        sprite.text = children.join('');
-    }
-    return sprite;
-}
-function createStage(props, children) {
-    var canvas = props.canvas, width = props.width, height = props.height, scaleMode = props.scaleMode, autoAdjustCanvasSize = props.autoAdjustCanvasSize, useExternalTimer = props.useExternalTimer, touchEnabled = props.touchEnabled, mouseEnabled = props.mouseEnabled, keyboardEnabled = props.keyboardEnabled, orientation = props.orientation;
-    var stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation);
-    stage.touchEnabled = touchEnabled;
-    stage.mouseEnabled = mouseEnabled;
-    stage.keyboardEnabled = keyboardEnabled;
-    stage.start(useExternalTimer);
-    if (children.length) {
-        children.forEach(function (child) { return child && stage.addChild(child); });
-    }
-    return stage;
-}
-function ensureString(list) {
-    return list.every(function (item) { return typeof item === 'string'; });
-}
-
-exports.Sprite = Sprite;
-exports.RAD_PER_DEG = RAD_PER_DEG;
-exports.createSprite = createSprite;
 exports.Keys = Keys;
 exports.Tween = Tween;
 exports.Texture = Texture;
 exports.Action = Action;
 exports.Stage = Stage;
+exports.createSprite = createSprite;
 exports.EventEmitter = EventEmitter;
-exports.Sound = Sound;
 exports.UIEvent = UIEvent;
-exports.TextLabel = TextLabel;
+exports.uid = uid;
+exports.addArrayItem = addArrayItem;
+exports.removeArrayItem = removeArrayItem;
+exports.convertColor = convertColor;
+exports.SoundManager = SoundManager;
+exports.Sound = Sound;
+exports.HTMLAudio = HTMLAudio;
+exports.WebAudio = WebAudio;
+exports.RAD_PER_DEG = RAD_PER_DEG;
+exports.Sprite = Sprite;
 exports.BMFontLabel = BMFontLabel;
+exports.TextLabel = TextLabel;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
