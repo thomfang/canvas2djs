@@ -182,7 +182,7 @@ function createCanvas(image: HTMLImageElement, sourceRect: Rect, textureRect: Re
 
     context.drawImage(
         image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height,
-        textureRect.x, textureRect.y, textureRect.width, textureRect.height);
+        textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
 
     return canvas;
 }

@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.1.1
+ * canvas2djs v2.1.2
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -451,7 +451,7 @@ function createCanvas(image, sourceRect, textureRect) {
     var context = canvas.getContext('2d');
     canvas.width = textureRect.width;
     canvas.height = textureRect.height;
-    context.drawImage(image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, textureRect.x, textureRect.y, textureRect.width, textureRect.height);
+    context.drawImage(image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
     return canvas;
 }
 
