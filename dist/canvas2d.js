@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.1.0
+ * canvas2djs v2.1.1
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2399,6 +2399,7 @@ function createSprite(type, props) {
     var ref = props.ref, actions = props.actions, options = __rest(props, ["ref", "actions"]);
     if (typeof type === 'function') {
         sprite = new type(options);
+        addChildren(sprite, children);
     }
     else {
         switch (type) {

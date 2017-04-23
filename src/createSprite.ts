@@ -39,7 +39,8 @@ export function createSprite<T, U>(type: any, props: any, ...children: any[]): a
     let { ref, actions, ...options } = props;
 
     if (typeof type === 'function') {
-        sprite = new type(options);
+        sprite = new type(options) as Sprite<any>;
+        addChildren(sprite, children);
     }
     else {
         switch (type) {
