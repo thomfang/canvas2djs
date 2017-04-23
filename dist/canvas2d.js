@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.0.0
+ * canvas2djs v2.1.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -357,6 +357,23 @@ var Texture = (function () {
             return cache[name];
         }
         return new Texture(source, sourceRect, textureRect);
+    };
+    /**
+     * 缓存Texture实例
+     */
+    Texture.cacheAs = function (name, texture) {
+        cache[name] = texture;
+    };
+    /**
+     * 清除缓存
+     */
+    Texture.clearCache = function (name) {
+        if (name != null) {
+            delete cache[name];
+        }
+        else {
+            cache = {};
+        }
     };
     Texture.prototype.onReady = function (callback) {
         if (this.ready) {

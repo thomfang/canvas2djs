@@ -26,6 +26,14 @@ export declare class Texture {
      */
     static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture;
     /**
+     * 缓存Texture实例
+     */
+    static cacheAs(name: string, texture: Texture): void;
+    /**
+     * 清除缓存
+     */
+    static clearCache(name?: string): void;
+    /**
      * @param  source  Drawable source
      * @param  rect    Clipping rect
      */
