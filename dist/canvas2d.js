@@ -1,5 +1,5 @@
 /**
- * canvas2djs v1.9.0
+ * canvas2djs v2.0.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -321,7 +321,7 @@ var Texture = (function () {
      * @param  source  Drawable source
      * @param  rect    Clipping rect
      */
-    function Texture(source, rect) {
+    function Texture(source, sourceRect, textureRect) {
         this._readyCallbacks = [];
         /**
          * Texture resource loading state
@@ -329,15 +329,15 @@ var Texture = (function () {
         this.ready = false;
         this.width = 0;
         this.height = 0;
-        var name = getName(source, rect);
+        var name = generateTextureName(source, sourceRect, textureRect);
         if (cache[name]) {
             return cache[name];
         }
         if (typeof source === 'string') {
-            this._createByPath(source, rect);
+            this._createByPath(source, sourceRect, textureRect);
         }
         else if ((source instanceof HTMLImageElement) || (source instanceof HTMLCanvasElement)) {
-            this._createByImage(source, rect);
+            this._createByImage(source, sourceRect, textureRect);
         }
         else {
             throw new Error("Invalid texture source");
@@ -351,12 +351,12 @@ var Texture = (function () {
      * @param  source  Drawable source
      * @param  rect    Clipping rect
      */
-    Texture.create = function (source, rect) {
-        var name = getName(source, rect);
+    Texture.create = function (source, sourceRect, textureRect) {
+        var name = generateTextureName(source, sourceRect, textureRect);
         if (name && cache[name]) {
             return cache[name];
         }
-        return new Texture(source, rect);
+        return new Texture(source, sourceRect, textureRect);
     };
     Texture.prototype.onReady = function (callback) {
         if (this.ready) {
@@ -366,11 +366,11 @@ var Texture = (function () {
             this._readyCallbacks.push(callback);
         }
     };
-    Texture.prototype._createByPath = function (path, rect) {
+    Texture.prototype._createByPath = function (path, sourceRect, textureRect) {
         var _this = this;
         var img = new Image();
         img.onload = function () {
-            _this._createByImage(img, rect);
+            _this._createByImage(img, sourceRect, textureRect);
             // if (!loaded[path]) {
             //     console.log(`canvas2d: "${path}" loaded.`);
             // }
@@ -394,16 +394,24 @@ var Texture = (function () {
         img.src = path;
         loading[path] = true;
     };
-    Texture.prototype._createByImage = function (image, rect) {
-        if (!rect) {
-            rect = {
+    Texture.prototype._createByImage = function (image, sourceRect, textureRect) {
+        if (!sourceRect) {
+            sourceRect = {
                 x: 0,
                 y: 0,
                 width: image.width,
                 height: image.height
             };
         }
-        var source = createCanvas(image, rect);
+        if (!textureRect) {
+            textureRect = {
+                x: 0,
+                y: 0,
+                width: sourceRect.width,
+                height: sourceRect.height,
+            };
+        }
+        var source = createCanvas(image, sourceRect, textureRect);
         this.width = source.width;
         this.height = source.height;
         this.source = source;
@@ -411,21 +419,22 @@ var Texture = (function () {
     };
     return Texture;
 }());
-function getName(source, rect) {
+function generateTextureName(source, sourceRect, textureRect) {
     var isStr = typeof source === 'string';
     if (!isStr && !source.src) {
         return null;
     }
     var src = isStr ? source : source.src;
-    var str = rect ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
-    return src + str;
+    var sourceRectStr = sourceRect ? [sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height].join(',') : '';
+    var textureRectStr = textureRect ? [textureRect.x, textureRect.y, textureRect.width, textureRect.height].join(',') : '';
+    return src + sourceRectStr + textureRectStr;
 }
-function createCanvas(image, rect) {
+function createCanvas(image, sourceRect, textureRect) {
     var canvas = document.createElement("canvas");
     var context = canvas.getContext('2d');
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    context.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, rect.width, rect.height);
+    canvas.width = textureRect.width;
+    canvas.height = textureRect.height;
+    context.drawImage(image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, textureRect.x, textureRect.y, textureRect.width, textureRect.height);
     return canvas;
 }
 
@@ -2938,46 +2947,6 @@ var SoundManager = (function () {
     return SoundManager;
 }());
 var Sound = new SoundManager();
-
-// export { Keys } from './Keys';
-// export {
-//     Tween,
-//     EasingFunc
-// } from './Tween';
-// export {
-//     Texture,
-//     Rect
-// } from './Texture';
-// export {
-//     Action,
-//     ActionType
-// } from './action/Action';
-// export {
-//     Stage,
-//     ScaleMode,
-//     Orientation,
-//     VisibleRect
-// } from './Stage';
-// export { EventEmitter } from './EventEmitter';
-// export { Sound } from './sound/Sound';
-// export { UIEvent } from './UIEvent';
-// export { TextLabel } from './sprite/TextLabel';
-// export { BMFontLabel } from './sprite/BMFontLabel';
-// import { Sprite, AlignType, RAD_PER_DEG } from './sprite/Sprite';
-// import { createSprite, ActionProps, StageProps, SpriteProps, TextProps, BMFontProps, SpriteClass, Ref } from './createSprite';
-// export {
-//     Sprite,
-//     AlignType,
-//     RAD_PER_DEG,
-//     createSprite,
-//     ActionProps,
-//     StageProps,
-//     SpriteProps,
-//     TextProps,
-//     BMFontProps,
-//     SpriteClass,
-//     Ref
-// }
 
 exports.Keys = Keys;
 exports.Tween = Tween;

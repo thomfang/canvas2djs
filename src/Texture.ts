@@ -34,32 +34,32 @@ export class Texture {
      * @param  source  Drawable source
      * @param  rect    Clipping rect
      */
-    static create(source: string | HTMLCanvasElement | HTMLImageElement, rect?: Rect): Texture {
-        var name = getName(source, rect);
+    static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture {
+        var name = generateTextureName(source, sourceRect, textureRect);
 
         if (name && cache[name]) {
             return cache[name];
         }
 
-        return new Texture(source, rect);
+        return new Texture(source, sourceRect, textureRect);
     }
 
     /**
      * @param  source  Drawable source
      * @param  rect    Clipping rect
      */
-    constructor(source: string | HTMLCanvasElement | HTMLImageElement, rect?: Rect) {
-        var name: any = getName(source, rect);
+    constructor(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect) {
+        var name: any = generateTextureName(source, sourceRect, textureRect);
 
         if (cache[name]) {
             return cache[name];
         }
 
         if (typeof source === 'string') {
-            this._createByPath(source, rect);
+            this._createByPath(source, sourceRect, textureRect);
         }
         else if ((source instanceof HTMLImageElement) || (source instanceof HTMLCanvasElement)) {
-            this._createByImage(<HTMLImageElement>source, rect);
+            this._createByImage(<HTMLImageElement>source, sourceRect, textureRect);
         }
         else {
             throw new Error("Invalid texture source");
@@ -79,11 +79,11 @@ export class Texture {
         }
     }
 
-    private _createByPath(path: string, rect?: Rect): void {
+    private _createByPath(path: string, sourceRect?: Rect, textureRect?: Rect): void {
         var img: HTMLImageElement = new Image();
 
         img.onload = () => {
-            this._createByImage(img, rect);
+            this._createByImage(img, sourceRect, textureRect);
 
             // if (!loaded[path]) {
             //     console.log(`canvas2d: "${path}" loaded.`);
@@ -113,17 +113,25 @@ export class Texture {
         loading[path] = true;
     }
 
-    private _createByImage(image: HTMLImageElement, rect?: Rect): void {
-        if (!rect) {
-            rect = {
+    private _createByImage(image: HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): void {
+        if (!sourceRect) {
+            sourceRect = {
                 x: 0,
                 y: 0,
                 width: image.width,
                 height: image.height
             };
         }
+        if (!textureRect) {
+            textureRect = {
+                x: 0,
+                y: 0,
+                width: sourceRect.width,
+                height: sourceRect.height,
+            };
+        }
 
-        var source: HTMLCanvasElement = createCanvas(image, rect);
+        var source: HTMLCanvasElement = createCanvas(image, sourceRect, textureRect);
 
         this.width = source.width;
         this.height = source.height;
@@ -132,7 +140,7 @@ export class Texture {
     }
 }
 
-function getName(source: any, rect?: Rect): any {
+function generateTextureName(source: any, sourceRect?: Rect, textureRect?: Rect): any {
     var isStr = typeof source === 'string';
 
     if (!isStr && !source.src) {
@@ -140,19 +148,22 @@ function getName(source: any, rect?: Rect): any {
     }
 
     var src = isStr ? source : source.src;
-    var str = rect ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
+    var sourceRectStr = sourceRect ? [sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height].join(',') : '';
+    var textureRectStr = textureRect ? [textureRect.x, textureRect.y, textureRect.width, textureRect.height].join(',') : '';
 
-    return src + str;
+    return src + sourceRectStr + textureRectStr;
 }
 
-function createCanvas(image: HTMLImageElement, rect: Rect): HTMLCanvasElement {
+function createCanvas(image: HTMLImageElement, sourceRect: Rect, textureRect: Rect): HTMLCanvasElement {
     var canvas: HTMLCanvasElement = document.createElement("canvas");
     var context: CanvasRenderingContext2D = canvas.getContext('2d');
 
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    canvas.width = textureRect.width;
+    canvas.height = textureRect.height;
 
-    context.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, rect.width, rect.height);
+    context.drawImage(
+        image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height,
+        textureRect.x, textureRect.y, textureRect.width, textureRect.height);
 
     return canvas;
 }

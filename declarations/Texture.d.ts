@@ -24,16 +24,16 @@ export declare class Texture {
      * @param  source  Drawable source
      * @param  rect    Clipping rect
      */
-    static create(source: string | HTMLCanvasElement | HTMLImageElement, rect?: Rect): Texture;
+    static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture;
     /**
      * @param  source  Drawable source
      * @param  rect    Clipping rect
      */
-    constructor(source: string | HTMLCanvasElement | HTMLImageElement, rect?: Rect);
+    constructor(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect);
     onReady(callback: (size: {
         width: number;
         height: number;
     }) => any): void;
-    private _createByPath(path, rect?);
-    private _createByImage(image, rect?);
+    private _createByPath(path, sourceRect?, textureRect?);
+    private _createByImage(image, sourceRect?, textureRect?);
 }
