@@ -14,6 +14,16 @@ export declare type EventHelper = {
     cancelBubble: boolean;
 };
 export declare class UIEvent {
+    static Event: {
+        touchBegin: string;
+        touchMoved: string;
+        touchEnded: string;
+        keyDown: string;
+        keyUp: string;
+        mouseBegin: string;
+        mouseMoved: string;
+        mouseEnded: string;
+    };
     static supportTouch: boolean;
     private _registered;
     private _touchHelperMap;

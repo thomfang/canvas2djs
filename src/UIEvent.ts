@@ -42,6 +42,17 @@ const onMouseEnded = "onMouseEnded";
 
 export class UIEvent {
 
+    public static Event = {
+        touchBegin,
+        touchMoved,
+        touchEnded,
+        keyDown,
+        keyUp,
+        mouseBegin,
+        mouseMoved,
+        mouseEnded,
+    };
+
     public static supportTouch: boolean = "ontouchend" in window;
 
     private _registered: boolean;
@@ -190,7 +201,8 @@ export class UIEvent {
         helpers.forEach((touch) => {
             touch.beginTarget = touch.target;
         });
-
+        
+        stage.sprite.emit(UIEvent.Event.touchBegin, helpers);
         event.preventDefault();
     }
 
@@ -205,6 +217,7 @@ export class UIEvent {
 
         this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved);
 
+        stage.sprite.emit(UIEvent.Event.touchMoved, helpers);
         event.preventDefault();
     }
 
@@ -232,6 +245,7 @@ export class UIEvent {
                 this._touchHelperMap[helper.identifier] = null;
             });
 
+            stage.sprite.emit(UIEvent.Event.touchEnded, helpers);
             helpers = null;
         }
     }
@@ -258,6 +272,7 @@ export class UIEvent {
             this._mouseBeginHelper = helper;
         }
 
+        stage.sprite.emit(UIEvent.Event.mouseBegin, helper);
         event.preventDefault();
     }
 
@@ -275,6 +290,7 @@ export class UIEvent {
             mouseBeginHelper.stageY = location.y;
             mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
             this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved);
+            stage.sprite.emit(UIEvent.Event.mouseMoved, mouseBeginHelper);
         }
         else {
             let mouseMovedHelper = this._mouseMovedHelper = {
@@ -285,6 +301,7 @@ export class UIEvent {
                 cancelBubble: false
             };
             this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved);
+            stage.sprite.emit(UIEvent.Event.mouseMoved, mouseMovedHelper);
         }
 
         event.preventDefault();
@@ -307,6 +324,7 @@ export class UIEvent {
 
             var triggerClick = !helper._moved || isMovedSmallRange(helper);
             this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, triggerClick);
+            stage.sprite.emit(UIEvent.Event.mouseEnded, helper);
 
             // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
             //     target[ON_CLICK](helper, event);
@@ -322,6 +340,7 @@ export class UIEvent {
             return;
         }
         this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyDown);
+        stage.sprite.emit(UIEvent.Event.keyDown, event);
     }
 
     private _keyUpHandler = (event: KeyboardEvent) => {
@@ -330,6 +349,7 @@ export class UIEvent {
             return;
         }
         this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyUp);
+        stage.sprite.emit(UIEvent.Event.keyUp, event);
     }
 
     private _dispatchTouch(

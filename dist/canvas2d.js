@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.1.2
+ * canvas2djs v2.1.3
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1512,6 +1512,7 @@ var UIEvent = (function () {
             helpers.forEach(function (touch) {
                 touch.beginTarget = touch.target;
             });
+            stage.sprite.emit(UIEvent.Event.touchBegin, helpers);
             event.preventDefault();
         };
         this._touchMovedHandler = function (event) {
@@ -1521,6 +1522,7 @@ var UIEvent = (function () {
             }
             var helpers = _this._transformTouches(event.changedTouches);
             _this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved);
+            stage.sprite.emit(UIEvent.Event.touchMoved, helpers);
             event.preventDefault();
         };
         this._touchEndedHandler = function (event) {
@@ -1540,6 +1542,7 @@ var UIEvent = (function () {
                     helper.beginTarget = null;
                     _this._touchHelperMap[helper.identifier] = null;
                 });
+                stage.sprite.emit(UIEvent.Event.touchEnded, helpers);
                 helpers = null;
             }
         };
@@ -1561,6 +1564,7 @@ var UIEvent = (function () {
                 helper.beginTarget = helper.target;
                 _this._mouseBeginHelper = helper;
             }
+            stage.sprite.emit(UIEvent.Event.mouseBegin, helper);
             event.preventDefault();
         };
         this._mouseMovedHandler = function (event) {
@@ -1575,6 +1579,7 @@ var UIEvent = (function () {
                 mouseBeginHelper.stageY = location.y;
                 mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
                 _this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved);
+                stage.sprite.emit(UIEvent.Event.mouseMoved, mouseBeginHelper);
             }
             else {
                 var mouseMovedHelper = _this._mouseMovedHelper = {
@@ -1585,6 +1590,7 @@ var UIEvent = (function () {
                     cancelBubble: false
                 };
                 _this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved);
+                stage.sprite.emit(UIEvent.Event.mouseMoved, mouseMovedHelper);
             }
             event.preventDefault();
         };
@@ -1602,6 +1608,7 @@ var UIEvent = (function () {
                 // }
                 var triggerClick = !helper._moved || isMovedSmallRange(helper);
                 _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, triggerClick);
+                stage.sprite.emit(UIEvent.Event.mouseEnded, helper);
                 // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
                 //     target[ON_CLICK](helper, event);
                 // }
@@ -1614,6 +1621,7 @@ var UIEvent = (function () {
                 return;
             }
             _this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyDown);
+            stage.sprite.emit(UIEvent.Event.keyDown, event);
         };
         this._keyUpHandler = function (event) {
             var stage = _this.stage;
@@ -1621,6 +1629,7 @@ var UIEvent = (function () {
                 return;
             }
             _this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyUp);
+            stage.sprite.emit(UIEvent.Event.keyUp, event);
         };
         this.stage = stage;
         this.element = stage.canvas;
@@ -1863,6 +1872,16 @@ var UIEvent = (function () {
     };
     return UIEvent;
 }());
+UIEvent.Event = {
+    touchBegin: touchBegin,
+    touchMoved: touchMoved,
+    touchEnded: touchEnded,
+    keyDown: keyDown,
+    keyUp: keyUp,
+    mouseBegin: mouseBegin,
+    mouseMoved: mouseMoved,
+    mouseEnded: mouseEnded,
+};
 UIEvent.supportTouch = "ontouchend" in window;
 function isRectContainPoint(rect, p) {
     return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
