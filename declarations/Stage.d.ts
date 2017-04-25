@@ -1,9 +1,11 @@
 import { Sprite } from './sprite/Sprite';
+import { EventEmitter } from './EventEmitter';
 export declare enum ScaleMode {
     SHOW_ALL = 0,
     NO_BORDER = 1,
     FIX_WIDTH = 2,
     FIX_HEIGHT = 3,
+    EXACTFIT = 4,
 }
 export declare enum Orientation {
     LANDSCAPE = 0,
@@ -15,27 +17,31 @@ export declare type VisibleRect = {
     top: number;
     bottom: number;
 };
-export declare class Stage {
+export declare class Stage extends EventEmitter {
     private _fps;
     private _frameRate;
     private _isRunning;
     private _width;
     private _height;
-    private _rootSprite;
+    private _sprite;
     private _visibleRect;
-    private _canvasScale;
+    private _scaleX;
+    private _scaleY;
     private _isPortrait;
     private _scaleMode;
     private _autoAdjustCanvasSize;
     private _orientation;
-    private _canvasElement;
+    private _canvas;
     private _renderContext;
     private _bufferCanvas;
     private _bufferContext;
     private _useExternalTimer;
     private _lastUpdateTime;
-    private _eventLoopTimerId;
+    private _timerId;
     private _uiEvent;
+    private _touchEnabled;
+    private _mouseEnabled;
+    private _keyboardEnabled;
     touchEnabled: boolean;
     mouseEnabled: boolean;
     keyboardEnabled: boolean;
@@ -47,7 +53,8 @@ export declare class Stage {
     readonly context: CanvasRenderingContext2D;
     readonly sprite: Sprite<{}>;
     readonly visibleRect: VisibleRect;
-    readonly scale: number;
+    readonly scaleX: number;
+    readonly scaleY: number;
     readonly isPortrait: boolean;
     scaleMode: ScaleMode;
     autoAdjustCanvasSize: boolean;

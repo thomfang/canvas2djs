@@ -1,12 +1,14 @@
 ﻿import { UIEvent } from './UIEvent';
 import { Sprite } from './sprite/Sprite';
 import { Action } from './action/Action';
+import { EventEmitter } from './EventEmitter';
 
 export enum ScaleMode {
     SHOW_ALL,
     NO_BORDER,
     FIX_WIDTH,
-    FIX_HEIGHT
+    FIX_HEIGHT,
+    EXACTFIT,
 }
 
 export enum Orientation {
@@ -21,32 +23,56 @@ export type VisibleRect = {
     bottom: number;
 };
 
-export class Stage {
+export class Stage extends EventEmitter {
 
     private _fps: number = 30;
     private _frameRate: number = 1000 / this._fps;
     private _isRunning: boolean;
     private _width: number = 0;
     private _height: number = 0;
-    private _rootSprite: Sprite<{}>;
+    private _sprite: Sprite<{}>;
     private _visibleRect: VisibleRect;
-    private _canvasScale: number;
+    private _scaleX: number;
+    private _scaleY: number;
     private _isPortrait: boolean;
     private _scaleMode: ScaleMode;
     private _autoAdjustCanvasSize: boolean;
     private _orientation: Orientation;
-    private _canvasElement: HTMLCanvasElement;
+    private _canvas: HTMLCanvasElement;
     private _renderContext: CanvasRenderingContext2D;
     private _bufferCanvas: HTMLCanvasElement;
     private _bufferContext: CanvasRenderingContext2D;
     private _useExternalTimer: boolean;
     private _lastUpdateTime: number;
-    private _eventLoopTimerId: number;
+    private _timerId: number;
     private _uiEvent: UIEvent;
+    private _touchEnabled: boolean;
+    private _mouseEnabled: boolean;
+    private _keyboardEnabled: boolean;
 
-    touchEnabled: boolean;
-    mouseEnabled: boolean;
-    keyboardEnabled: boolean;
+    get touchEnabled(): boolean {
+        return this._touchEnabled;
+    }
+
+    set touchEnabled(enabled: boolean) {
+        this._touchEnabled = enabled;
+    }
+
+    get mouseEnabled(): boolean {
+        return this._mouseEnabled;
+    }
+
+    set mouseEnabled(enabled: boolean) {
+        this._mouseEnabled = enabled;
+    }
+
+    get keyboardEnabled(): boolean {
+        return this._keyboardEnabled;
+    }
+
+    set keyboardEnabled(enabled: boolean) {
+        this._keyboardEnabled = enabled;
+    }
 
     get fps(): number {
         return this._fps;
@@ -70,7 +96,7 @@ export class Stage {
     }
 
     get canvas(): HTMLCanvasElement {
-        return this._canvasElement;
+        return this._canvas;
     }
 
     get context(): CanvasRenderingContext2D {
@@ -78,15 +104,19 @@ export class Stage {
     }
 
     get sprite(): Sprite<{}> {
-        return this._rootSprite;
+        return this._sprite;
     }
 
     get visibleRect(): VisibleRect {
         return this._visibleRect;
     }
 
-    get scale(): number {
-        return this._canvasScale;
+    get scaleX(): number {
+        return this._scaleX;
+    }
+
+    get scaleY(): number {
+        return this._scaleY;
     }
 
     get isPortrait() {
@@ -146,16 +176,18 @@ export class Stage {
         autoAdjustCanvasSize?: boolean,
         orientation = Orientation.PORTRAIT
     ) {
-        this._rootSprite = new Sprite({
+        super();
+
+        this._sprite = new Sprite({
             x: width * 0.5,
             y: height * 0.5,
             width: width,
             height: height
         });
-
+        this._sprite.stage = this;
         this._scaleMode = scaleMode;
 
-        this._canvasElement = canvas;
+        this._canvas = canvas;
         this._renderContext = canvas.getContext('2d');
 
         this._bufferCanvas = document.createElement("canvas");
@@ -164,7 +196,7 @@ export class Stage {
         this._width = canvas.width = this._bufferCanvas.width = width;
         this._height = canvas.height = this._bufferCanvas.height = height;
 
-        this._canvasScale = 1;
+        this._scaleX = this._scaleY = 1;
         this._isPortrait = false;
         this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
         this.orientation = orientation;
@@ -174,35 +206,35 @@ export class Stage {
     }
 
     setSize(width: number, height: number) {
-        this._width = this._canvasElement.width = this._bufferCanvas.width = width;
-        this._height = this._canvasElement.height = this._bufferCanvas.height = height;
+        this._width = this._canvas.width = this._bufferCanvas.width = width;
+        this._height = this._canvas.height = this._bufferCanvas.height = height;
 
         if (this._autoAdjustCanvasSize) {
             this.adjustCanvasSize();
         }
 
-        this._rootSprite.x = width * 0.5;
-        this._rootSprite.y = height * 0.5;
-        this._rootSprite.width = width;
-        this._rootSprite.height = height;
+        this._sprite.x = width * 0.5;
+        this._sprite.y = height * 0.5;
+        this._sprite.width = width;
+        this._sprite.height = height;
     }
 
     adjustCanvasSize = () => {
-        var canvasElement = this._canvasElement;
+        var canvas = this._canvas;
         var stageWidth = this._width;
         var stageHeight = this._height;
-        var currentScaleMode = this._scaleMode;
+        var scaleMode = this._scaleMode;
         var visibleRect = this._visibleRect;
         var orientation = this._orientation;
 
-        if (!canvasElement || !canvasElement.parentNode) {
+        if (!canvas || !canvas.parentNode) {
             return;
         }
 
-        var style = canvasElement.style;
+        var style = canvas.style;
         var container = {
-            width: canvasElement.parentElement.offsetWidth,
-            height: canvasElement.parentElement.offsetHeight
+            width: canvas.parentElement.offsetWidth,
+            height: canvas.parentElement.offsetHeight
         };
         var isPortrait = container.width < container.height;
 
@@ -212,48 +244,55 @@ export class Stage {
             container.width = tmpHeight;
         }
 
-        var scaleX: number = container.width / stageWidth;
-        var scaleY: number = container.height / stageHeight;
+        var sx: number = container.width / stageWidth;
+        var sy: number = container.height / stageHeight;
         var deltaWidth: number = 0;
         var deltaHeight: number = 0;
-        var scale: number;
+        var scaleX: number;
+        var scaleY: number;
         var width: number;
         var height: number;
 
-        switch (currentScaleMode) {
+        switch (scaleMode) {
             case ScaleMode.SHOW_ALL:
-                if (scaleX < scaleY) {
-                    scale = scaleX;
+                if (sx < sy) {
+                    scaleX = scaleY = sx;
                     width = container.width;
-                    height = scale * stageHeight;
+                    height = scaleX * stageHeight;
                 }
                 else {
-                    scale = scaleY;
-                    width = scale * stageWidth;
+                    scaleX = scaleY = sy;
+                    width = scaleX * stageWidth;
                     height = container.height;
                 }
                 break;
             case ScaleMode.NO_BORDER:
-                scale = scaleX > scaleY ? scaleX : scaleY;
-                width = stageWidth * scale;
-                height = stageHeight * scale;
-                deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
-                deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
+                scaleX = scaleY = sx > sy ? sx : sy;
+                width = stageWidth * scaleX;
+                height = stageHeight * scaleX;
+                deltaWidth = (stageWidth - container.width / scaleX) * 0.5 | 0;
+                deltaHeight = (stageHeight - container.height / scaleX) * 0.5 | 0;
                 break;
             case ScaleMode.FIX_WIDTH:
-                scale = scaleX;
+                scaleX = scaleY = sx;
                 width = container.width;
-                height = container.height * scale;
-                deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
+                height = container.height * scaleX;
+                deltaHeight = (stageHeight - container.height / scaleX) * 0.5 | 0;
                 break;
             case ScaleMode.FIX_HEIGHT:
-                scale = scaleY;
-                width = scale * container.width;
+                scaleX = scaleY = sy;
+                width = scaleX * container.width;
                 height = container.height;
-                deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
+                deltaWidth = (stageWidth - container.width / scaleX) * 0.5 | 0;
+                break;
+            case ScaleMode.EXACTFIT:
+                scaleX = sx;
+                scaleY = sy;
+                width = container.width;
+                height = container.height;
                 break;
             default:
-                throw new Error(`Unknow stage scale mode "${currentScaleMode}"`);
+                throw new Error(`Unknow stage scale mode "${scaleMode}"`);
         }
 
         style.width = width + 'px';
@@ -277,7 +316,8 @@ export class Stage {
             style.left = ((container.width - width) * 0.5) + 'px';
         }
 
-        this._canvasScale = scale;
+        this._scaleX = scaleX;
+        this._scaleY = scaleY;
         this._isPortrait = isPortrait;
     }
 
@@ -298,7 +338,7 @@ export class Stage {
     }
 
     step(deltaTime: number): void {
-        this._rootSprite._update(deltaTime);
+        (this._sprite as any)._update(deltaTime);
     }
 
     stop(unregisterUIEvent?: boolean): void {
@@ -311,7 +351,7 @@ export class Stage {
         }
 
         this._isRunning = false;
-        clearTimeout(this._eventLoopTimerId);
+        clearTimeout(this._timerId);
     }
 
     render() {
@@ -319,10 +359,10 @@ export class Stage {
             return;
         }
 
-        var { width, height } = this._canvasElement;
+        var { width, height } = this._canvas;
 
         this._bufferContext.clearRect(0, 0, width, height);
-        this._rootSprite._visit(this._bufferContext);
+        (this._sprite as any)._visit(this._bufferContext);
 
         this._renderContext.clearRect(0, 0, width, height);
         this._renderContext.drawImage(this._bufferCanvas, 0, 0, width, height);
@@ -332,14 +372,14 @@ export class Stage {
      * Add sprite to the stage
      */
     addChild(child: Sprite<any>, position?: number): void {
-        this._rootSprite.addChild(child, position);
+        this._sprite.addChild(child, position);
     }
 
     /**
      * Remove sprite from the stage
      */
     removeChild(child: Sprite<any>): void {
-        this._rootSprite.removeChild(child);
+        this._sprite.removeChild(child);
     }
 
     /**
@@ -347,25 +387,25 @@ export class Stage {
      * @param  recusive  Recusize remove all the children
      */
     removeAllChildren(recusive?: boolean): void {
-        this._rootSprite.removeAllChildren(recusive);
+        this._sprite.removeAllChildren(recusive);
     }
 
     release() {
         this.stop(true);
         this._uiEvent.release();
-        this._rootSprite.release(true);
-        this._rootSprite = this._uiEvent = this._canvasElement = this._renderContext = this._bufferCanvas = this._bufferContext = null;
+        this._sprite.release(true);
+        this._sprite = this._uiEvent = this._canvas = this._renderContext = this._bufferCanvas = this._bufferContext = null;
     }
 
     private _startTimer() {
-        this._eventLoopTimerId = setTimeout(() => {
+        this._timerId = setTimeout(() => {
             if (this._useExternalTimer) {
                 return;
             }
 
             var deltaTime: number = this._getDeltaTime();
             Action.schedule(deltaTime);
-            this._rootSprite._update(deltaTime);
+            (this._sprite as any)._update(deltaTime);
             this.render();
             this._startTimer();
         }, this._frameRate);

@@ -2,6 +2,7 @@ import { EventHelper } from '../UIEvent';
 import { Color } from '../Util';
 import { Texture } from '../Texture';
 import { EventEmitter } from '../EventEmitter';
+import { Stage } from '../Stage';
 export declare const RAD_PER_DEG: number;
 export declare enum AlignType {
     TOP = 0,
@@ -11,6 +12,7 @@ export declare enum AlignType {
     CENTER = 4,
 }
 export declare class Sprite<T extends ISprite> extends EventEmitter {
+    protected _props: T & ISprite;
     protected _width: number;
     protected _height: number;
     protected _originX: number;
@@ -21,9 +23,16 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     protected _alignX: AlignType;
     protected _alignY: AlignType;
     protected _parent: Sprite<T>;
-    protected _props: T & ISprite;
-    _originPixelX: number;
-    _originPixelY: number;
+    protected _stage: Stage;
+    protected _top: number;
+    protected _right: number;
+    protected _bottom: number;
+    protected _left: number;
+    protected _percentWidth: number;
+    protected _percentHeight: number;
+    protected _originPixelX: number;
+    protected _originPixelY: number;
+    protected _grid: number[];
     id: number;
     x: number;
     y: number;
@@ -47,56 +56,43 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     children: Sprite<any>[];
     touchEnabled: boolean;
     mouseEnabled: boolean;
-    keyboardEnabled: boolean;
     onClick: ISprite["onClick"];
-    /**
-     * Mouse begin event handler
-     */
     onMouseBegin: ISprite["onMouseBegin"];
-    /**
-     * Mouse moved event handler
-     */
     onMouseMoved: ISprite["onMouseMoved"];
-    /**
-     * Mouse ended event handler
-     */
     onMouseEnded: ISprite["onMouseEnded"];
-    /**
-     * Touch begin event handler
-     */
     onTouchBegin: ISprite["onTouchBegin"];
-    /**
-     * Touch moved event handler
-     */
     onTouchMoved: ISprite["onTouchMoved"];
-    /**
-     * KeyDown event handler
-     */
     onKeyDown: ISprite["onKeyDown"];
-    /**
-     * KeyUp event handler
-     */
     onKeyUp: ISprite["onKeyUp"];
-    /**
-     * Touch ended event hadndler
-     */
     onTouchEnded: ISprite["onTouchEnded"];
-    constructor(attrs?: ISprite);
+    constructor(props?: ISprite);
     protected _init(attrs?: ISprite): void;
     width: number;
     height: number;
     originX: number;
     originY: number;
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+    percentWidth: number;
+    percentHeight: number;
+    grid: number[];
     rotation: number;
     texture: Texture | string;
     parent: Sprite<any>;
+    stage: Stage;
     alignX: AlignType;
     alignY: AlignType;
-    _update(deltaTime: number): void;
-    _visit(context: CanvasRenderingContext2D): void;
-    adjustAlignX(): void;
-    adjustAlignY(): void;
-    protected _visitAllChildren(context: CanvasRenderingContext2D): void;
+    protected _update(deltaTime: number): void;
+    protected _visit(context: CanvasRenderingContext2D): void;
+    protected _reLayoutChildrenOnWidthChanged(): void;
+    protected _reLayoutChildrenOnHeightChanged(): void;
+    protected _resizeWidth(): void;
+    protected _resizeHeight(): void;
+    protected _adjustAlignX(): void;
+    protected _adjustAlignY(): void;
+    protected _visitChildren(context: CanvasRenderingContext2D): void;
     protected _clip(context: CanvasRenderingContext2D): void;
     protected _drawBgColor(context: CanvasRenderingContext2D): void;
     protected _drawBorder(context: CanvasRenderingContext2D): void;
@@ -104,6 +100,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     addChild(target: Sprite<any>, position?: number): void;
     removeChild(target: Sprite<any>): void;
     removeAllChildren(recusive?: boolean): void;
+    contains(target: Sprite<any>): any;
     release(recusive?: boolean): void;
     update(deltaTime: number): any;
 }
@@ -129,6 +126,13 @@ export interface ISprite {
     flippedX?: boolean;
     flippedY?: boolean;
     clipOverflow?: boolean;
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+    percentWidth?: number;
+    percentHeight?: number;
+    grid?: number[];
     /**
      * Position X of the clipping rect on texture
      */

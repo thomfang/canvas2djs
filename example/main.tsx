@@ -6,21 +6,23 @@ namespace demo {
 
     export var stage: canvas2d.Stage;
     export var santa: canvas2d.Sprite<any>;
+    export var btn: canvas2d.Sprite<any>;
 
     var stageProps: canvas2d.StageProps = {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        scaleMode: canvas2d.ScaleMode.SHOW_ALL,
+        width: 960,
+        height: 640,
+        scaleMode: canvas2d.ScaleMode.EXACTFIT,
         autoAdjustCanvasSize: true,
         touchEnabled: true,
         mouseEnabled: true,
         canvas,
     };
     var sceneProps: canvas2d.SpriteProps = {
-        width: stageProps.width,
-        height: stageProps.height,
-        alignX: canvas2d.AlignType.CENTER,
-        alignY: canvas2d.AlignType.CENTER,
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        bgColor: 0x333
     };
     var titleProps: canvas2d.TextProps = {
         y: 30,
@@ -47,7 +49,7 @@ namespace demo {
                 frameList: santaFrames,
                 frameRate: 20
             }]
-        ]
+        ],
     };
 
     var action: canvas2d.Action;
@@ -81,9 +83,23 @@ namespace demo {
             <text {...titleProps}>
                 canvas2djs
             </text>
-            {sprites}
-            <sprite {...santaProps} ref={e => santa = e} onClick={santaJump} />
-            <sprite />
+            <sprite {...santaProps} ref={e => santa = e} />
+                {...sprites}
+            <sprite
+                ref={e => btn = e}
+                onClick={santaJump}
+                bgColor={0xf00}
+                alignX={canvas2d.AlignType.CENTER}
+                alignY={canvas2d.AlignType.CENTER}
+                percentHeight={0.1}
+                percentWidth={0.1}>
+                <text alignX={canvas2d.AlignType.CENTER} alignY={canvas2d.AlignType.CENTER}>Jump</text>
+            </sprite>
+            {/*<sprite touchEnabled={false} left={10} right={10} top={10} bottom={10} grid={[20,20,20,20]} texture="img/roundrect-bg.png" />*/}
         </sprite>
     </stage>;
+
+    stage.on(canvas2d.UIEvent.TOUCH_MOVED, (helpers, event) => {
+        console.log(helpers[0].target)
+    });
 }

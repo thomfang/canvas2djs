@@ -15,22 +15,10 @@ export type EventHelper = {
     beginTarget?: Sprite<any>;
     target?: Sprite<any>;
     cancelBubble: boolean;
+    stopPropagation();
 }
 
-const keyDown = "keydown";
-const keyUp = "keyup";
-
-const touchBegin = "touchstart";
-const touchMoved = "touchmove";
-const touchEnded = "touchend";
-
-const mouseBegin = "mousedown";
-const mouseMoved = "mousemove";
-const mouseEnded = "mouseup";
-
 const onClick = "onClick";
-const onKeyUp = "onKeyUp";
-const onKeyDown = "onKeyDown";
 
 const onTouchBegin = "onTouchBegin";
 const onTouchMoved = "onTouchMoved";
@@ -42,18 +30,21 @@ const onMouseEnded = "onMouseEnded";
 
 export class UIEvent {
 
-    public static Event = {
-        touchBegin,
-        touchMoved,
-        touchEnded,
-        keyDown,
-        keyUp,
-        mouseBegin,
-        mouseMoved,
-        mouseEnded,
-    };
-
     public static supportTouch: boolean = "ontouchend" in window;
+
+    public static TOUCH_BEGIN = "touchstart";
+    public static TOUCH_MOVED = "touchmove";
+    public static TOUCH_ENDED = "touchend";
+
+    public static MOUSE_BEGIN = "mousedown";
+    public static MOUSE_MOVED = "mousemove";
+    public static MOUSE_ENDED = "mouseup";
+
+    public static CLICK = "click";
+
+    public static ADD_TO_STAGE = "addtostage";
+    public static REMOVED_FROM_STAGE = "removedfromstage";
+    public static FRAME = "frame";
 
     private _registered: boolean;
     private _touchHelperMap: { [index: number]: EventHelper } = {};
@@ -75,20 +66,15 @@ export class UIEvent {
 
         var { stage, element } = this;
 
-        if (stage.touchEnabled && UIEvent.supportTouch) {
-            element.addEventListener(touchBegin, this._touchBeginHandler, false);
-            element.addEventListener(touchMoved, this._touchMovedHandler, false);
-            element.addEventListener(touchEnded, this._touchEndedHandler, false);
+        if (UIEvent.supportTouch) {
+            element.addEventListener(UIEvent.TOUCH_BEGIN, this._touchBeginHandler, false);
+            element.addEventListener(UIEvent.TOUCH_MOVED, this._touchMovedHandler, false);
+            element.addEventListener(UIEvent.TOUCH_ENDED, this._touchEndedHandler, false);
         }
-        if (stage.mouseEnabled) {
-            element.addEventListener(mouseBegin, this._mouseBeginHandler, false);
-            element.addEventListener(mouseMoved, this._mouseMovedHandler, false);
-            element.addEventListener(mouseEnded, this._mouseEndedHandler, false);
-        }
-        if (stage.keyboardEnabled) {
-            document.addEventListener(keyDown, this._keyDownHandler, false);
-            document.addEventListener(keyUp, this._keyUpHandler, false);
-        }
+
+        element.addEventListener(UIEvent.MOUSE_BEGIN, this._mouseBeginHandler, false);
+        element.addEventListener(UIEvent.MOUSE_MOVED, this._mouseMovedHandler, false);
+        element.addEventListener(UIEvent.MOUSE_ENDED, this._mouseEndedHandler, false);
 
         this._touchHelperMap = {};
         this._registered = true;
@@ -100,17 +86,14 @@ export class UIEvent {
         }
         var element = this.element;
 
-        element.removeEventListener(touchBegin, this._touchBeginHandler, false);
-        element.removeEventListener(touchMoved, this._touchMovedHandler, false);
-        element.removeEventListener(touchEnded, this._touchEndedHandler, false);
+        element.removeEventListener(UIEvent.TOUCH_BEGIN, this._touchBeginHandler, false);
+        element.removeEventListener(UIEvent.TOUCH_MOVED, this._touchMovedHandler, false);
+        element.removeEventListener(UIEvent.TOUCH_ENDED, this._touchEndedHandler, false);
 
 
-        element.removeEventListener(mouseBegin, this._mouseBeginHandler, false);
-        element.removeEventListener(mouseMoved, this._mouseMovedHandler, false);
-        element.removeEventListener(mouseEnded, this._mouseEndedHandler, false);
-
-        document.removeEventListener(keyDown, this._keyDownHandler, false);
-        document.removeEventListener(keyUp, this._keyUpHandler, false);
+        element.removeEventListener(UIEvent.MOUSE_BEGIN, this._mouseBeginHandler, false);
+        element.removeEventListener(UIEvent.MOUSE_MOVED, this._mouseMovedHandler, false);
+        element.removeEventListener(UIEvent.MOUSE_ENDED, this._mouseEndedHandler, false);
 
         this._mouseBeginHelper = this._mouseMovedHelper = null;
         this._registered = false;
@@ -120,25 +103,25 @@ export class UIEvent {
         this.unregister();
         this._mouseBeginHandler = this._mouseMovedHandler = this._mouseEndedHandler = null;
         this._touchBeginHandler = this._touchMovedHandler = this._touchEndedHandler = null;
-        this._keyUpHandler = this._keyDownHandler = null;
         this._touchHelperMap = null;
         this.element = this.stage = null;
     }
 
-    transformLocation(event) {
+    private _transformLocation(event) {
         var clientRect = this.element.getBoundingClientRect();
-        var scale = this.stage.scale;
+        var scaleX = this.stage.scaleX;
+        var scaleY = this.stage.scaleY;
         var isRotated = this.stage.isPortrait && this.stage.orientation === Orientation.LANDSCAPE;
         var x: number;
         var y: number;
 
         if (isRotated) {
-            x = (event.clientY - clientRect.top) / scale;
-            y = this.stage.height - (event.clientX - clientRect.left) / scale;
+            x = (event.clientY - clientRect.top) / scaleX;
+            y = this.stage.height - (event.clientX - clientRect.left) / scaleY;
         }
         else {
-            x = (event.clientX - clientRect.left) / scale;
-            y = (event.clientY - clientRect.top) / scale;
+            x = (event.clientX - clientRect.left) / scaleX;
+            y = (event.clientY - clientRect.top) / scaleY;
         }
         return { x, y };
     }
@@ -146,7 +129,8 @@ export class UIEvent {
     private _transformTouches(touches, justGet?: boolean): EventHelper[] {
         var helpers: EventHelper[] = [];
         var clientRect = this.element.getBoundingClientRect();
-        var scale = this.stage.scale;
+        var scaleX = this.stage.scaleX;
+        var scaleY = this.stage.scaleY;
         var isRotated = this.stage.isPortrait && this.stage.orientation === Orientation.LANDSCAPE;
         var touchHelperMap = this._touchHelperMap;
 
@@ -156,12 +140,12 @@ export class UIEvent {
             var y: number;
 
             if (isRotated) {
-                x = (touch.clientY - clientRect.top) / scale;
-                y = this.stage.height - (touch.clientX - clientRect.left) / scale;
+                x = (touch.clientY - clientRect.top) / scaleX;
+                y = this.stage.height - (touch.clientX - clientRect.left) / scaleY;
             }
             else {
-                x = (touch.clientX - clientRect.left) / scale;
-                y = (touch.clientY - clientRect.top) / scale;
+                x = (touch.clientX - clientRect.left) / scaleX;
+                y = (touch.clientY - clientRect.top) / scaleY;
             }
 
             helper = touchHelperMap[id];
@@ -171,7 +155,10 @@ export class UIEvent {
                     identifier: id,
                     beginX: x,
                     beginY: y,
-                    cancelBubble: false
+                    cancelBubble: false,
+                    stopPropagation() {
+                        this.cancelBubble = true;
+                    }
                 };
             }
             else if (!justGet) {
@@ -196,13 +183,13 @@ export class UIEvent {
 
         var helpers = this._transformTouches(event.changedTouches);
 
-        this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin, UIEvent.TOUCH_BEGIN);
 
         helpers.forEach((touch) => {
             touch.beginTarget = touch.target;
         });
-        
-        stage.sprite.emit(UIEvent.Event.touchBegin, helpers);
+
+        stage.emit(UIEvent.TOUCH_BEGIN, helpers, event);
         event.preventDefault();
     }
 
@@ -215,9 +202,9 @@ export class UIEvent {
 
         var helpers = this._transformTouches(event.changedTouches);
 
-        this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved, UIEvent.TOUCH_MOVED);
 
-        stage.sprite.emit(UIEvent.Event.touchMoved, helpers);
+        stage.emit(UIEvent.TOUCH_MOVED, helpers, event);
         event.preventDefault();
     }
 
@@ -227,25 +214,15 @@ export class UIEvent {
         if (stage.isRunning && stage.touchEnabled) {
             var helpers = this._transformTouches(event.changedTouches, true);
 
-            this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, true);
+            this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, UIEvent.TOUCH_ENDED, true);
 
             helpers.forEach(helper => {
-                // target = helper.target;
-
-                // if (hasImplements(target, ontouchended)) {
-                //     target[ontouchended](helper, helpers, event);
-                // }
-
-                // if (hasImplements(target, onclick) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
-                //     target[onclick](helper, event);
-                // }
-
                 helper.target = null;
                 helper.beginTarget = null;
                 this._touchHelperMap[helper.identifier] = null;
             });
 
-            stage.sprite.emit(UIEvent.Event.touchEnded, helpers);
+            stage.emit(UIEvent.TOUCH_ENDED, helpers, event);
             helpers = null;
         }
     }
@@ -256,23 +233,26 @@ export class UIEvent {
             return;
         }
 
-        var location = this.transformLocation(event);
+        var location = this._transformLocation(event);
         var helper: EventHelper = {
             beginX: location.x,
             beginY: location.y,
             stageX: location.x,
             stageY: location.y,
-            cancelBubble: false
+            cancelBubble: false,
+            stopPropagation() {
+                this.cancelBubble = true;
+            }
         };
 
-        this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseBegin);
+        this._dispatchMouse(stage.sprite, 0, 0, helper, event, UIEvent.MOUSE_BEGIN, onMouseBegin);
 
         if (helper.target) {
             helper.beginTarget = helper.target;
             this._mouseBeginHelper = helper;
         }
 
-        stage.sprite.emit(UIEvent.Event.mouseBegin, helper);
+        stage.emit(UIEvent.MOUSE_BEGIN, helper, event);
         event.preventDefault();
     }
 
@@ -282,15 +262,16 @@ export class UIEvent {
             return;
         }
 
-        var location = this.transformLocation(event);
+        var location = this._transformLocation(event);
         var mouseBeginHelper = this._mouseBeginHelper;
 
         if (mouseBeginHelper) {
             mouseBeginHelper.stageX = location.x;
             mouseBeginHelper.stageY = location.y;
             mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
-            this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved);
-            stage.sprite.emit(UIEvent.Event.mouseMoved, mouseBeginHelper);
+            mouseBeginHelper.cancelBubble = false;
+            this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, UIEvent.MOUSE_MOVED, onMouseMoved);
+            stage.emit(UIEvent.MOUSE_MOVED, mouseBeginHelper, event);
         }
         else {
             let mouseMovedHelper = this._mouseMovedHelper = {
@@ -298,10 +279,13 @@ export class UIEvent {
                 beginY: null,
                 stageX: location.x,
                 stageY: location.y,
-                cancelBubble: false
+                cancelBubble: false,
+                stopPropagation() {
+                    this.cancelBubble = true;
+                }
             };
-            this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved);
-            stage.sprite.emit(UIEvent.Event.mouseMoved, mouseMovedHelper);
+            this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, UIEvent.MOUSE_MOVED, onMouseMoved);
+            stage.emit(UIEvent.MOUSE_MOVED, mouseMovedHelper, event);
         }
 
         event.preventDefault();
@@ -310,7 +294,7 @@ export class UIEvent {
     private _mouseEndedHandler = (event: MouseEvent) => {
         var stage = this.stage;
         if (stage.isRunning && stage.mouseEnabled) {
-            var location = this.transformLocation(event)
+            var location = this._transformLocation(event)
             var helper = this._mouseBeginHelper || this._mouseMovedHelper;
             var target;
 
@@ -318,38 +302,12 @@ export class UIEvent {
             helper.stageY = location.y;
             target = helper.target;
 
-            // if (hasImplements(target, ON_MOUSE_ENDED)) {
-            //     target[ON_MOUSE_ENDED](helper, event);
-            // }
-
             var triggerClick = !helper._moved || isMovedSmallRange(helper);
-            this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, triggerClick);
-            stage.sprite.emit(UIEvent.Event.mouseEnded, helper);
-
-            // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
-            //     target[ON_CLICK](helper, event);
-            // }
+            this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, UIEvent.MOUSE_ENDED, triggerClick);
+            stage.emit(UIEvent.MOUSE_ENDED, helper, event);
         }
 
         this._mouseBeginHelper = helper.target = helper.beginTarget = null;
-    }
-
-    private _keyDownHandler = (event: KeyboardEvent) => {
-        var stage = this.stage;
-        if (!stage.isRunning || !stage.keyboardEnabled) {
-            return;
-        }
-        this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyDown);
-        stage.sprite.emit(UIEvent.Event.keyDown, event);
-    }
-
-    private _keyUpHandler = (event: KeyboardEvent) => {
-        var stage = this.stage;
-        if (!stage.isRunning || !stage.keyboardEnabled) {
-            return;
-        }
-        this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyUp);
-        stage.sprite.emit(UIEvent.Event.keyUp, event);
     }
 
     private _dispatchTouch(
@@ -359,14 +317,15 @@ export class UIEvent {
         helpers: EventHelper[],
         event: TouchEvent,
         methodName: string,
+        eventName: string,
         needTriggerClick?: boolean
     ): any {
-        if (sprite.touchEnabled === false || !sprite.visible) {
+        if (!sprite.touchEnabled || !sprite.visible) {
             return;
         }
 
-        offsetX += sprite.x - sprite._originPixelX;
-        offsetY += sprite.y - sprite._originPixelY;
+        offsetX += sprite.x - (sprite as any)._originPixelX;
+        offsetY += sprite.y - (sprite as any)._originPixelY;
 
         var children = sprite.children;
         var tmpHelpers: EventHelper[] = helpers.slice();
@@ -379,7 +338,7 @@ export class UIEvent {
             let index = children.length;
 
             while (--index >= 0) {
-                result = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, needTriggerClick);
+                result = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, eventName, needTriggerClick);
                 if (result && result.length) {
                     triggerreds.push(...result);
 
@@ -428,17 +387,18 @@ export class UIEvent {
         }
 
         if (hits.length) {
-            var hasMethod: boolean = hasImplements(sprite, methodName);
-            var hasClickHandler: boolean = hasImplements(sprite, onClick);
+            // var hasMethod: boolean = hasImplements(sprite, methodName);
+            // var hasClickHandler: boolean = hasImplements(sprite, onClick);
 
-            if (hasMethod) {
-                sprite[methodName](hits, event);
-                triggerreds.push(...hits.slice(hits.length - count, count));
-            }
+            triggerreds.push(...hits.slice(hits.length - count, count));
+
+            sprite.emit(eventName, hits, event);
+            sprite[methodName] && sprite[methodName](hits, event);
 
             // Click event would just trigger by only a touch
-            if (hasClickHandler && needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
-                sprite[onClick](hits[0], event as any);
+            if (needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
+                sprite.emit(UIEvent.CLICK, hits[0], event);
+                sprite[onClick] && sprite[onClick](hits[0], event as any);
                 addArrayItem(triggerreds, hits[0]);
             }
         }
@@ -452,14 +412,15 @@ export class UIEvent {
         helper: EventHelper,
         event: MouseEvent,
         methodName: string,
-        triggerClick?: boolean
+        eventName: string,
+        needTriggerClick?: boolean
     ): boolean {
-        if (sprite.mouseEnabled === false || !sprite.visible) {
+        if (!sprite.mouseEnabled || !sprite.visible) {
             return false;
         }
 
-        offsetX += sprite.x - sprite._originPixelX;
-        offsetY += sprite.y - sprite._originPixelY;
+        offsetX += sprite.x - (sprite as any)._originPixelX;
+        offsetY += sprite.y - (sprite as any)._originPixelY;
 
         var children = sprite.children;
         var triggerred = false;
@@ -468,7 +429,7 @@ export class UIEvent {
             var index = children.length;
 
             while (--index >= 0) {
-                triggerred = this._dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, triggerClick);
+                triggerred = this._dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick);
                 if (triggerred) {
                     break;
                 }
@@ -497,41 +458,20 @@ export class UIEvent {
         };
 
         if (triggerred || detect(helper)) {
-            var hasMethod: boolean = hasImplements(sprite, methodName);
-            var hasClickHandler: boolean = hasImplements(sprite, onClick);
-
             if (!helper.target) {
                 helper.target = sprite;
             }
             helper.localX = helper.stageX - rect.x;
             helper.localY = helper.stageY - rect.y;
 
-            if (hasMethod) {
-                sprite[methodName](helper, event);
-            }
-            if (hasClickHandler && triggerClick) {
-                sprite[onClick](helper, event);
+            sprite.emit(eventName, helper, event);
+            sprite[methodName] && sprite[methodName](helper, event);
+            if (needTriggerClick) {
+                sprite.emit(UIEvent.CLICK, helper, event);
+                sprite[onClick] && sprite[onClick](helper, event);
             }
 
             return true;
-        }
-    }
-
-    private _dispatchKeyboard(sprite: Sprite<any>, keyCode: number, event, methodName: string) {
-        if (sprite.keyboardEnabled === false) {
-            return;
-        }
-
-        if (hasImplements(sprite, methodName)) {
-            sprite[methodName](keyCode, event);
-        }
-
-        var i = 0, children = sprite.children, child;
-
-        if (children && children.length) {
-            for (; child = children[i]; i++) {
-                this._dispatchKeyboard(child, keyCode, event, methodName);
-            }
         }
     }
 }

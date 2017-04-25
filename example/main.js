@@ -11,19 +11,20 @@ var demo;
 (function (demo) {
     var canvas = document.querySelector('canvas');
     var stageProps = {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        scaleMode: canvas2d.ScaleMode.SHOW_ALL,
+        width: 960,
+        height: 640,
+        scaleMode: canvas2d.ScaleMode.EXACTFIT,
         autoAdjustCanvasSize: true,
         touchEnabled: true,
         mouseEnabled: true,
         canvas: canvas,
     };
     var sceneProps = {
-        width: stageProps.width,
-        height: stageProps.height,
-        alignX: canvas2d.AlignType.CENTER,
-        alignY: canvas2d.AlignType.CENTER,
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        bgColor: 0x333
     };
     var titleProps = {
         y: 30,
@@ -47,7 +48,7 @@ var demo;
                     frameList: santaFrames,
                     frameRate: 20
                 }]
-        ]
+        ],
     };
     var action;
     function santaJump() {
@@ -74,8 +75,12 @@ var demo;
     canvas2d.createSprite("stage", __assign({}, stageProps, { ref: function (e) { return demo.stage = e; } }),
         canvas2d.createSprite("sprite", __assign({}, sceneProps),
             canvas2d.createSprite("text", __assign({}, titleProps), "canvas2djs"),
+            canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; } })),
             sprites,
-            canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; }, onClick: santaJump })),
-            canvas2d.createSprite("sprite", null)));
+            canvas2d.createSprite("sprite", { ref: function (e) { return demo.btn = e; }, onClick: santaJump, bgColor: 0xf00, alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER, percentHeight: 0.1, percentWidth: 0.1 },
+                canvas2d.createSprite("text", { alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER }, "Jump"))));
+    demo.stage.on(canvas2d.UIEvent.TOUCH_MOVED, function (helpers, event) {
+        console.log(helpers[0].target);
+    });
 })(demo || (demo = {}));
 //# sourceMappingURL=main.js.map

@@ -26,24 +26,23 @@ export function removeArrayItem(array: any[], item: any) {
 }
 
 export function convertColor(color: string | number): string {
+    if (typeof color === 'string') {
+        return color;
+    }
     if (cachedColor[color]) {
         return cachedColor[color];
     }
-    if (typeof color === 'string') {
-        if (color.indexOf('rgb') === 0) {
-            cachedColor[color] = color;
-            return color;
-        }
-        if (color[0] != '#' || (color.length != 4 && color.length != 7)) {
-            throw new Error(`canvas2d: Invalid color string "${color}".`);
-        }
-        cachedColor[color] = color;
-        return color;
-    }
     if (typeof color === 'number') {
         let result = color.toString(16);
-        while (result.length < 3) {
-            result = '0' + result;
+        if (result.length < 3) {
+            while (result.length < 3) {
+                result = '0' + result;
+            }
+        }
+        else if (result.length > 3 && result.length < 6) {
+            while (result.length < 6) {
+                result = '0' + result;
+            }
         }
         if (result.length !== 3 && result.length !== 6) {
             throw new Error(`canvas2d: Invalid hex color "0x${result}".`);

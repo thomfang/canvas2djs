@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.1.3
+ * canvas2djs v2.2.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -544,24 +544,23 @@ function removeArrayItem(array, item) {
     }
 }
 function convertColor(color) {
+    if (typeof color === 'string') {
+        return color;
+    }
     if (cachedColor[color]) {
         return cachedColor[color];
     }
-    if (typeof color === 'string') {
-        if (color.indexOf('rgb') === 0) {
-            cachedColor[color] = color;
-            return color;
-        }
-        if (color[0] != '#' || (color.length != 4 && color.length != 7)) {
-            throw new Error("canvas2d: Invalid color string \"" + color + "\".");
-        }
-        cachedColor[color] = color;
-        return color;
-    }
     if (typeof color === 'number') {
         var result = color.toString(16);
-        while (result.length < 3) {
-            result = '0' + result;
+        if (result.length < 3) {
+            while (result.length < 3) {
+                result = '0' + result;
+            }
+        }
+        else if (result.length > 3 && result.length < 6) {
+            while (result.length < 6) {
+                result = '0' + result;
+            }
         }
         if (result.length !== 3 && result.length !== 6) {
             throw new Error("canvas2d: Invalid hex color \"0x" + result + "\".");
@@ -965,29 +964,52 @@ function __asyncValues(o) {
     return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
 }
 
-var eventCache = {};
 var EventEmitter = (function () {
     function EventEmitter() {
     }
     EventEmitter.prototype.addListener = function (type, listener) {
         var id = uid(this);
-        if (!eventCache[id]) {
-            eventCache[id] = {};
+        if (!EventEmitter._eventCache[id]) {
+            EventEmitter._eventCache[id] = {};
         }
-        if (!eventCache[id][type]) {
-            eventCache[id][type] = [];
+        if (!EventEmitter._eventCache[id][type]) {
+            EventEmitter._eventCache[id][type] = [];
         }
-        addArrayItem(eventCache[id][type], listener);
+        var events = EventEmitter._eventCache[id][type];
+        if (events.some(function (ev) { return ev.listener === listener && !ev.once; })) {
+            return this;
+        }
+        events.push({ listener: listener });
         return this;
     };
     EventEmitter.prototype.on = function (type, listener) {
         return this.addListener(type, listener);
     };
+    EventEmitter.prototype.once = function (type, listener) {
+        var id = uid(this);
+        if (!EventEmitter._eventCache[id]) {
+            EventEmitter._eventCache[id] = {};
+        }
+        if (!EventEmitter._eventCache[id][type]) {
+            EventEmitter._eventCache[id][type] = [];
+        }
+        var events = EventEmitter._eventCache[id][type];
+        if (events.some(function (ev) { return ev.listener === listener && ev.once; })) {
+            return this;
+        }
+        events.push({ listener: listener, once: true });
+        return this;
+    };
     EventEmitter.prototype.removeListener = function (type, listener) {
-        var cache = eventCache[uid(this)];
+        var cache = EventEmitter._eventCache[uid(this)];
         if (cache && cache[type]) {
-            removeArrayItem(cache[type], listener);
-            if (!cache[type].length) {
+            var events_1 = cache[type];
+            events_1.slice().forEach(function (ev, index) {
+                if (ev.listener === listener) {
+                    removeArrayItem(events_1, ev);
+                }
+            });
+            if (!events_1.length) {
                 delete cache[type];
             }
         }
@@ -995,7 +1017,7 @@ var EventEmitter = (function () {
     };
     EventEmitter.prototype.removeAllListeners = function (type) {
         var id = uid(this);
-        var cache = eventCache[id];
+        var cache = EventEmitter._eventCache[id];
         if (cache) {
             if (type == null) {
                 EventEmitter[id] = null;
@@ -1013,16 +1035,21 @@ var EventEmitter = (function () {
             args[_i - 1] = arguments[_i];
         }
         var id = uid(this);
-        var cache = eventCache[id];
+        var cache = EventEmitter._eventCache[id];
         if (cache && cache[type]) {
-            cache[type].slice().forEach(function (listener) {
-                listener.apply(_this, args);
+            var events_2 = cache[type];
+            events_2.slice().forEach(function (ev) {
+                ev.listener.apply(_this, args);
+                if (ev.once) {
+                    removeArrayItem(events_2, ev);
+                }
             });
         }
         return this;
     };
     return EventEmitter;
 }());
+EventEmitter._eventCache = {};
 
 var instance;
 var ReleasePool = (function () {
@@ -1068,7 +1095,7 @@ var RAD_PER_DEG = Math.PI / 180;
 })(exports.AlignType || (exports.AlignType = {}));
 var Sprite = (function (_super) {
     __extends(Sprite, _super);
-    function Sprite(attrs) {
+    function Sprite(props) {
         var _this = _super.call(this) || this;
         _this._width = 0;
         _this._height = 0;
@@ -1094,9 +1121,8 @@ var Sprite = (function (_super) {
         _this.clipOverflow = false;
         _this.touchEnabled = true;
         _this.mouseEnabled = true;
-        _this.keyboardEnabled = true;
         _this.id = uid(_this);
-        _this._init(attrs);
+        _this._init(props);
         return _this;
     }
     Sprite.prototype._init = function (attrs) {
@@ -1115,8 +1141,8 @@ var Sprite = (function (_super) {
             }
             this._width = value;
             this._originPixelX = this._width * this._originX;
-            this.adjustAlignX();
-            this.children && this.children.forEach(function (sprite) { return sprite.adjustAlignX(); });
+            this._adjustAlignX();
+            this._reLayoutChildrenOnWidthChanged();
         },
         enumerable: true,
         configurable: true
@@ -1131,8 +1157,8 @@ var Sprite = (function (_super) {
             }
             this._height = value;
             this._originPixelY = this._height * this._originY;
-            this.adjustAlignY();
-            this.children && this.children.forEach(function (sprite) { return sprite.adjustAlignY(); });
+            this._adjustAlignY();
+            this._reLayoutChildrenOnHeightChanged();
         },
         enumerable: true,
         configurable: true
@@ -1147,7 +1173,7 @@ var Sprite = (function (_super) {
             }
             this._originX = value;
             this._originPixelX = this._originX * this._width;
-            this.adjustAlignX();
+            this._adjustAlignX();
         },
         enumerable: true,
         configurable: true
@@ -1162,7 +1188,90 @@ var Sprite = (function (_super) {
             }
             this._originY = value;
             this._originPixelY = this._originY * this._height;
-            this.adjustAlignY();
+            this._adjustAlignY();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "top", {
+        get: function () {
+            return this._top;
+        },
+        set: function (top) {
+            this.autoResize = false;
+            this._top = top;
+            this._resizeHeight();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "right", {
+        get: function () {
+            return this._right;
+        },
+        set: function (right) {
+            this.autoResize = false;
+            this._right = right;
+            this._resizeWidth();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "bottom", {
+        get: function () {
+            return this._bottom;
+        },
+        set: function (bottom) {
+            this.autoResize = false;
+            this._bottom = bottom;
+            this._resizeHeight();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "left", {
+        get: function () {
+            return this._left;
+        },
+        set: function (left) {
+            this.autoResize = false;
+            this._left = left;
+            this._resizeWidth();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "percentWidth", {
+        get: function () {
+            return this._percentWidth;
+        },
+        set: function (percentWidth) {
+            this.autoResize = false;
+            this._percentWidth = percentWidth;
+            this._resizeWidth();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "percentHeight", {
+        get: function () {
+            return this._percentHeight;
+        },
+        set: function (percentHeight) {
+            this.autoResize = false;
+            this._percentHeight = percentHeight;
+            this._resizeHeight();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "grid", {
+        get: function () {
+            return this._grid;
+        },
+        set: function (grid) {
+            this._grid = grid;
+            this.autoResize = false;
         },
         enumerable: true,
         configurable: true
@@ -1231,9 +1340,26 @@ var Sprite = (function (_super) {
             }
             this._parent = sprite;
             if (sprite) {
-                this.adjustAlignX();
-                this.adjustAlignY();
+                this._adjustAlignX();
+                this._adjustAlignY();
             }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "stage", {
+        get: function () {
+            return this._stage;
+        },
+        set: function (stage) {
+            this._stage = stage;
+            if (stage == null) {
+                this.emit(UIEvent.REMOVED_FROM_STAGE);
+            }
+            else {
+                this.emit(UIEvent.ADD_TO_STAGE);
+            }
+            this.children && this.children.forEach(function (child) { return child.stage = stage; });
         },
         enumerable: true,
         configurable: true
@@ -1247,7 +1373,7 @@ var Sprite = (function (_super) {
                 return;
             }
             this._alignX = value;
-            this.adjustAlignX();
+            this._adjustAlignX();
         },
         enumerable: true,
         configurable: true
@@ -1261,12 +1387,13 @@ var Sprite = (function (_super) {
                 return;
             }
             this._alignY = value;
-            this.adjustAlignY();
+            this._adjustAlignY();
         },
         enumerable: true,
         configurable: true
     });
     Sprite.prototype._update = function (deltaTime) {
+        this.emit(UIEvent.FRAME, deltaTime);
         this.update(deltaTime);
         if (this.children && this.children.length) {
             this.children.slice().forEach(function (child) {
@@ -1306,10 +1433,54 @@ var Sprite = (function (_super) {
         if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
             this.draw(context);
         }
-        this._visitAllChildren(context);
+        this._visitChildren(context);
         context.restore();
     };
-    Sprite.prototype.adjustAlignX = function () {
+    Sprite.prototype._reLayoutChildrenOnWidthChanged = function () {
+        if (!this.children || !this.children.length) {
+            return;
+        }
+        this.children.forEach(function (child) {
+            child._resizeWidth();
+            child._adjustAlignX();
+        });
+    };
+    Sprite.prototype._reLayoutChildrenOnHeightChanged = function () {
+        if (!this.children || !this.children.length) {
+            return;
+        }
+        this.children.forEach(function (child) {
+            child._resizeHeight();
+            child._adjustAlignY();
+        });
+    };
+    Sprite.prototype._resizeWidth = function () {
+        if (this.parent == null) {
+            return;
+        }
+        var _a = this, parent = _a.parent, percentWidth = _a.percentWidth, right = _a.right, left = _a.left;
+        if (left != null && right != null) {
+            this.width = parent.width - left - right;
+            this.x = left + this._originPixelX;
+        }
+        else if (percentWidth != null) {
+            this.width = parent.width * percentWidth;
+        }
+    };
+    Sprite.prototype._resizeHeight = function () {
+        if (this.parent == null) {
+            return;
+        }
+        var _a = this, parent = _a.parent, percentHeight = _a.percentHeight, top = _a.top, bottom = _a.bottom;
+        if (top != null && bottom != null) {
+            this.height = parent.height - top - bottom;
+            this.y = top + this._originPixelY;
+        }
+        else if (percentHeight != null) {
+            this.height = parent.height * percentHeight;
+        }
+    };
+    Sprite.prototype._adjustAlignX = function () {
         if (!this.parent || this._alignX == null) {
             return;
         }
@@ -1330,7 +1501,7 @@ var Sprite = (function (_super) {
             this.x = x;
         }
     };
-    Sprite.prototype.adjustAlignY = function () {
+    Sprite.prototype._adjustAlignY = function () {
         if (!this.parent || this._alignY == null) {
             return;
         }
@@ -1351,7 +1522,7 @@ var Sprite = (function (_super) {
             this.y = y;
         }
     };
-    Sprite.prototype._visitAllChildren = function (context) {
+    Sprite.prototype._visitChildren = function (context) {
         if (!this.children || !this.children.length) {
             return;
         }
@@ -1411,12 +1582,38 @@ var Sprite = (function (_super) {
         this._drawBgColor(context);
         this._drawBorder(context);
         var texture = this._texture;
-        if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
-            var sx = this.sourceX;
-            var sy = this.sourceY;
-            var sw = this.sourceWidth == null ? texture.width : this.sourceWidth;
-            var sh = this.sourceHeight == null ? texture.height : this.sourceHeight;
-            context.drawImage(texture.source, sx, sy, sw, sh, -this._originPixelX, -this._originPixelY, this.width, this.height);
+        if (!texture || !texture.ready || texture.width === 0 || texture.height === 0) {
+            return;
+        }
+        var sx = this.sourceX;
+        var sy = this.sourceY;
+        var sw = this.sourceWidth == null ? texture.width : this.sourceWidth;
+        var sh = this.sourceHeight == null ? texture.height : this.sourceHeight;
+        var w = this.width;
+        var h = this.height;
+        var ox = this._originPixelX;
+        var oy = this._originPixelY;
+        var grid = this.grid;
+        if (!Array.isArray(grid)) {
+            context.drawImage(texture.source, sx, sy, sw, sh, -ox, -oy, w, h);
+        }
+        else {
+            // this.grid: [top, right, bottom, left]
+            var top = grid[0], right = grid[1], bottom = grid[2], left = grid[3];
+            var grids = [
+                { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top },
+                { x: left, y: 0, w: w - left - right, h: top, sx: left, sy: 0, sw: sw - left - right, sh: top },
+                { x: w - right, y: 0, w: right, h: top, sx: sw - right, sy: 0, sw: right, sh: top },
+                { x: 0, y: top, w: left, h: h - top - bottom, sx: 0, sy: top, sw: left, sh: sh - top - bottom },
+                { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: left, sy: top, sw: sw - left - right, sh: sh - top - bottom },
+                { x: w - right, y: top, w: right, h: h - top - bottom, sx: sw - right, sy: top, sw: right, sh: sh - top - bottom },
+                { x: 0, y: h - bottom, w: left, h: bottom, sx: 0, sy: sh - bottom, sw: left, sh: bottom },
+                { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: left, sy: sh - bottom, sw: sw - left - right, sh: bottom },
+                { x: w - right, y: h - bottom, w: right, h: bottom, sx: sw - right, sy: sh - bottom, sw: right, sh: bottom },
+            ];
+            grids.forEach(function (g) {
+                context.drawImage(texture.source, g.sx, g.sy, g.sw, g.sh, g.x - ox, g.y - oy, g.w, g.h);
+            });
         }
     };
     Sprite.prototype.addChild = function (target, position) {
@@ -1427,7 +1624,7 @@ var Sprite = (function (_super) {
             this.children = [];
         }
         var children = this.children;
-        if (children.indexOf(target) === -1) {
+        if (children.indexOf(target) < 0) {
             if (position > -1 && position < children.length) {
                 children.splice(position, 0, target);
             }
@@ -1435,6 +1632,11 @@ var Sprite = (function (_super) {
                 children.push(target);
             }
             target.parent = this;
+            if (this.stage) {
+                target.stage = this.stage;
+            }
+            target._resizeWidth();
+            target._resizeHeight();
         }
     };
     Sprite.prototype.removeChild = function (target) {
@@ -1445,6 +1647,7 @@ var Sprite = (function (_super) {
         if (index > -1) {
             this.children.splice(index, 1);
             target.parent = null;
+            target.stage = null;
         }
     };
     Sprite.prototype.removeAllChildren = function (recusive) {
@@ -1460,6 +1663,12 @@ var Sprite = (function (_super) {
             this.removeChild(sprite);
         }
         this.children = null;
+    };
+    Sprite.prototype.contains = function (target) {
+        if (!this.children || !this.children.length) {
+            return false;
+        }
+        return this.children.indexOf(target) > -1 || this.children.some(function (c) { return c.contains(target); });
     };
     Sprite.prototype.release = function (recusive) {
         Action.stop(this);
@@ -1481,17 +1690,7 @@ var Sprite = (function (_super) {
     return Sprite;
 }(EventEmitter));
 
-var keyDown = "keydown";
-var keyUp = "keyup";
-var touchBegin = "touchstart";
-var touchMoved = "touchmove";
-var touchEnded = "touchend";
-var mouseBegin = "mousedown";
-var mouseMoved = "mousemove";
-var mouseEnded = "mouseup";
 var onClick = "onClick";
-var onKeyUp = "onKeyUp";
-var onKeyDown = "onKeyDown";
 var onTouchBegin = "onTouchBegin";
 var onTouchMoved = "onTouchMoved";
 var onTouchEnded = "onTouchEnded";
@@ -1508,11 +1707,11 @@ var UIEvent = (function () {
                 return;
             }
             var helpers = _this._transformTouches(event.changedTouches);
-            _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin);
+            _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin, UIEvent.TOUCH_BEGIN);
             helpers.forEach(function (touch) {
                 touch.beginTarget = touch.target;
             });
-            stage.sprite.emit(UIEvent.Event.touchBegin, helpers);
+            stage.emit(UIEvent.TOUCH_BEGIN, helpers, event);
             event.preventDefault();
         };
         this._touchMovedHandler = function (event) {
@@ -1521,28 +1720,21 @@ var UIEvent = (function () {
                 return;
             }
             var helpers = _this._transformTouches(event.changedTouches);
-            _this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved);
-            stage.sprite.emit(UIEvent.Event.touchMoved, helpers);
+            _this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved, UIEvent.TOUCH_MOVED);
+            stage.emit(UIEvent.TOUCH_MOVED, helpers, event);
             event.preventDefault();
         };
         this._touchEndedHandler = function (event) {
             var stage = _this.stage;
             if (stage.isRunning && stage.touchEnabled) {
                 var helpers = _this._transformTouches(event.changedTouches, true);
-                _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, true);
+                _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, UIEvent.TOUCH_ENDED, true);
                 helpers.forEach(function (helper) {
-                    // target = helper.target;
-                    // if (hasImplements(target, ontouchended)) {
-                    //     target[ontouchended](helper, helpers, event);
-                    // }
-                    // if (hasImplements(target, onclick) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
-                    //     target[onclick](helper, event);
-                    // }
                     helper.target = null;
                     helper.beginTarget = null;
                     _this._touchHelperMap[helper.identifier] = null;
                 });
-                stage.sprite.emit(UIEvent.Event.touchEnded, helpers);
+                stage.emit(UIEvent.TOUCH_ENDED, helpers, event);
                 helpers = null;
             }
         };
@@ -1551,20 +1743,23 @@ var UIEvent = (function () {
             if (!stage.isRunning || !stage.mouseEnabled) {
                 return;
             }
-            var location = _this.transformLocation(event);
+            var location = _this._transformLocation(event);
             var helper = {
                 beginX: location.x,
                 beginY: location.y,
                 stageX: location.x,
                 stageY: location.y,
-                cancelBubble: false
+                cancelBubble: false,
+                stopPropagation: function () {
+                    this.cancelBubble = true;
+                }
             };
-            _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseBegin);
+            _this._dispatchMouse(stage.sprite, 0, 0, helper, event, UIEvent.MOUSE_BEGIN, onMouseBegin);
             if (helper.target) {
                 helper.beginTarget = helper.target;
                 _this._mouseBeginHelper = helper;
             }
-            stage.sprite.emit(UIEvent.Event.mouseBegin, helper);
+            stage.emit(UIEvent.MOUSE_BEGIN, helper, event);
             event.preventDefault();
         };
         this._mouseMovedHandler = function (event) {
@@ -1572,14 +1767,15 @@ var UIEvent = (function () {
             if (!stage.isRunning || !stage.mouseEnabled) {
                 return;
             }
-            var location = _this.transformLocation(event);
+            var location = _this._transformLocation(event);
             var mouseBeginHelper = _this._mouseBeginHelper;
             if (mouseBeginHelper) {
                 mouseBeginHelper.stageX = location.x;
                 mouseBeginHelper.stageY = location.y;
                 mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
-                _this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved);
-                stage.sprite.emit(UIEvent.Event.mouseMoved, mouseBeginHelper);
+                mouseBeginHelper.cancelBubble = false;
+                _this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, UIEvent.MOUSE_MOVED, onMouseMoved);
+                stage.emit(UIEvent.MOUSE_MOVED, mouseBeginHelper, event);
             }
             else {
                 var mouseMovedHelper = _this._mouseMovedHelper = {
@@ -1587,49 +1783,30 @@ var UIEvent = (function () {
                     beginY: null,
                     stageX: location.x,
                     stageY: location.y,
-                    cancelBubble: false
+                    cancelBubble: false,
+                    stopPropagation: function () {
+                        this.cancelBubble = true;
+                    }
                 };
-                _this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved);
-                stage.sprite.emit(UIEvent.Event.mouseMoved, mouseMovedHelper);
+                _this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, UIEvent.MOUSE_MOVED, onMouseMoved);
+                stage.emit(UIEvent.MOUSE_MOVED, mouseMovedHelper, event);
             }
             event.preventDefault();
         };
         this._mouseEndedHandler = function (event) {
             var stage = _this.stage;
             if (stage.isRunning && stage.mouseEnabled) {
-                var location = _this.transformLocation(event);
+                var location = _this._transformLocation(event);
                 var helper = _this._mouseBeginHelper || _this._mouseMovedHelper;
                 var target;
                 helper.stageX = location.x;
                 helper.stageY = location.y;
                 target = helper.target;
-                // if (hasImplements(target, ON_MOUSE_ENDED)) {
-                //     target[ON_MOUSE_ENDED](helper, event);
-                // }
                 var triggerClick = !helper._moved || isMovedSmallRange(helper);
-                _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, triggerClick);
-                stage.sprite.emit(UIEvent.Event.mouseEnded, helper);
-                // if (hasImplements(target, ON_CLICK) && target === helper.beginTarget && (!helper._moved || isMovedSmallRange(helper))) {
-                //     target[ON_CLICK](helper, event);
-                // }
+                _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, UIEvent.MOUSE_ENDED, triggerClick);
+                stage.emit(UIEvent.MOUSE_ENDED, helper, event);
             }
             _this._mouseBeginHelper = helper.target = helper.beginTarget = null;
-        };
-        this._keyDownHandler = function (event) {
-            var stage = _this.stage;
-            if (!stage.isRunning || !stage.keyboardEnabled) {
-                return;
-            }
-            _this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyDown);
-            stage.sprite.emit(UIEvent.Event.keyDown, event);
-        };
-        this._keyUpHandler = function (event) {
-            var stage = _this.stage;
-            if (!stage.isRunning || !stage.keyboardEnabled) {
-                return;
-            }
-            _this._dispatchKeyboard(stage.sprite, event.keyCode, event, onKeyUp);
-            stage.sprite.emit(UIEvent.Event.keyUp, event);
         };
         this.stage = stage;
         this.element = stage.canvas;
@@ -1639,20 +1816,14 @@ var UIEvent = (function () {
             return;
         }
         var _a = this, stage = _a.stage, element = _a.element;
-        if (stage.touchEnabled && UIEvent.supportTouch) {
-            element.addEventListener(touchBegin, this._touchBeginHandler, false);
-            element.addEventListener(touchMoved, this._touchMovedHandler, false);
-            element.addEventListener(touchEnded, this._touchEndedHandler, false);
+        if (UIEvent.supportTouch) {
+            element.addEventListener(UIEvent.TOUCH_BEGIN, this._touchBeginHandler, false);
+            element.addEventListener(UIEvent.TOUCH_MOVED, this._touchMovedHandler, false);
+            element.addEventListener(UIEvent.TOUCH_ENDED, this._touchEndedHandler, false);
         }
-        if (stage.mouseEnabled) {
-            element.addEventListener(mouseBegin, this._mouseBeginHandler, false);
-            element.addEventListener(mouseMoved, this._mouseMovedHandler, false);
-            element.addEventListener(mouseEnded, this._mouseEndedHandler, false);
-        }
-        if (stage.keyboardEnabled) {
-            document.addEventListener(keyDown, this._keyDownHandler, false);
-            document.addEventListener(keyUp, this._keyUpHandler, false);
-        }
+        element.addEventListener(UIEvent.MOUSE_BEGIN, this._mouseBeginHandler, false);
+        element.addEventListener(UIEvent.MOUSE_MOVED, this._mouseMovedHandler, false);
+        element.addEventListener(UIEvent.MOUSE_ENDED, this._mouseEndedHandler, false);
         this._touchHelperMap = {};
         this._registered = true;
     };
@@ -1661,14 +1832,12 @@ var UIEvent = (function () {
             return;
         }
         var element = this.element;
-        element.removeEventListener(touchBegin, this._touchBeginHandler, false);
-        element.removeEventListener(touchMoved, this._touchMovedHandler, false);
-        element.removeEventListener(touchEnded, this._touchEndedHandler, false);
-        element.removeEventListener(mouseBegin, this._mouseBeginHandler, false);
-        element.removeEventListener(mouseMoved, this._mouseMovedHandler, false);
-        element.removeEventListener(mouseEnded, this._mouseEndedHandler, false);
-        document.removeEventListener(keyDown, this._keyDownHandler, false);
-        document.removeEventListener(keyUp, this._keyUpHandler, false);
+        element.removeEventListener(UIEvent.TOUCH_BEGIN, this._touchBeginHandler, false);
+        element.removeEventListener(UIEvent.TOUCH_MOVED, this._touchMovedHandler, false);
+        element.removeEventListener(UIEvent.TOUCH_ENDED, this._touchEndedHandler, false);
+        element.removeEventListener(UIEvent.MOUSE_BEGIN, this._mouseBeginHandler, false);
+        element.removeEventListener(UIEvent.MOUSE_MOVED, this._mouseMovedHandler, false);
+        element.removeEventListener(UIEvent.MOUSE_ENDED, this._mouseEndedHandler, false);
         this._mouseBeginHelper = this._mouseMovedHelper = null;
         this._registered = false;
     };
@@ -1676,30 +1845,31 @@ var UIEvent = (function () {
         this.unregister();
         this._mouseBeginHandler = this._mouseMovedHandler = this._mouseEndedHandler = null;
         this._touchBeginHandler = this._touchMovedHandler = this._touchEndedHandler = null;
-        this._keyUpHandler = this._keyDownHandler = null;
         this._touchHelperMap = null;
         this.element = this.stage = null;
     };
-    UIEvent.prototype.transformLocation = function (event) {
+    UIEvent.prototype._transformLocation = function (event) {
         var clientRect = this.element.getBoundingClientRect();
-        var scale = this.stage.scale;
+        var scaleX = this.stage.scaleX;
+        var scaleY = this.stage.scaleY;
         var isRotated = this.stage.isPortrait && this.stage.orientation === exports.Orientation.LANDSCAPE;
         var x;
         var y;
         if (isRotated) {
-            x = (event.clientY - clientRect.top) / scale;
-            y = this.stage.height - (event.clientX - clientRect.left) / scale;
+            x = (event.clientY - clientRect.top) / scaleX;
+            y = this.stage.height - (event.clientX - clientRect.left) / scaleY;
         }
         else {
-            x = (event.clientX - clientRect.left) / scale;
-            y = (event.clientY - clientRect.top) / scale;
+            x = (event.clientX - clientRect.left) / scaleX;
+            y = (event.clientY - clientRect.top) / scaleY;
         }
         return { x: x, y: y };
     };
     UIEvent.prototype._transformTouches = function (touches, justGet) {
         var helpers = [];
         var clientRect = this.element.getBoundingClientRect();
-        var scale = this.stage.scale;
+        var scaleX = this.stage.scaleX;
+        var scaleY = this.stage.scaleY;
         var isRotated = this.stage.isPortrait && this.stage.orientation === exports.Orientation.LANDSCAPE;
         var touchHelperMap = this._touchHelperMap;
         for (var i = 0, x, y, id, helper, touch; touch = touches[i]; i++) {
@@ -1707,12 +1877,12 @@ var UIEvent = (function () {
             var x;
             var y;
             if (isRotated) {
-                x = (touch.clientY - clientRect.top) / scale;
-                y = this.stage.height - (touch.clientX - clientRect.left) / scale;
+                x = (touch.clientY - clientRect.top) / scaleX;
+                y = this.stage.height - (touch.clientX - clientRect.left) / scaleY;
             }
             else {
-                x = (touch.clientX - clientRect.left) / scale;
-                y = (touch.clientY - clientRect.top) / scale;
+                x = (touch.clientX - clientRect.left) / scaleX;
+                y = (touch.clientY - clientRect.top) / scaleY;
             }
             helper = touchHelperMap[id];
             if (!helper) {
@@ -1720,7 +1890,10 @@ var UIEvent = (function () {
                     identifier: id,
                     beginX: x,
                     beginY: y,
-                    cancelBubble: false
+                    cancelBubble: false,
+                    stopPropagation: function () {
+                        this.cancelBubble = true;
+                    }
                 };
             }
             else if (!justGet) {
@@ -1732,8 +1905,8 @@ var UIEvent = (function () {
         }
         return helpers;
     };
-    UIEvent.prototype._dispatchTouch = function (sprite, offsetX, offsetY, helpers, event, methodName, needTriggerClick) {
-        if (sprite.touchEnabled === false || !sprite.visible) {
+    UIEvent.prototype._dispatchTouch = function (sprite, offsetX, offsetY, helpers, event, methodName, eventName, needTriggerClick) {
+        if (!sprite.touchEnabled || !sprite.visible) {
             return;
         }
         offsetX += sprite.x - sprite._originPixelX;
@@ -1746,7 +1919,7 @@ var UIEvent = (function () {
         if (children && children.length) {
             var index = children.length;
             while (--index >= 0) {
-                result = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, needTriggerClick);
+                result = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, eventName, needTriggerClick);
                 if (result && result.length) {
                     triggerreds.push.apply(triggerreds, result);
                     // Remove triggerred touch helper, it won't pass to other child sprites
@@ -1789,22 +1962,22 @@ var UIEvent = (function () {
             }
         }
         if (hits.length) {
-            var hasMethod = hasImplements(sprite, methodName);
-            var hasClickHandler = hasImplements(sprite, onClick);
-            if (hasMethod) {
-                sprite[methodName](hits, event);
-                triggerreds.push.apply(triggerreds, hits.slice(hits.length - count, count));
-            }
+            // var hasMethod: boolean = hasImplements(sprite, methodName);
+            // var hasClickHandler: boolean = hasImplements(sprite, onClick);
+            triggerreds.push.apply(triggerreds, hits.slice(hits.length - count, count));
+            sprite.emit(eventName, hits, event);
+            sprite[methodName] && sprite[methodName](hits, event);
             // Click event would just trigger by only a touch
-            if (hasClickHandler && needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
-                sprite[onClick](hits[0], event);
+            if (needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
+                sprite.emit(UIEvent.CLICK, hits[0], event);
+                sprite[onClick] && sprite[onClick](hits[0], event);
                 addArrayItem(triggerreds, hits[0]);
             }
         }
         return triggerreds;
     };
-    UIEvent.prototype._dispatchMouse = function (sprite, offsetX, offsetY, helper, event, methodName, triggerClick) {
-        if (sprite.mouseEnabled === false || !sprite.visible) {
+    UIEvent.prototype._dispatchMouse = function (sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick) {
+        if (!sprite.mouseEnabled || !sprite.visible) {
             return false;
         }
         offsetX += sprite.x - sprite._originPixelX;
@@ -1814,7 +1987,7 @@ var UIEvent = (function () {
         if (children && children.length) {
             var index = children.length;
             while (--index >= 0) {
-                triggerred = this._dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, triggerClick);
+                triggerred = this._dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick);
                 if (triggerred) {
                     break;
                 }
@@ -1840,49 +2013,33 @@ var UIEvent = (function () {
             return isRectContainPoint(rect, helper);
         };
         if (triggerred || detect(helper)) {
-            var hasMethod = hasImplements(sprite, methodName);
-            var hasClickHandler = hasImplements(sprite, onClick);
             if (!helper.target) {
                 helper.target = sprite;
             }
             helper.localX = helper.stageX - rect.x;
             helper.localY = helper.stageY - rect.y;
-            if (hasMethod) {
-                sprite[methodName](helper, event);
-            }
-            if (hasClickHandler && triggerClick) {
-                sprite[onClick](helper, event);
+            sprite.emit(eventName, helper, event);
+            sprite[methodName] && sprite[methodName](helper, event);
+            if (needTriggerClick) {
+                sprite.emit(UIEvent.CLICK, helper, event);
+                sprite[onClick] && sprite[onClick](helper, event);
             }
             return true;
         }
     };
-    UIEvent.prototype._dispatchKeyboard = function (sprite, keyCode, event, methodName) {
-        if (sprite.keyboardEnabled === false) {
-            return;
-        }
-        if (hasImplements(sprite, methodName)) {
-            sprite[methodName](keyCode, event);
-        }
-        var i = 0, children = sprite.children, child;
-        if (children && children.length) {
-            for (; child = children[i]; i++) {
-                this._dispatchKeyboard(child, keyCode, event, methodName);
-            }
-        }
-    };
     return UIEvent;
 }());
-UIEvent.Event = {
-    touchBegin: touchBegin,
-    touchMoved: touchMoved,
-    touchEnded: touchEnded,
-    keyDown: keyDown,
-    keyUp: keyUp,
-    mouseBegin: mouseBegin,
-    mouseMoved: mouseMoved,
-    mouseEnded: mouseEnded,
-};
 UIEvent.supportTouch = "ontouchend" in window;
+UIEvent.TOUCH_BEGIN = "touchstart";
+UIEvent.TOUCH_MOVED = "touchmove";
+UIEvent.TOUCH_ENDED = "touchend";
+UIEvent.MOUSE_BEGIN = "mousedown";
+UIEvent.MOUSE_MOVED = "mousemove";
+UIEvent.MOUSE_ENDED = "mouseup";
+UIEvent.CLICK = "click";
+UIEvent.ADD_TO_STAGE = "addtostage";
+UIEvent.REMOVED_FROM_STAGE = "removedfromstage";
+UIEvent.FRAME = "frame";
 function isRectContainPoint(rect, p) {
     return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
         rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
@@ -1900,22 +2057,21 @@ function isMovedSmallRange(e) {
     var y = Math.abs(e.beginY - e.stageY);
     return x <= 5 && y <= 5;
 }
-function hasImplements(sprite, methodName) {
-    return sprite[methodName] !== Sprite.prototype[methodName] && typeof sprite[methodName] === 'function';
-}
 
 (function (ScaleMode) {
     ScaleMode[ScaleMode["SHOW_ALL"] = 0] = "SHOW_ALL";
     ScaleMode[ScaleMode["NO_BORDER"] = 1] = "NO_BORDER";
     ScaleMode[ScaleMode["FIX_WIDTH"] = 2] = "FIX_WIDTH";
     ScaleMode[ScaleMode["FIX_HEIGHT"] = 3] = "FIX_HEIGHT";
+    ScaleMode[ScaleMode["EXACTFIT"] = 4] = "EXACTFIT";
 })(exports.ScaleMode || (exports.ScaleMode = {}));
 
 (function (Orientation) {
     Orientation[Orientation["LANDSCAPE"] = 0] = "LANDSCAPE";
     Orientation[Orientation["PORTRAIT"] = 1] = "PORTRAIT";
 })(exports.Orientation || (exports.Orientation = {}));
-var Stage = (function () {
+var Stage = (function (_super) {
+    __extends(Stage, _super);
     /**
      * @param  canvas     Canvas element
      * @param  width      Resolution design width
@@ -1924,25 +2080,25 @@ var Stage = (function () {
      */
     function Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation) {
         if (orientation === void 0) { orientation = exports.Orientation.PORTRAIT; }
-        var _this = this;
-        this._fps = 30;
-        this._frameRate = 1000 / this._fps;
-        this._width = 0;
-        this._height = 0;
-        this.adjustCanvasSize = function () {
-            var canvasElement = _this._canvasElement;
+        var _this = _super.call(this) || this;
+        _this._fps = 30;
+        _this._frameRate = 1000 / _this._fps;
+        _this._width = 0;
+        _this._height = 0;
+        _this.adjustCanvasSize = function () {
+            var canvas = _this._canvas;
             var stageWidth = _this._width;
             var stageHeight = _this._height;
-            var currentScaleMode = _this._scaleMode;
+            var scaleMode = _this._scaleMode;
             var visibleRect = _this._visibleRect;
             var orientation = _this._orientation;
-            if (!canvasElement || !canvasElement.parentNode) {
+            if (!canvas || !canvas.parentNode) {
                 return;
             }
-            var style = canvasElement.style;
+            var style = canvas.style;
             var container = {
-                width: canvasElement.parentElement.offsetWidth,
-                height: canvasElement.parentElement.offsetHeight
+                width: canvas.parentElement.offsetWidth,
+                height: canvas.parentElement.offsetHeight
             };
             var isPortrait = container.width < container.height;
             if (orientation === exports.Orientation.LANDSCAPE && isPortrait) {
@@ -1950,47 +2106,54 @@ var Stage = (function () {
                 container.height = container.width;
                 container.width = tmpHeight;
             }
-            var scaleX = container.width / stageWidth;
-            var scaleY = container.height / stageHeight;
+            var sx = container.width / stageWidth;
+            var sy = container.height / stageHeight;
             var deltaWidth = 0;
             var deltaHeight = 0;
-            var scale;
+            var scaleX;
+            var scaleY;
             var width;
             var height;
-            switch (currentScaleMode) {
+            switch (scaleMode) {
                 case exports.ScaleMode.SHOW_ALL:
-                    if (scaleX < scaleY) {
-                        scale = scaleX;
+                    if (sx < sy) {
+                        scaleX = scaleY = sx;
                         width = container.width;
-                        height = scale * stageHeight;
+                        height = scaleX * stageHeight;
                     }
                     else {
-                        scale = scaleY;
-                        width = scale * stageWidth;
+                        scaleX = scaleY = sy;
+                        width = scaleX * stageWidth;
                         height = container.height;
                     }
                     break;
                 case exports.ScaleMode.NO_BORDER:
-                    scale = scaleX > scaleY ? scaleX : scaleY;
-                    width = stageWidth * scale;
-                    height = stageHeight * scale;
-                    deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
-                    deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
+                    scaleX = scaleY = sx > sy ? sx : sy;
+                    width = stageWidth * scaleX;
+                    height = stageHeight * scaleX;
+                    deltaWidth = (stageWidth - container.width / scaleX) * 0.5 | 0;
+                    deltaHeight = (stageHeight - container.height / scaleX) * 0.5 | 0;
                     break;
                 case exports.ScaleMode.FIX_WIDTH:
-                    scale = scaleX;
+                    scaleX = scaleY = sx;
                     width = container.width;
-                    height = container.height * scale;
-                    deltaHeight = (stageHeight - container.height / scale) * 0.5 | 0;
+                    height = container.height * scaleX;
+                    deltaHeight = (stageHeight - container.height / scaleX) * 0.5 | 0;
                     break;
                 case exports.ScaleMode.FIX_HEIGHT:
-                    scale = scaleY;
-                    width = scale * container.width;
+                    scaleX = scaleY = sy;
+                    width = scaleX * container.width;
                     height = container.height;
-                    deltaWidth = (stageWidth - container.width / scale) * 0.5 | 0;
+                    deltaWidth = (stageWidth - container.width / scaleX) * 0.5 | 0;
+                    break;
+                case exports.ScaleMode.EXACTFIT:
+                    scaleX = sx;
+                    scaleY = sy;
+                    width = container.width;
+                    height = container.height;
                     break;
                 default:
-                    throw new Error("Unknow stage scale mode \"" + currentScaleMode + "\"");
+                    throw new Error("Unknow stage scale mode \"" + scaleMode + "\"");
             }
             style.width = width + 'px';
             style.height = height + 'px';
@@ -2010,29 +2173,62 @@ var Stage = (function () {
                 style.top = ((container.height - height) * 0.5) + 'px';
                 style.left = ((container.width - width) * 0.5) + 'px';
             }
-            _this._canvasScale = scale;
+            _this._scaleX = scaleX;
+            _this._scaleY = scaleY;
             _this._isPortrait = isPortrait;
         };
-        this._rootSprite = new Sprite({
+        _this._sprite = new Sprite({
             x: width * 0.5,
             y: height * 0.5,
             width: width,
             height: height
         });
-        this._scaleMode = scaleMode;
-        this._canvasElement = canvas;
-        this._renderContext = canvas.getContext('2d');
-        this._bufferCanvas = document.createElement("canvas");
-        this._bufferContext = this._bufferCanvas.getContext("2d");
-        this._width = canvas.width = this._bufferCanvas.width = width;
-        this._height = canvas.height = this._bufferCanvas.height = height;
-        this._canvasScale = 1;
-        this._isPortrait = false;
-        this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
-        this.orientation = orientation;
-        this.autoAdjustCanvasSize = autoAdjustCanvasSize;
-        this._uiEvent = new UIEvent(this);
+        _this._sprite.stage = _this;
+        _this._scaleMode = scaleMode;
+        _this._canvas = canvas;
+        _this._renderContext = canvas.getContext('2d');
+        _this._bufferCanvas = document.createElement("canvas");
+        _this._bufferContext = _this._bufferCanvas.getContext("2d");
+        _this._width = canvas.width = _this._bufferCanvas.width = width;
+        _this._height = canvas.height = _this._bufferCanvas.height = height;
+        _this._scaleX = _this._scaleY = 1;
+        _this._isPortrait = false;
+        _this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
+        _this.orientation = orientation;
+        _this.autoAdjustCanvasSize = autoAdjustCanvasSize;
+        _this._uiEvent = new UIEvent(_this);
+        return _this;
     }
+    Object.defineProperty(Stage.prototype, "touchEnabled", {
+        get: function () {
+            return this._touchEnabled;
+        },
+        set: function (enabled) {
+            this._touchEnabled = enabled;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Stage.prototype, "mouseEnabled", {
+        get: function () {
+            return this._mouseEnabled;
+        },
+        set: function (enabled) {
+            this._mouseEnabled = enabled;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Stage.prototype, "keyboardEnabled", {
+        get: function () {
+            return this._keyboardEnabled;
+        },
+        set: function (enabled) {
+            this._keyboardEnabled = enabled;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Stage.prototype, "fps", {
         get: function () {
             return this._fps;
@@ -2067,7 +2263,7 @@ var Stage = (function () {
     });
     Object.defineProperty(Stage.prototype, "canvas", {
         get: function () {
-            return this._canvasElement;
+            return this._canvas;
         },
         enumerable: true,
         configurable: true
@@ -2081,7 +2277,7 @@ var Stage = (function () {
     });
     Object.defineProperty(Stage.prototype, "sprite", {
         get: function () {
-            return this._rootSprite;
+            return this._sprite;
         },
         enumerable: true,
         configurable: true
@@ -2093,9 +2289,16 @@ var Stage = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(Stage.prototype, "scale", {
+    Object.defineProperty(Stage.prototype, "scaleX", {
         get: function () {
-            return this._canvasScale;
+            return this._scaleX;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Stage.prototype, "scaleY", {
+        get: function () {
+            return this._scaleY;
         },
         enumerable: true,
         configurable: true
@@ -2152,15 +2355,15 @@ var Stage = (function () {
         configurable: true
     });
     Stage.prototype.setSize = function (width, height) {
-        this._width = this._canvasElement.width = this._bufferCanvas.width = width;
-        this._height = this._canvasElement.height = this._bufferCanvas.height = height;
+        this._width = this._canvas.width = this._bufferCanvas.width = width;
+        this._height = this._canvas.height = this._bufferCanvas.height = height;
         if (this._autoAdjustCanvasSize) {
             this.adjustCanvasSize();
         }
-        this._rootSprite.x = width * 0.5;
-        this._rootSprite.y = height * 0.5;
-        this._rootSprite.width = width;
-        this._rootSprite.height = height;
+        this._sprite.x = width * 0.5;
+        this._sprite.y = height * 0.5;
+        this._sprite.width = width;
+        this._sprite.height = height;
     };
     Stage.prototype.start = function (useExternalTimer) {
         if (this._isRunning) {
@@ -2175,7 +2378,7 @@ var Stage = (function () {
         this._isRunning = true;
     };
     Stage.prototype.step = function (deltaTime) {
-        this._rootSprite._update(deltaTime);
+        this._sprite._update(deltaTime);
     };
     Stage.prototype.stop = function (unregisterUIEvent) {
         if (!this._isRunning) {
@@ -2185,15 +2388,15 @@ var Stage = (function () {
             this._uiEvent.unregister();
         }
         this._isRunning = false;
-        clearTimeout(this._eventLoopTimerId);
+        clearTimeout(this._timerId);
     };
     Stage.prototype.render = function () {
         if (!this._isRunning) {
             return;
         }
-        var _a = this._canvasElement, width = _a.width, height = _a.height;
+        var _a = this._canvas, width = _a.width, height = _a.height;
         this._bufferContext.clearRect(0, 0, width, height);
-        this._rootSprite._visit(this._bufferContext);
+        this._sprite._visit(this._bufferContext);
         this._renderContext.clearRect(0, 0, width, height);
         this._renderContext.drawImage(this._bufferCanvas, 0, 0, width, height);
     };
@@ -2201,36 +2404,36 @@ var Stage = (function () {
      * Add sprite to the stage
      */
     Stage.prototype.addChild = function (child, position) {
-        this._rootSprite.addChild(child, position);
+        this._sprite.addChild(child, position);
     };
     /**
      * Remove sprite from the stage
      */
     Stage.prototype.removeChild = function (child) {
-        this._rootSprite.removeChild(child);
+        this._sprite.removeChild(child);
     };
     /**
      * Remove all sprites from the stage
      * @param  recusive  Recusize remove all the children
      */
     Stage.prototype.removeAllChildren = function (recusive) {
-        this._rootSprite.removeAllChildren(recusive);
+        this._sprite.removeAllChildren(recusive);
     };
     Stage.prototype.release = function () {
         this.stop(true);
         this._uiEvent.release();
-        this._rootSprite.release(true);
-        this._rootSprite = this._uiEvent = this._canvasElement = this._renderContext = this._bufferCanvas = this._bufferContext = null;
+        this._sprite.release(true);
+        this._sprite = this._uiEvent = this._canvas = this._renderContext = this._bufferCanvas = this._bufferContext = null;
     };
     Stage.prototype._startTimer = function () {
         var _this = this;
-        this._eventLoopTimerId = setTimeout(function () {
+        this._timerId = setTimeout(function () {
             if (_this._useExternalTimer) {
                 return;
             }
             var deltaTime = _this._getDeltaTime();
             Action.schedule(deltaTime);
-            _this._rootSprite._update(deltaTime);
+            _this._sprite._update(deltaTime);
             _this.render();
             _this._startTimer();
         }, this._frameRate);
@@ -2242,7 +2445,7 @@ var Stage = (function () {
         return delta / 1000;
     };
     return Stage;
-}());
+}(EventEmitter));
 
 var measureContext = document.createElement("canvas").getContext("2d");
 var regEnter = /\n/;

@@ -12,19 +12,20 @@ export declare type EventHelper = {
     beginTarget?: Sprite<any>;
     target?: Sprite<any>;
     cancelBubble: boolean;
+    stopPropagation();
 };
 export declare class UIEvent {
-    static Event: {
-        touchBegin: string;
-        touchMoved: string;
-        touchEnded: string;
-        keyDown: string;
-        keyUp: string;
-        mouseBegin: string;
-        mouseMoved: string;
-        mouseEnded: string;
-    };
     static supportTouch: boolean;
+    static TOUCH_BEGIN: string;
+    static TOUCH_MOVED: string;
+    static TOUCH_ENDED: string;
+    static MOUSE_BEGIN: string;
+    static MOUSE_MOVED: string;
+    static MOUSE_ENDED: string;
+    static CLICK: string;
+    static ADD_TO_STAGE: string;
+    static REMOVED_FROM_STAGE: string;
+    static FRAME: string;
     private _registered;
     private _touchHelperMap;
     private _mouseBeginHelper;
@@ -35,10 +36,7 @@ export declare class UIEvent {
     register(): void;
     unregister(): void;
     release(): void;
-    transformLocation(event: any): {
-        x: number;
-        y: number;
-    };
+    private _transformLocation(event);
     private _transformTouches(touches, justGet?);
     private _touchBeginHandler;
     private _touchMovedHandler;
@@ -46,9 +44,6 @@ export declare class UIEvent {
     private _mouseBeginHandler;
     private _mouseMovedHandler;
     private _mouseEndedHandler;
-    private _keyDownHandler;
-    private _keyUpHandler;
-    private _dispatchTouch(sprite, offsetX, offsetY, helpers, event, methodName, needTriggerClick?);
-    private _dispatchMouse(sprite, offsetX, offsetY, helper, event, methodName, triggerClick?);
-    private _dispatchKeyboard(sprite, keyCode, event, methodName);
+    private _dispatchTouch(sprite, offsetX, offsetY, helpers, event, methodName, eventName, needTriggerClick?);
+    private _dispatchMouse(sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick?);
 }
