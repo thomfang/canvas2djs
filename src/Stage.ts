@@ -46,33 +46,9 @@ export class Stage extends EventEmitter {
     private _lastUpdateTime: number;
     private _timerId: number;
     private _uiEvent: UIEvent;
-    private _touchEnabled: boolean;
-    private _mouseEnabled: boolean;
-    private _keyboardEnabled: boolean;
-
-    get touchEnabled(): boolean {
-        return this._touchEnabled;
-    }
-
-    set touchEnabled(enabled: boolean) {
-        this._touchEnabled = enabled;
-    }
-
-    get mouseEnabled(): boolean {
-        return this._mouseEnabled;
-    }
-
-    set mouseEnabled(enabled: boolean) {
-        this._mouseEnabled = enabled;
-    }
-
-    get keyboardEnabled(): boolean {
-        return this._keyboardEnabled;
-    }
-
-    set keyboardEnabled(enabled: boolean) {
-        this._keyboardEnabled = enabled;
-    }
+    
+    touchEnabled: boolean;
+    mouseEnabled: boolean;
 
     get fps(): number {
         return this._fps;

@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.2.0
+ * canvas2djs v2.2.1
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2199,36 +2199,6 @@ var Stage = (function (_super) {
         _this._uiEvent = new UIEvent(_this);
         return _this;
     }
-    Object.defineProperty(Stage.prototype, "touchEnabled", {
-        get: function () {
-            return this._touchEnabled;
-        },
-        set: function (enabled) {
-            this._touchEnabled = enabled;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Stage.prototype, "mouseEnabled", {
-        get: function () {
-            return this._mouseEnabled;
-        },
-        set: function (enabled) {
-            this._mouseEnabled = enabled;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Stage.prototype, "keyboardEnabled", {
-        get: function () {
-            return this._keyboardEnabled;
-        },
-        set: function (enabled) {
-            this._keyboardEnabled = enabled;
-        },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(Stage.prototype, "fps", {
         get: function () {
             return this._fps;
@@ -2664,11 +2634,10 @@ function createLabel(tag, ctor, props, children) {
     return sprite;
 }
 function createStage(props, children) {
-    var canvas = props.canvas, width = props.width, height = props.height, scaleMode = props.scaleMode, autoAdjustCanvasSize = props.autoAdjustCanvasSize, useExternalTimer = props.useExternalTimer, touchEnabled = props.touchEnabled, mouseEnabled = props.mouseEnabled, keyboardEnabled = props.keyboardEnabled, orientation = props.orientation;
+    var canvas = props.canvas, width = props.width, height = props.height, scaleMode = props.scaleMode, autoAdjustCanvasSize = props.autoAdjustCanvasSize, useExternalTimer = props.useExternalTimer, touchEnabled = props.touchEnabled, mouseEnabled = props.mouseEnabled, orientation = props.orientation;
     var stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation);
     stage.touchEnabled = touchEnabled;
     stage.mouseEnabled = mouseEnabled;
-    stage.keyboardEnabled = keyboardEnabled;
     stage.start(useExternalTimer);
     if (children.length) {
         children.forEach(function (child) { return child && stage.addChild(child); });

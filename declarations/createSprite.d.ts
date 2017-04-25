@@ -22,7 +22,6 @@ export declare type StageProps = {
     orientation?: Orientation;
     touchEnabled?: boolean;
     mouseEnabled?: boolean;
-    keyboardEnabled?: boolean;
     useExternalTimer?: boolean;
 } & Ref<Stage>;
 export declare function createSprite<T, U>(type: "sprite", props: SpriteProps, ...children: any[]): Sprite<{}>;

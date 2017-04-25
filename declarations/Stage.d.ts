@@ -39,12 +39,8 @@ export declare class Stage extends EventEmitter {
     private _lastUpdateTime;
     private _timerId;
     private _uiEvent;
-    private _touchEnabled;
-    private _mouseEnabled;
-    private _keyboardEnabled;
     touchEnabled: boolean;
     mouseEnabled: boolean;
-    keyboardEnabled: boolean;
     fps: number;
     readonly isRunning: boolean;
     readonly width: number;

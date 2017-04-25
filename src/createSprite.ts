@@ -23,7 +23,6 @@ export type StageProps = {
     orientation?: Orientation;
     touchEnabled?: boolean;
     mouseEnabled?: boolean;
-    keyboardEnabled?: boolean;
     useExternalTimer?: boolean;
 } & Ref<Stage>;
 
@@ -88,12 +87,11 @@ function createLabel<T>(tag: string, ctor: any, props: any, children: any[]): T 
 }
 
 function createStage(props: StageProps, children: Sprite<any>[]) {
-    let { canvas, width, height, scaleMode, autoAdjustCanvasSize, useExternalTimer, touchEnabled, mouseEnabled, keyboardEnabled, orientation } = props;
+    let { canvas, width, height, scaleMode, autoAdjustCanvasSize, useExternalTimer, touchEnabled, mouseEnabled, orientation } = props;
     let stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation);
 
     stage.touchEnabled = touchEnabled;
     stage.mouseEnabled = mouseEnabled;
-    stage.keyboardEnabled = keyboardEnabled;
     stage.start(useExternalTimer);
 
     if (children.length) {
