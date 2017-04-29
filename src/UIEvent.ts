@@ -305,9 +305,10 @@ export class UIEvent {
             var triggerClick = !helper._moved || isMovedSmallRange(helper);
             this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, UIEvent.MOUSE_ENDED, triggerClick);
             stage.emit(UIEvent.MOUSE_ENDED, helper, event);
+            helper.target = helper.beginTarget = null;
         }
 
-        this._mouseBeginHelper = helper.target = helper.beginTarget = null;
+        this._mouseBeginHelper = this._mouseMovedHelper = null;
     }
 
     private _dispatchTouch(

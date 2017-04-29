@@ -296,11 +296,12 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     set stage(stage: Stage) {
-        this._stage = stage;
         if (stage == null) {
             this.emit(UIEvent.REMOVED_FROM_STAGE);
+            this._stage = stage;
         }
         else {
+            this._stage = stage;
             this.emit(UIEvent.ADD_TO_STAGE);
         }
         this.children && this.children.forEach(child => child.stage = stage);
@@ -669,6 +670,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
 
         ReleasePool.instance.add(this);
+        this.removeAllListeners();
     }
 
     update(deltaTime: number): any {

@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.2.1
+ * canvas2djs v2.2.3
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1352,11 +1352,12 @@ var Sprite = (function (_super) {
             return this._stage;
         },
         set: function (stage) {
-            this._stage = stage;
             if (stage == null) {
                 this.emit(UIEvent.REMOVED_FROM_STAGE);
+                this._stage = stage;
             }
             else {
+                this._stage = stage;
                 this.emit(UIEvent.ADD_TO_STAGE);
             }
             this.children && this.children.forEach(function (child) { return child.stage = stage; });
@@ -1684,6 +1685,7 @@ var Sprite = (function (_super) {
             this.parent.removeChild(this);
         }
         ReleasePool.instance.add(this);
+        this.removeAllListeners();
     };
     Sprite.prototype.update = function (deltaTime) {
     };
@@ -1805,8 +1807,9 @@ var UIEvent = (function () {
                 var triggerClick = !helper._moved || isMovedSmallRange(helper);
                 _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, UIEvent.MOUSE_ENDED, triggerClick);
                 stage.emit(UIEvent.MOUSE_ENDED, helper, event);
+                helper.target = helper.beginTarget = null;
             }
-            _this._mouseBeginHelper = helper.target = helper.beginTarget = null;
+            _this._mouseBeginHelper = _this._mouseMovedHelper = null;
         };
         this.stage = stage;
         this.element = stage.canvas;
