@@ -49,7 +49,7 @@ export class ActionListener implements IActionListener {
         var anyDone: boolean = false;
 
         this._actions.forEach((action) => {
-            if (action._done) {
+            if (action.isDone()) {
                 anyDone = true;
             }
             else {
@@ -64,7 +64,7 @@ export class ActionListener implements IActionListener {
 
         if (allDone && this._callbacks.all) {
             this._callbacks.all.forEach(callback => callback());
-            removeArrayItem(Action._listenerList, this);
+            Action.removeListener(this);
             this._resolved = true;
         }
     }

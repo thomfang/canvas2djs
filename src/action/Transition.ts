@@ -1,5 +1,5 @@
-import { IAction } from './Action';
 import { Tween, EasingFunc } from '../Tween';
+import { BaseAction } from './BaseAction';
 
 export type TransToProps = {
     [name: string]: number | { dest: number; easing: EasingFunc; }
@@ -9,21 +9,26 @@ export type TransByProps = {
     [name: string]: number | { value: number; easing: EasingFunc; }
 }
 
-export class Transition implements IAction {
+export class Transition extends BaseAction {
 
-    private _defaultEasing: EasingFunc = Tween.easeInOutQuad;
+    public static defaultEasingFunc = Tween.easeInOutQuad;
 
-    done: boolean = false;
-    immediate: boolean = false;
-    elapsed: number = 0;
-    duration: number;
-    isTransitionBy: boolean;
+    public static setDefaultEasingFunc(func: EasingFunc) {
+        this.defaultEasingFunc = func;
+    }
 
-    options: Array<{ name: string; dest: number; easing: EasingFunc; }>;
-    beginValue: { [name: string]: number };
-    deltaValue: { [name: string]: number };
+    protected elapsed: number = 0;
+    protected duration: number;
+
+    protected isTransitionBy: boolean;
+
+    protected options: Array<{ name: string; dest: number; easing: EasingFunc; }>;
+    protected beginValue: { [name: string]: number };
+    protected deltaValue: { [name: string]: number };
 
     constructor(options: any, duration: number, isTransitionBy?: boolean) {
+        super();
+
         this.options = [];
         this.deltaValue = {};
         this.duration = duration;
@@ -108,8 +113,8 @@ export class Transition implements IAction {
         var beginValue = this.beginValue;
         var deltaValue = this.deltaValue;
 
-        this.options.forEach(({name, dest, easing}) => {
-            easing = easing || this._defaultEasing;
+        this.options.forEach(({ name, dest, easing }) => {
+            easing = easing || Transition.defaultEasingFunc;
             target[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
         });
     }
@@ -118,9 +123,31 @@ export class Transition implements IAction {
         this.options.forEach((attr) => {
             target[attr.name] = attr.dest;
         });
+        this.done = true;
+    }
+
+    destroy() {
         this.beginValue = null;
         this.deltaValue = null;
         this.options = null;
-        this.done = true;
+    }
+
+    reset() {
+        this.done = false;
+        this.elapsed = 0;
+    }
+
+    reverse() {
+        this.done = false;
+        this.elapsed = 0;
+
+        const { options, beginValue, deltaValue } = this;
+
+        options.forEach(e => {
+            let dest = beginValue[e.name];
+            beginValue[e.name] = e.dest;
+            deltaValue[e.name] = -deltaValue[e.name];
+            e.dest = dest;
+        });
     }
 }

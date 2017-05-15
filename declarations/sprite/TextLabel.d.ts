@@ -3,37 +3,47 @@ import { Sprite, ISprite } from './Sprite';
 export declare type FontWeight = "lighter" | "normal" | "bold" | "bolder";
 export declare type FontStyle = "oblique" | "normal" | "italic";
 export declare type TextAlign = "left" | "right" | "center" | "start" | "end";
-export interface ITextLabel extends ISprite {
+export declare type ITextLabel = ISprite & {
     text?: string;
     fontName?: string;
     textAlign?: TextAlign;
     fontColor?: Color;
     fontSize?: number;
-    lineSpace?: number;
+    lineHeight?: number;
     fontStyle?: FontStyle;
     fontWeight?: FontWeight;
-    maxWidth?: number;
     strokeColor?: Color;
     strokeWidth?: number;
-}
+    wordWrap?: boolean;
+};
 export declare class TextLabel extends Sprite<ITextLabel> {
-    maxWidth: number;
-    fontName: string;
     textAlign: TextAlign;
-    lineSpace: number;
-    fontColor: Color;
-    fontSize: number;
-    fontWeight: FontWeight;
-    fontStyle: FontStyle;
     strokeColor: Color;
     strokeWidth: number;
-    private _lines;
-    private _text;
+    fontColor: Color;
+    protected _wordWrap: boolean;
+    protected _fontName: string;
+    protected _lineHeight: number;
+    protected _fontSize: number;
+    protected _fontWeight: FontWeight;
+    protected _fontStyle: FontStyle;
+    protected _lines: {
+        width: number;
+        text: string;
+    }[];
+    protected _text: string;
     constructor(props?: ITextLabel);
-    protected _init(props?: ISprite): void;
-    texture: any;
+    width: number;
+    height: number;
+    fontSize: number;
+    fontName: string;
+    fontStyle: FontStyle;
+    fontWeight: FontWeight;
+    lineHeight: number;
+    wordWrap: boolean;
     text: string;
-    private _resize();
-    addChild(): void;
+    private _reMeasureText();
+    addChild(target: any): void;
+    addChildren(...children: any[]): void;
     protected draw(context: CanvasRenderingContext2D): void;
 }

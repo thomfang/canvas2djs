@@ -78,9 +78,6 @@ export function createSprite<T, U>(type: any, props: any, ...children: any[]): a
 function createLabel<T>(tag: string, ctor: any, props: any, children: any[]): T {
     let sprite = new ctor(props);
     if (children.length) {
-        if (!ensureString(children)) {
-            throw new Error(`canvas2d: <${tag}> only support string children.`);
-        }
         sprite.text = children.join('');
     }
     return sprite
@@ -99,10 +96,6 @@ function createStage(props: StageProps, children: Sprite<any>[]) {
     }
 
     return stage;
-}
-
-function ensureString(list: any[]) {
-    return list.every(item => typeof item === 'string');
 }
 
 function addChildren(sprite: Sprite<any>, children: any[]) {

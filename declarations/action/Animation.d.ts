@@ -1,15 +1,16 @@
-import { IAction } from './Action';
 import { Texture } from '../Texture';
-export declare class Animation implements IAction {
-    done: boolean;
-    immediate: boolean;
-    elapsed: number;
-    count: number;
-    frameIndex: number;
+import { BaseAction } from './BaseAction';
+export declare class Animation extends BaseAction {
     interval: number;
-    frameList: Array<Texture | string>;
-    repetitions: number;
+    protected elapsed: number;
+    protected count: number;
+    protected frameIndex: number;
+    protected frameList: Array<Texture | string>;
+    protected repetitions: number;
     constructor(frameList: Array<Texture | string>, frameRate: number, repetitions?: number);
     step(deltaTime: number, target: any): void;
     end(): void;
+    reset(): void;
+    reverse(): void;
+    destroy(): void;
 }

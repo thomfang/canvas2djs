@@ -10,6 +10,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 var demo;
 (function (demo) {
     var canvas = document.querySelector('canvas');
+    var ball;
     var stageProps = {
         width: 960,
         height: 640,
@@ -52,11 +53,13 @@ var demo;
     };
     var action;
     function santaJump() {
-        if (action) {
-            return;
+        if (!action) {
+            action = new canvas2d.Action(demo.santa);
         }
-        action = new canvas2d.Action(demo.santa)
-            .by({
+        else {
+            action.clear();
+        }
+        action.by({
             y: {
                 value: -200,
                 easing: canvas2d.Tween.easeOutQuad
@@ -65,7 +68,7 @@ var demo;
             .to({
             y: demo.santa.y
         }, 0.2)
-            .then(function () { return action = null; })
+            .setRepeatMode(canvas2d.ActionRepeatMode.REPEAT)
             .start();
     }
     var sprites = [
@@ -78,9 +81,11 @@ var demo;
             canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; } })),
             sprites,
             canvas2d.createSprite("sprite", { ref: function (e) { return demo.btn = e; }, onClick: santaJump, bgColor: 0xf00, alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER, percentHeight: 0.1, percentWidth: 0.1 },
-                canvas2d.createSprite("text", { alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER }, "Jump"))));
+                canvas2d.createSprite("text", { alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER }, "Jump")),
+            canvas2d.createSprite("sprite", { radius: 50, bgColor: 0xfff, alignX: canvas2d.AlignType.CENTER, y: 300, ref: function (e) { return ball = e; } })));
     demo.stage.on(canvas2d.UIEvent.TOUCH_MOVED, function (helpers, event) {
         console.log(helpers[0].target);
     });
+    new canvas2d.Action(ball).by({ y: 100 }, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
 })(demo || (demo = {}));
 //# sourceMappingURL=main.js.map

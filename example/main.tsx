@@ -8,6 +8,8 @@ namespace demo {
     export var santa: canvas2d.Sprite<any>;
     export var btn: canvas2d.Sprite<any>;
 
+    var ball: canvas2d.Sprite<any>;
+
     var stageProps: canvas2d.StageProps = {
         width: 960,
         height: 640,
@@ -55,21 +57,24 @@ namespace demo {
     var action: canvas2d.Action;
 
     function santaJump() {
-        if (action) {
-            return;
+        if (!action) {
+            action = new canvas2d.Action(santa)
+        }
+        else {
+            action.clear();
         }
 
-        action = new canvas2d.Action(santa)
-            .by({
-                y: {
-                    value: -200,
-                    easing: canvas2d.Tween.easeOutQuad
-                }
-            }, 0.3)
+
+        action.by({
+            y: {
+                value: -200,
+                easing: canvas2d.Tween.easeOutQuad
+            }
+        }, 0.3)
             .to({
                 y: santa.y
             }, 0.2)
-            .then(() => action = null)
+            .setRepeatMode(canvas2d.ActionRepeatMode.REPEAT)
             .start();
     }
 
@@ -84,7 +89,7 @@ namespace demo {
                 canvas2djs
             </text>
             <sprite {...santaProps} ref={e => santa = e} />
-                {...sprites}
+            {...sprites}
             <sprite
                 ref={e => btn = e}
                 onClick={santaJump}
@@ -95,6 +100,7 @@ namespace demo {
                 percentWidth={0.1}>
                 <text alignX={canvas2d.AlignType.CENTER} alignY={canvas2d.AlignType.CENTER}>Jump</text>
             </sprite>
+            <sprite radius={50} bgColor={0xfff} alignX={canvas2d.AlignType.CENTER} y={300} ref={e => ball = e}/>
             {/*<sprite touchEnabled={false} left={10} right={10} top={10} bottom={10} grid={[20,20,20,20]} texture="img/roundrect-bg.png" />*/}
         </sprite>
     </stage>;
@@ -102,4 +108,6 @@ namespace demo {
     stage.on(canvas2d.UIEvent.TOUCH_MOVED, (helpers, event) => {
         console.log(helpers[0].target)
     });
+
+    new canvas2d.Action(ball).by({y: 100}, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
 }

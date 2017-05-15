@@ -45,5 +45,7 @@ export declare class UIEvent {
     private _mouseMovedHandler;
     private _mouseEndedHandler;
     private _dispatchTouch(sprite, offsetX, offsetY, helpers, event, methodName, eventName, needTriggerClick?);
+    private _detectTouchOnClipArea(sprite, offsetX, offsetY, helpers, event, methodName, eventName, needTriggerClick?);
     private _dispatchMouse(sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick?);
+    private _detectMouseOnClipArea(sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick?);
 }

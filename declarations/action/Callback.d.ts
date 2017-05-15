@@ -1,9 +1,11 @@
-import { IAction } from './Action';
-export declare class Callback implements IAction {
-    func: Function;
-    done: boolean;
+import { BaseAction } from './BaseAction';
+export declare class Callback extends BaseAction {
+    protected func: Function;
     immediate: boolean;
     constructor(func: Function);
     step(): void;
     end(): void;
+    reset(): void;
+    reverse(): void;
+    destroy(): void;
 }

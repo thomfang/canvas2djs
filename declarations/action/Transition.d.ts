@@ -1,5 +1,5 @@
-import { IAction } from './Action';
 import { EasingFunc } from '../Tween';
+import { BaseAction } from './BaseAction';
 export declare type TransToProps = {
     [name: string]: number | {
         dest: number;
@@ -12,22 +12,21 @@ export declare type TransByProps = {
         easing: EasingFunc;
     };
 };
-export declare class Transition implements IAction {
-    private _defaultEasing;
-    done: boolean;
-    immediate: boolean;
-    elapsed: number;
-    duration: number;
-    isTransitionBy: boolean;
-    options: Array<{
+export declare class Transition extends BaseAction {
+    static defaultEasingFunc: (pos: any) => number;
+    static setDefaultEasingFunc(func: EasingFunc): void;
+    protected elapsed: number;
+    protected duration: number;
+    protected isTransitionBy: boolean;
+    protected options: Array<{
         name: string;
         dest: number;
         easing: EasingFunc;
     }>;
-    beginValue: {
+    protected beginValue: {
         [name: string]: number;
     };
-    deltaValue: {
+    protected deltaValue: {
         [name: string]: number;
     };
     constructor(options: any, duration: number, isTransitionBy?: boolean);
@@ -36,4 +35,7 @@ export declare class Transition implements IAction {
     private _initBeginValue(target);
     step(deltaTime: number, target: any): void;
     end(target: any): void;
+    destroy(): void;
+    reset(): void;
+    reverse(): void;
 }

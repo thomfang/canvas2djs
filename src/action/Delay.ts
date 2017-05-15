@@ -1,13 +1,12 @@
-import { IAction } from './Action';
+import { BaseAction } from './BaseAction';
 
-export class Delay implements IAction {
+export class Delay extends BaseAction {
 
-    duration: number;
-    done: boolean = false;
-    elapsed: number = 0;
-    immediate: boolean = true;
+    protected duration: number;
+    protected elapsed: number = 0;
 
     constructor(duration: number) {
+        super();
         this.duration = duration;
     }
 
@@ -19,5 +18,18 @@ export class Delay implements IAction {
     }
 
     end(): void {
+    }
+
+    reset() {
+        this.elapsed = 0;
+        this.done = false;
+    }
+
+    reverse() {
+        this.done = false;
+        this.elapsed = 0;
+    }
+
+    destroy() {
     }
 }

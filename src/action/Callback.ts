@@ -1,12 +1,12 @@
-import { IAction } from './Action';
+import { BaseAction } from './BaseAction';
 
-export class Callback implements IAction {
+export class Callback extends BaseAction {
 
-    func: Function;
-    done: boolean = false;
+    protected func: Function;
     immediate: boolean = true;
 
     constructor(func: Function) {
+        super();
         this.func = func;
     }
 
@@ -18,5 +18,17 @@ export class Callback implements IAction {
     end(): void {
         this.func = null;
         this.done = true;
+    }
+
+    reset() {
+        this.done = false;
+    }
+
+    reverse() {
+        this.done = false;
+    }
+
+    destroy() {
+        this.func = null;
     }
 }

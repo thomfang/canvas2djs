@@ -1,13 +1,13 @@
 /**
- * canvas2djs v2.2.3
+ * canvas2djs v2.3.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
 
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
-    (factory((global.canvas2d = global.canvas2d || {})));
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
+	(factory((global.canvas2d = global.canvas2d || {})));
 }(this, (function (exports) { 'use strict';
 
 var Keys = {
@@ -455,12 +455,65 @@ function createCanvas(image, sourceRect, textureRect) {
     return canvas;
 }
 
-var Delay = (function () {
-    function Delay(duration) {
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+/* global Reflect, Promise */
+
+var extendStatics = Object.setPrototypeOf ||
+    ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+    function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+
+function __extends(d, b) {
+    extendStatics(d, b);
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+}
+
+var __assign = Object.assign || function __assign(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+    }
+    return t;
+};
+
+function __rest(s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
+            t[p[i]] = s[p[i]];
+    return t;
+}
+
+var BaseAction = (function () {
+    function BaseAction() {
+        this.immediate = false;
         this.done = false;
-        this.elapsed = 0;
-        this.immediate = true;
-        this.duration = duration;
+    }
+    return BaseAction;
+}());
+
+var Delay = (function (_super) {
+    __extends(Delay, _super);
+    function Delay(duration) {
+        var _this = _super.call(this) || this;
+        _this.elapsed = 0;
+        _this.duration = duration;
+        return _this;
     }
     Delay.prototype.step = function (deltaTime) {
         this.elapsed += deltaTime;
@@ -470,14 +523,26 @@ var Delay = (function () {
     };
     Delay.prototype.end = function () {
     };
-    return Delay;
-}());
-
-var Callback = (function () {
-    function Callback(func) {
+    Delay.prototype.reset = function () {
+        this.elapsed = 0;
         this.done = false;
-        this.immediate = true;
-        this.func = func;
+    };
+    Delay.prototype.reverse = function () {
+        this.done = false;
+        this.elapsed = 0;
+    };
+    Delay.prototype.destroy = function () {
+    };
+    return Delay;
+}(BaseAction));
+
+var Callback = (function (_super) {
+    __extends(Callback, _super);
+    function Callback(func) {
+        var _this = _super.call(this) || this;
+        _this.immediate = true;
+        _this.func = func;
+        return _this;
     }
     Callback.prototype.step = function () {
         this.func.call(null);
@@ -487,19 +552,29 @@ var Callback = (function () {
         this.func = null;
         this.done = true;
     };
-    return Callback;
-}());
-
-var Animation = (function () {
-    function Animation(frameList, frameRate, repetitions) {
+    Callback.prototype.reset = function () {
         this.done = false;
-        this.immediate = false;
-        this.elapsed = 0;
-        this.count = 0;
-        this.frameIndex = 0;
-        this.frameList = frameList;
-        this.repetitions = repetitions;
-        this.interval = 1 / frameRate;
+    };
+    Callback.prototype.reverse = function () {
+        this.done = false;
+    };
+    Callback.prototype.destroy = function () {
+        this.func = null;
+    };
+    return Callback;
+}(BaseAction));
+
+var Animation = (function (_super) {
+    __extends(Animation, _super);
+    function Animation(frameList, frameRate, repetitions) {
+        var _this = _super.call(this) || this;
+        _this.elapsed = 0;
+        _this.count = 0;
+        _this.frameIndex = 0;
+        _this.frameList = frameList;
+        _this.repetitions = repetitions;
+        _this.interval = 1 / frameRate;
+        return _this;
     }
     Animation.prototype.step = function (deltaTime, target) {
         this.elapsed += deltaTime;
@@ -517,11 +592,26 @@ var Animation = (function () {
         }
     };
     Animation.prototype.end = function () {
-        this.frameList = null;
         this.done = true;
     };
+    Animation.prototype.reset = function () {
+        this.done = false;
+        this.frameIndex = 0;
+        this.elapsed = 0;
+        this.count = 0;
+    };
+    Animation.prototype.reverse = function () {
+        this.done = false;
+        this.frameIndex = 0;
+        this.elapsed = 0;
+        this.count = 0;
+        this.frameList = this.frameList.slice().reverse();
+    };
+    Animation.prototype.destroy = function () {
+        this.frameList = null;
+    };
     return Animation;
-}());
+}(BaseAction));
 
 var Key = 'canvas2d.uid';
 var counter = 0;
@@ -604,7 +694,7 @@ var ActionListener = (function () {
         var allDone = true;
         var anyDone = false;
         this._actions.forEach(function (action) {
-            if (action._done) {
+            if (action.isDone()) {
                 anyDone = true;
             }
             else {
@@ -617,30 +707,33 @@ var ActionListener = (function () {
         }
         if (allDone && this._callbacks.all) {
             this._callbacks.all.forEach(function (callback) { return callback(); });
-            removeArrayItem(Action._listenerList, this);
+            Action.removeListener(this);
             this._resolved = true;
         }
     };
     return ActionListener;
 }());
 
-var Transition = (function () {
+var Transition = (function (_super) {
+    __extends(Transition, _super);
     function Transition(options, duration, isTransitionBy) {
-        this._defaultEasing = Tween.easeInOutQuad;
-        this.done = false;
-        this.immediate = false;
-        this.elapsed = 0;
-        this.options = [];
-        this.deltaValue = {};
-        this.duration = duration;
-        this.isTransitionBy = isTransitionBy;
+        var _this = _super.call(this) || this;
+        _this.elapsed = 0;
+        _this.options = [];
+        _this.deltaValue = {};
+        _this.duration = duration;
+        _this.isTransitionBy = isTransitionBy;
         if (isTransitionBy) {
-            this._initAsTransitionBy(options);
+            _this._initAsTransitionBy(options);
         }
         else {
-            this._initAsTransitionTo(options);
+            _this._initAsTransitionTo(options);
         }
+        return _this;
     }
+    Transition.setDefaultEasingFunc = function (func) {
+        this.defaultEasingFunc = func;
+    };
     Transition.prototype._initAsTransitionTo = function (options) {
         var _this = this;
         Object.keys(options).forEach(function (name) {
@@ -691,7 +784,6 @@ var Transition = (function () {
         }
     };
     Transition.prototype.step = function (deltaTime, target) {
-        var _this = this;
         this.elapsed += deltaTime;
         if (this.beginValue == null) {
             this._initBeginValue(target);
@@ -704,7 +796,7 @@ var Transition = (function () {
         var deltaValue = this.deltaValue;
         this.options.forEach(function (_a) {
             var name = _a.name, dest = _a.dest, easing = _a.easing;
-            easing = easing || _this._defaultEasing;
+            easing = easing || Transition.defaultEasingFunc;
             target[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
         });
     };
@@ -712,13 +804,31 @@ var Transition = (function () {
         this.options.forEach(function (attr) {
             target[attr.name] = attr.dest;
         });
+        this.done = true;
+    };
+    Transition.prototype.destroy = function () {
         this.beginValue = null;
         this.deltaValue = null;
         this.options = null;
-        this.done = true;
+    };
+    Transition.prototype.reset = function () {
+        this.done = false;
+        this.elapsed = 0;
+    };
+    Transition.prototype.reverse = function () {
+        this.done = false;
+        this.elapsed = 0;
+        var _a = this, options = _a.options, beginValue = _a.beginValue, deltaValue = _a.deltaValue;
+        options.forEach(function (e) {
+            var dest = beginValue[e.name];
+            beginValue[e.name] = e.dest;
+            deltaValue[e.name] = -deltaValue[e.name];
+            e.dest = dest;
+        });
     };
     return Transition;
-}());
+}(BaseAction));
+Transition.defaultEasingFunc = Tween.easeInOutQuad;
 
 (function (ActionType) {
     ActionType[ActionType["TO"] = 0] = "TO";
@@ -727,10 +837,18 @@ var Transition = (function () {
     ActionType[ActionType["WAIT"] = 3] = "WAIT";
     ActionType[ActionType["CALLBACK"] = 4] = "CALLBACK";
 })(exports.ActionType || (exports.ActionType = {}));
+
+(function (ActionRepeatMode) {
+    ActionRepeatMode[ActionRepeatMode["NONE"] = 0] = "NONE";
+    ActionRepeatMode[ActionRepeatMode["REPEAT"] = 1] = "REPEAT";
+    ActionRepeatMode[ActionRepeatMode["REVERSE_REPEAT"] = 2] = "REVERSE_REPEAT";
+})(exports.ActionRepeatMode || (exports.ActionRepeatMode = {}));
 var Action = (function () {
     function Action(target) {
         this._queue = [];
+        this._currentIndex = 0;
         this._done = false;
+        this._repeatMode = exports.ActionRepeatMode.NONE;
         /**
          * Action running state
          */
@@ -755,6 +873,9 @@ var Action = (function () {
         Action._listenerList.push(listener);
         return listener;
     };
+    Action.removeListener = function (listener) {
+        removeArrayItem(this._listenerList, this);
+    };
     Action.schedule = function (deltaTime) {
         Action._actionList.slice().forEach(function (action) {
             action._step(deltaTime);
@@ -766,6 +887,23 @@ var Action = (function () {
             listener._step();
         });
     };
+    Action.prototype.isDone = function () {
+        return this._done;
+    };
+    Action.prototype.setRepeatMode = function (mode) {
+        this._repeatMode = mode;
+        return this;
+    };
+    Object.defineProperty(Action.prototype, "repeatMode", {
+        get: function () {
+            return this._repeatMode;
+        },
+        set: function (mode) {
+            this._repeatMode = mode;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Action.prototype.queue = function (actions) {
         var _this = this;
         actions.forEach(function (action) {
@@ -840,129 +978,60 @@ var Action = (function () {
      * Stop the action
      */
     Action.prototype.stop = function () {
+        this._queue.forEach(function (action) { return action.destroy(); });
         this._done = true;
         this.isRunning = false;
         this._queue.length = 0;
         removeArrayItem(Action._actionList, this);
     };
+    Action.prototype.clear = function () {
+        this._queue.forEach(function (action) { return action.destroy(); });
+        this._done = false;
+        this.isRunning = false;
+        this._queue.length = 0;
+        this._currentIndex = 0;
+        this._repeatMode = exports.ActionRepeatMode.NONE;
+        removeArrayItem(Action._actionList, this);
+    };
     Action.prototype._step = function (deltaTime) {
-        if (!this._queue.length) {
+        if (!this._queue.length || this._currentIndex >= this._queue.length) {
             return;
         }
-        var action = this._queue[0];
+        var action = this._queue[this._currentIndex];
         action.step(deltaTime, this.target);
         if (action.done) {
-            this._queue.shift();
-            if (!this._queue.length) {
-                this._done = true;
-                this.isRunning = false;
-                this.target = null;
+            this._currentIndex += 1;
+            if (this._currentIndex >= this._queue.length) {
+                this._onAllActionDone();
             }
             else if (action.immediate) {
                 this._step(deltaTime);
             }
         }
     };
+    Action.prototype._onAllActionDone = function () {
+        switch (this._repeatMode) {
+            case exports.ActionRepeatMode.REPEAT:
+                this._queue.forEach(function (a) { return a.reset(); });
+                this._currentIndex = 0;
+                break;
+            case exports.ActionRepeatMode.REVERSE_REPEAT:
+                this._queue.forEach(function (a) { return a.reverse(); });
+                this._currentIndex = 0;
+                break;
+            default:
+                this._done = true;
+                this.isRunning = false;
+                this.target = null;
+                this._queue.forEach(function (a) { return a.destroy(); });
+                this._queue.length = 0;
+                break;
+        }
+    };
     return Action;
 }());
 Action._actionList = [];
 Action._listenerList = [];
-
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-/* global Reflect, Promise */
-
-var extendStatics = Object.setPrototypeOf ||
-    ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-    function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-
-function __extends(d, b) {
-    extendStatics(d, b);
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-}
-
-var __assign = Object.assign || function __assign(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-    }
-    return t;
-};
-
-function __rest(s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
-            t[p[i]] = s[p[i]];
-    return t;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function __values(o) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
-    if (m) return m.call(o);
-    return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-}
-
-function __read(o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-}
-
-
-
-
-
-
-
-function __asyncValues(o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator];
-    return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
-}
 
 var EventEmitter = (function () {
     function EventEmitter() {
@@ -1093,6 +1162,8 @@ var RAD_PER_DEG = Math.PI / 180;
     AlignType[AlignType["LEFT"] = 3] = "LEFT";
     AlignType[AlignType["CENTER"] = 4] = "CENTER";
 })(exports.AlignType || (exports.AlignType = {}));
+var sharedCanvas = document.createElement("canvas");
+var sharedContext = sharedCanvas.getContext("2d");
 var Sprite = (function (_super) {
     __extends(Sprite, _super);
     function Sprite(props) {
@@ -1125,11 +1196,16 @@ var Sprite = (function (_super) {
         _this._init(props);
         return _this;
     }
-    Sprite.prototype._init = function (attrs) {
-        var _this = this;
-        if (attrs) {
-            Object.keys(attrs).forEach(function (name) { return _this[name] = attrs[name]; });
+    Sprite.prototype._init = function (props) {
+        if (props) {
+            this.setProps(props);
         }
+    };
+    Sprite.prototype.setProps = function (props) {
+        var _this = this;
+        Object.keys(props).forEach(function (key) {
+            _this[key] = props[key];
+        });
     };
     Object.defineProperty(Sprite.prototype, "width", {
         get: function () {
@@ -1141,7 +1217,12 @@ var Sprite = (function (_super) {
             }
             this._width = value;
             this._originPixelX = this._width * this._originX;
-            this._adjustAlignX();
+            if (this.left != null || this.right != null) {
+                this._reCalcX();
+            }
+            else {
+                this._adjustAlignX();
+            }
             this._reLayoutChildrenOnWidthChanged();
         },
         enumerable: true,
@@ -1157,7 +1238,12 @@ var Sprite = (function (_super) {
             }
             this._height = value;
             this._originPixelY = this._height * this._originY;
-            this._adjustAlignY();
+            if (this.top != null || this.bottom != null) {
+                this._reCalcY();
+            }
+            else {
+                this._adjustAlignY();
+            }
             this._reLayoutChildrenOnHeightChanged();
         },
         enumerable: true,
@@ -1173,7 +1259,12 @@ var Sprite = (function (_super) {
             }
             this._originX = value;
             this._originPixelX = this._originX * this._width;
-            this._adjustAlignX();
+            if (this.left != null || this.right != null) {
+                this._reCalcX();
+            }
+            else {
+                this._adjustAlignX();
+            }
         },
         enumerable: true,
         configurable: true
@@ -1188,7 +1279,12 @@ var Sprite = (function (_super) {
             }
             this._originY = value;
             this._originPixelY = this._originY * this._height;
-            this._adjustAlignY();
+            if (this.top != null || this.bottom != null) {
+                this._reCalcY();
+            }
+            else {
+                this._adjustAlignY();
+            }
         },
         enumerable: true,
         configurable: true
@@ -1339,10 +1435,6 @@ var Sprite = (function (_super) {
                 return;
             }
             this._parent = sprite;
-            if (sprite) {
-                this._adjustAlignX();
-                this._adjustAlignY();
-            }
         },
         enumerable: true,
         configurable: true
@@ -1462,10 +1554,19 @@ var Sprite = (function (_super) {
         var _a = this, parent = _a.parent, percentWidth = _a.percentWidth, right = _a.right, left = _a.left;
         if (left != null && right != null) {
             this.width = parent.width - left - right;
-            this.x = left + this._originPixelX;
         }
         else if (percentWidth != null) {
             this.width = parent.width * percentWidth;
+        }
+        this._reCalcX();
+    };
+    Sprite.prototype._reCalcX = function () {
+        var _a = this, left = _a.left, right = _a.right, parent = _a.parent, width = _a.width, _originPixelX = _a._originPixelX;
+        if (left != null) {
+            this.x = left + _originPixelX;
+        }
+        else if (right != null && parent != null) {
+            this.x = parent.width - (width + right - _originPixelX);
         }
     };
     Sprite.prototype._resizeHeight = function () {
@@ -1476,14 +1577,25 @@ var Sprite = (function (_super) {
         if (top != null && bottom != null) {
             this.height = parent.height - top - bottom;
             this.y = top + this._originPixelY;
+            return;
         }
-        else if (percentHeight != null) {
+        if (percentHeight != null) {
             this.height = parent.height * percentHeight;
+        }
+        this._reCalcY();
+    };
+    Sprite.prototype._reCalcY = function () {
+        var _a = this, top = _a.top, bottom = _a.bottom, parent = _a.parent, height = _a.height, _originPixelY = _a._originPixelY;
+        if (top != null) {
+            this.y = top + _originPixelY;
+        }
+        else if (bottom != null && parent != null) {
+            this.y = parent.height - (height + bottom - _originPixelY);
         }
     };
     Sprite.prototype._adjustAlignX = function () {
-        if (!this.parent || this._alignX == null) {
-            return;
+        if (!this.parent || this._alignX == null || this.left != null || this.right != null) {
+            return false;
         }
         var x;
         var ox = this._originPixelX;
@@ -1501,10 +1613,11 @@ var Sprite = (function (_super) {
         if (x != null) {
             this.x = x;
         }
+        return true;
     };
     Sprite.prototype._adjustAlignY = function () {
-        if (!this.parent || this._alignY == null) {
-            return;
+        if (!this.parent || this._alignY == null || this.top != null || this.bottom != null) {
+            return false;
         }
         var y;
         var oy = this._originPixelY;
@@ -1522,6 +1635,7 @@ var Sprite = (function (_super) {
         if (y != null) {
             this.y = y;
         }
+        return true;
     };
     Sprite.prototype._visitChildren = function (context) {
         if (!this.children || !this.children.length) {
@@ -1564,8 +1678,8 @@ var Sprite = (function (_super) {
         context.fill();
     };
     Sprite.prototype._drawBorder = function (context) {
-        if (this.borderWidth != null) {
-            context.lineWidth = this.borderWidth;
+        if (this.borderColor != null) {
+            context.lineWidth = this.borderWidth || 1;
             context.strokeStyle = convertColor(this.borderColor || 0x000);
             context.beginPath();
             if (this.radius > 0) {
@@ -1599,22 +1713,26 @@ var Sprite = (function (_super) {
             context.drawImage(texture.source, sx, sy, sw, sh, -ox, -oy, w, h);
         }
         else {
-            // this.grid: [top, right, bottom, left]
             var top = grid[0], right = grid[1], bottom = grid[2], left = grid[3];
             var grids = [
                 { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top },
-                { x: left, y: 0, w: w - left - right, h: top, sx: left, sy: 0, sw: sw - left - right, sh: top },
-                { x: w - right, y: 0, w: right, h: top, sx: sw - right, sy: 0, sw: right, sh: top },
-                { x: 0, y: top, w: left, h: h - top - bottom, sx: 0, sy: top, sw: left, sh: sh - top - bottom },
-                { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: left, sy: top, sw: sw - left - right, sh: sh - top - bottom },
-                { x: w - right, y: top, w: right, h: h - top - bottom, sx: sw - right, sy: top, sw: right, sh: sh - top - bottom },
-                { x: 0, y: h - bottom, w: left, h: bottom, sx: 0, sy: sh - bottom, sw: left, sh: bottom },
-                { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: left, sy: sh - bottom, sw: sw - left - right, sh: bottom },
-                { x: w - right, y: h - bottom, w: right, h: bottom, sx: sw - right, sy: sh - bottom, sw: right, sh: bottom },
+                { x: w - right, y: 0, w: right, h: top, sx: sx + sw - right, sy: sy, sw: right, sh: top },
+                { x: 0, y: h - bottom, w: left, h: bottom, sx: sx, sy: sy + sh - bottom, sw: left, sh: bottom },
+                { x: w - right, y: h - bottom, w: right, h: bottom, sx: sx + sw - right, sy: sh - bottom + sy, sw: right, sh: bottom },
+                { x: left, y: 0, w: w - left - right, h: top, sx: sx + left, sy: sy, sw: sw - left - right, sh: top },
+                { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: sx + left, sy: sh - bottom + sy, sw: sw - left - right, sh: bottom },
+                { x: 0, y: top, w: left, h: h - top - bottom, sx: sx, sy: top, sw: left, sh: sh - top - bottom },
+                { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom },
+                { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom },
             ];
+            sharedCanvas.width = w;
+            sharedCanvas.height = h;
             grids.forEach(function (g) {
-                context.drawImage(texture.source, g.sx, g.sy, g.sw, g.sh, g.x - ox, g.y - oy, g.w, g.h);
+                if (g.w && g.h) {
+                    sharedContext.drawImage(texture.source, g.sx, g.sy, g.sw, g.sh, Math.ceil(g.x), Math.ceil(g.y), Math.ceil(g.w), Math.ceil(g.h));
+                }
             });
+            context.drawImage(sharedCanvas, -ox, -oy, w, h);
         }
     };
     Sprite.prototype.addChild = function (target, position) {
@@ -1638,7 +1756,19 @@ var Sprite = (function (_super) {
             }
             target._resizeWidth();
             target._resizeHeight();
+            target._adjustAlignX();
+            target._adjustAlignY();
         }
+    };
+    Sprite.prototype.addChildren = function () {
+        var _this = this;
+        var children = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            children[_i] = arguments[_i];
+        }
+        children.forEach(function (child) {
+            _this.addChild(child);
+        });
     };
     Sprite.prototype.removeChild = function (target) {
         if (!this.children || !this.children.length) {
@@ -1650,6 +1780,16 @@ var Sprite = (function (_super) {
             target.parent = null;
             target.stage = null;
         }
+    };
+    Sprite.prototype.removeChildren = function () {
+        var _this = this;
+        var children = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            children[_i] = arguments[_i];
+        }
+        children.forEach(function (child) {
+            _this.removeChild(child);
+        });
     };
     Sprite.prototype.removeAllChildren = function (recusive) {
         if (!this.children || !this.children.length) {
@@ -1914,6 +2054,9 @@ var UIEvent = (function () {
         }
         offsetX += sprite.x - sprite._originPixelX;
         offsetY += sprite.y - sprite._originPixelY;
+        if (sprite.clipOverflow) {
+            return this._detectTouchOnClipArea(sprite, offsetX, offsetY, helpers, event, methodName, eventName, needTriggerClick);
+        }
         var children = sprite.children;
         var tmpHelpers = helpers.slice();
         var triggerreds = [];
@@ -1947,13 +2090,8 @@ var UIEvent = (function () {
             radius: sprite.radius
         };
         var count = 0;
-        var detect = rect.width === 0 && rect.height === 0 ? function (helper) {
-            return isCircleContainPoint(circle, helper);
-        } : function (helper) {
-            return isRectContainPoint(rect, helper);
-        };
         for (var i = 0, helper = void 0; helper = tmpHelpers[i]; i++) {
-            if (detect(helper)) {
+            if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
                 if (!helper.target) {
                     helper.target = sprite;
                 }
@@ -1979,12 +2117,75 @@ var UIEvent = (function () {
         }
         return triggerreds;
     };
+    UIEvent.prototype._detectTouchOnClipArea = function (sprite, offsetX, offsetY, helpers, event, methodName, eventName, needTriggerClick) {
+        var hits = [];
+        var rect = {
+            x: offsetX,
+            y: offsetY,
+            width: sprite.width,
+            height: sprite.height
+        };
+        var circle = {
+            x: offsetX,
+            y: offsetY,
+            radius: sprite.radius
+        };
+        var count = 0;
+        for (var i = 0, helper = void 0; helper = helpers[i]; i++) {
+            if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+                if (!helper.target) {
+                    helper.target = sprite;
+                }
+                helper.localX = helper.stageX - offsetX;
+                helper.localY = helper.stageY - offsetY;
+                // Add for current sprite hit list
+                hits.push(helper);
+                count++;
+            }
+        }
+        if (hits.length) {
+            var children = sprite.children;
+            var triggerreds = [];
+            if (children && children.length) {
+                var index = children.length;
+                var result_1;
+                var filterUnTriggerred = function (helper) { return result_1.indexOf(helper) === -1; };
+                var tmpHelpers = hits.slice();
+                while (--index >= 0) {
+                    result_1 = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, eventName, needTriggerClick);
+                    if (result_1 && result_1.length) {
+                        triggerreds.push.apply(triggerreds, result_1);
+                        // Remove triggerred touch helper, it won't pass to other child sprites
+                        tmpHelpers = tmpHelpers.filter(filterUnTriggerred);
+                        // All triggerred then exit the loop
+                        if (!tmpHelpers.length) {
+                            break;
+                        }
+                    }
+                }
+            }
+            hits = triggerreds.filter(function (helper) { return !helper.cancelBubble; });
+            if (hits.length) {
+                sprite.emit(eventName, hits, event);
+                sprite[methodName] && sprite[methodName](hits, event);
+                // Click event would just trigger by only a touch
+                if (needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
+                    sprite.emit(UIEvent.CLICK, hits[0], event);
+                    sprite[onClick] && sprite[onClick](hits[0], event);
+                }
+            }
+            return triggerreds;
+        }
+    };
     UIEvent.prototype._dispatchMouse = function (sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick) {
         if (!sprite.mouseEnabled || !sprite.visible) {
             return false;
         }
         offsetX += sprite.x - sprite._originPixelX;
         offsetY += sprite.y - sprite._originPixelY;
+        if (sprite.clipOverflow) {
+            return this._detectMouseOnClipArea(sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick);
+        }
         var children = sprite.children;
         var triggerred = false;
         if (children && children.length) {
@@ -2010,12 +2211,48 @@ var UIEvent = (function () {
             y: offsetY,
             radius: sprite.radius
         };
-        var detect = rect.width === 0 && rect.height === 0 ? function (helper) {
-            return isCircleContainPoint(circle, helper);
-        } : function (helper) {
-            return isRectContainPoint(rect, helper);
+        if (triggerred || isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+            if (!helper.target) {
+                helper.target = sprite;
+            }
+            helper.localX = helper.stageX - rect.x;
+            helper.localY = helper.stageY - rect.y;
+            sprite.emit(eventName, helper, event);
+            sprite[methodName] && sprite[methodName](helper, event);
+            if (needTriggerClick) {
+                sprite.emit(UIEvent.CLICK, helper, event);
+                sprite[onClick] && sprite[onClick](helper, event);
+            }
+            return true;
+        }
+    };
+    UIEvent.prototype._detectMouseOnClipArea = function (sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick) {
+        var rect = {
+            x: offsetX,
+            y: offsetY,
+            width: sprite.width,
+            height: sprite.height
         };
-        if (triggerred || detect(helper)) {
+        var circle = {
+            x: offsetX,
+            y: offsetY,
+            radius: sprite.radius
+        };
+        if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+            var children = sprite.children;
+            var triggerred = false;
+            if (children && children.length) {
+                var index = children.length;
+                while (--index >= 0) {
+                    triggerred = this._dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick);
+                    if (triggerred) {
+                        break;
+                    }
+                }
+                if (helper.cancelBubble) {
+                    return true;
+                }
+            }
             if (!helper.target) {
                 helper.target = sprite;
             }
@@ -2420,28 +2657,235 @@ var Stage = (function (_super) {
     return Stage;
 }(EventEmitter));
 
-var measureContext = document.createElement("canvas").getContext("2d");
-var regEnter = /\n/;
+var canvas = document.createElement('canvas');
+var ctx = canvas.getContext('2d');
+var _cache = {};
+function getCacheKey(text, width, fontFace, fontSize, lineHeight) {
+    return text + width + fontFace.name + fontSize + lineHeight;
+}
+function measureText(text, width, fontFace, fontSize, lineHeight) {
+    var cacheKey = getCacheKey(text, width, fontFace, fontSize, lineHeight);
+    var cached = _cache[cacheKey];
+    if (cached) {
+        return cached;
+    }
+    var measuredSize = {};
+    var textMetrics;
+    var lastMeasuredWidth;
+    var tryLine;
+    var currentLine;
+    ctx.font = fontFace.style + ' ' + fontFace.weight + ' ' + fontSize + 'px ' + fontFace.name;
+    textMetrics = ctx.measureText(text);
+    measuredSize.width = textMetrics.width;
+    measuredSize.height = lineHeight;
+    measuredSize.lines = [];
+    if (measuredSize.width <= width) {
+        // The entire text string fits.
+        measuredSize.lines.push({ width: measuredSize.width, text: text });
+    }
+    else {
+        // Break into multiple lines.
+        measuredSize.width = width;
+        currentLine = '';
+        var breaker = new LineBreaker(text, fontSize);
+        var remainWidth = width;
+        var index = 0;
+        var words = void 0;
+        while (index < text.length) {
+            var res = breaker.nextBreak(remainWidth);
+            if (res.len) {
+                words = text.slice(index, index + res.len);
+                tryLine = currentLine + words;
+                textMetrics = ctx.measureText(tryLine);
+                if (textMetrics.width > width) {
+                    measuredSize.height += lineHeight;
+                    measuredSize.lines.push({
+                        width: lastMeasuredWidth,
+                        text: currentLine.trim(),
+                    });
+                    currentLine = words;
+                    lastMeasuredWidth = ctx.measureText(currentLine.trim()).width;
+                    remainWidth = width;
+                }
+                else {
+                    currentLine = tryLine;
+                    lastMeasuredWidth = textMetrics.width;
+                    remainWidth = width - lastMeasuredWidth;
+                }
+            }
+            else {
+                measuredSize.height += lineHeight;
+                measuredSize.lines.push({
+                    width: lastMeasuredWidth,
+                    text: currentLine.trim(),
+                });
+                currentLine = "";
+                lastMeasuredWidth = 0;
+                remainWidth = width;
+            }
+            index += res.len;
+        }
+        currentLine = currentLine.trim();
+        if (currentLine.length > 0) {
+            textMetrics = ctx.measureText(currentLine);
+            measuredSize.lines.push({ width: textMetrics.width, text: currentLine });
+        }
+    }
+    _cache[cacheKey] = measuredSize;
+    return measuredSize;
+}
+
+var LineBreaker = (function () {
+    function LineBreaker(text, fontSize) {
+        this.text = text;
+        this.fontSize = fontSize;
+        this.position = 0;
+    }
+    LineBreaker.prototype.nextBreak = function (width) {
+        var len = Math.max(0, Math.floor(width / this.fontSize) - 1);
+        var pos = this.position;
+        this.position += len;
+        return {
+            len: len,
+        };
+    };
+    return LineBreaker;
+}());
+
+var DefaultFontSize = 24;
 var TextLabel = (function (_super) {
     __extends(TextLabel, _super);
     function TextLabel(props) {
         var _this = _super.call(this) || this;
-        _this.fontName = 'sans-serif';
         _this.textAlign = 'center';
-        _this.lineSpace = 5;
         _this.fontColor = 0x000;
-        _this.fontSize = 20;
-        _this.fontWeight = 'normal';
-        _this.fontStyle = 'normal';
-        _this._text = '';
-        _super.prototype._init.call(_this, props);
+        _this._wordWrap = true;
+        _this._fontName = 'sans-serif';
+        _this._fontSize = DefaultFontSize;
+        _this._fontWeight = 'normal';
+        _this._fontStyle = 'normal';
+        _this._lines = [];
+        props && _this.setProps(props);
         return _this;
     }
-    TextLabel.prototype._init = function (props) {
-    };
-    Object.defineProperty(TextLabel.prototype, "texture", {
+    Object.defineProperty(TextLabel.prototype, "width", {
+        get: function () {
+            return this._width;
+        },
         set: function (value) {
-            throw new Error("canvas2d: TextLabel cannot set texture.");
+            if (this._width === value) {
+                return;
+            }
+            this._width = value;
+            this._originPixelX = this._width * this._originX;
+            if (this.left != null || this.right != null) {
+                this._reCalcX();
+            }
+            else {
+                this._adjustAlignX();
+            }
+            this._reMeasureText();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "height", {
+        get: function () {
+            return this._height;
+        },
+        set: function (value) {
+            if (this._height === value) {
+                return;
+            }
+            this._height = value;
+            this._originPixelY = this._height * this._originY;
+            if (this.top != null || this.bottom != null) {
+                this._reCalcY();
+            }
+            else {
+                this._adjustAlignY();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "fontSize", {
+        get: function () {
+            return this._fontSize;
+        },
+        set: function (value) {
+            if (this._fontSize != value) {
+                this._fontSize = value;
+                if (this._lineHeight == null) {
+                    this._lineHeight = value;
+                }
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "fontName", {
+        get: function () {
+            return this._fontName;
+        },
+        set: function (value) {
+            if (this._fontName != value) {
+                this._fontName = value;
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "fontStyle", {
+        get: function () {
+            return this._fontStyle;
+        },
+        set: function (value) {
+            if (this._fontStyle != value) {
+                this._fontStyle = value;
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "fontWeight", {
+        get: function () {
+            return this._fontWeight;
+        },
+        set: function (value) {
+            if (this._fontWeight != value) {
+                this._fontWeight = value;
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "lineHeight", {
+        get: function () {
+            return this._lineHeight == null ? this._fontSize : this._lineHeight;
+        },
+        set: function (value) {
+            if (this._lineHeight != value) {
+                this._lineHeight = value;
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "wordWrap", {
+        get: function () {
+            return this._wordWrap;
+        },
+        set: function (value) {
+            if (this._wordWrap !== value) {
+                this._wordWrap = value;
+                this._reMeasureText();
+            }
         },
         enumerable: true,
         configurable: true
@@ -2453,62 +2897,72 @@ var TextLabel = (function (_super) {
         set: function (content) {
             if (this._text !== content) {
                 this._text = content;
-                if (this.autoResize) {
-                    this._resize();
-                }
-                else {
-                    this._lines = content.split(regEnter);
-                }
+                this._reMeasureText();
             }
         },
         enumerable: true,
         configurable: true
     });
-    TextLabel.prototype._resize = function () {
-        this._lines = this._text.split(regEnter);
-        var width = 0;
-        var height = 0;
-        var fontSize = this.fontSize;
-        var lineSpace = this.lineSpace;
-        measureContext.save();
-        measureContext.font = this.fontStyle + ' ' + this.fontWeight + ' ' + fontSize + 'px ' + this.fontName;
-        this._lines.forEach(function (text, i) {
-            width = Math.max(width, measureContext.measureText(text).width);
-            height = lineSpace * i + fontSize * (i + 1);
-        });
-        measureContext.restore();
-        this.width = width;
-        this.height = height;
-    };
-    TextLabel.prototype.addChild = function () {
-        throw new Error("canvas2d.TextLabel.addChild(): Don't call this method.");
-    };
-    TextLabel.prototype.draw = function (context) {
-        var _this = this;
-        this._drawBgColor(context);
-        this._drawBorder(context);
-        if (this._text.length === 0) {
+    TextLabel.prototype._reMeasureText = function () {
+        if (!this._text || this.width <= 0) {
             return;
         }
-        context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
-        context.fillStyle = convertColor(this.fontColor);
-        context.textAlign = this.textAlign;
-        context.textBaseline = 'middle';
-        context.lineJoin = 'round';
-        if (this.strokeWidth) {
-            context.strokeStyle = convertColor(this.strokeColor || 0x000);
-            context.lineWidth = this.strokeWidth * 2;
+        if (!this.wordWrap) {
+            this.height = this.lineHeight;
+            this._lines = [{
+                    text: this._text || "",
+                    width: this._width,
+                }];
+            return;
         }
-        var y = 0;
-        var h = this.fontSize + this.lineSpace;
-        this._lines.forEach(function (text) {
-            if (text.length > 0) {
-                if (_this.strokeWidth) {
-                    context.strokeText(text, 0, y, 0xffff);
+        var res = measureText(this._text, this.width, {
+            style: this.fontStyle,
+            name: this.fontName,
+            weight: this.fontWeight,
+        }, this.fontSize, this.lineHeight);
+        this._lines = res.lines;
+        this.height = res.height;
+    };
+    TextLabel.prototype.addChild = function (target) {
+        if (Array.isArray(target)) {
+            this.text += target.join("");
+        }
+        else {
+            this.text += String(target);
+        }
+    };
+    TextLabel.prototype.addChildren = function () {
+        var children = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            children[_i] = arguments[_i];
+        }
+    };
+    TextLabel.prototype.draw = function (context) {
+        _super.prototype.draw.call(this, context);
+        if (!this._lines || this._lines.length === 0) {
+            return;
+        }
+        var _a = this, strokeWidth = _a.strokeWidth, strokeColor = _a.strokeColor, textAlign = _a.textAlign, lineHeight = _a.lineHeight, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, fontSize = _a.fontSize, fontWeight = _a.fontWeight, fontStyle = _a.fontStyle, fontName = _a.fontName, fontColor = _a.fontColor, width = _a.width;
+        context.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
+        context.fillStyle = convertColor(fontColor);
+        context.textAlign = textAlign;
+        context.textBaseline = 'top';
+        context.lineJoin = 'round';
+        if (strokeColor != null) {
+            context.strokeStyle = convertColor(strokeColor || 0x000);
+            context.lineWidth = (strokeWidth || 1) * 2;
+        }
+        var x = textAlign === 'left' ? -_originPixelX : textAlign === 'center' ? 0 : width - _originPixelX;
+        var lineSpace = lineHeight - fontSize;
+        var y = -_originPixelY + lineSpace;
+        this._lines.forEach(function (line) {
+            if (line.text.length > 0) {
+                if (strokeColor != null) {
+                    context.strokeText(line.text, x, y);
                 }
-                context.fillText(text, 0, y, 0xffff);
+                context.fillText(line.text, x, y);
             }
-            y += h;
+            y += lineHeight;
         });
     };
     return TextLabel;
@@ -2516,9 +2970,34 @@ var TextLabel = (function (_super) {
 
 var BMFontLabel = (function (_super) {
     __extends(BMFontLabel, _super);
-    function BMFontLabel(attrs) {
-        return _super.call(this, attrs) || this;
+    function BMFontLabel(props) {
+        var _this = _super.call(this) || this;
+        _this._lineHeight = 5;
+        _this._wordSpace = 0;
+        _this._fontSize = 0;
+        _this._textAlign = "center";
+        _this._wordWrap = true;
+        _this._text = "";
+        _this._lines = [];
+        _this._autoResize = true;
+        props && _this.setProps(props);
+        return _this;
     }
+    Object.defineProperty(BMFontLabel.prototype, "autoResize", {
+        get: function () {
+            return this._autoResize;
+        },
+        set: function (value) {
+            if (this._autoResize !== value) {
+                this._autoResize = value;
+                if (value && this._lines.length) {
+                    this.height = this._lines.length * this.lineHeight;
+                }
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(BMFontLabel.prototype, "text", {
         get: function () {
             return this._text;
@@ -2527,7 +3006,8 @@ var BMFontLabel = (function (_super) {
             if (text === this._text) {
                 return;
             }
-            this.setText(text);
+            this._text = text;
+            this._reMeasureText();
         },
         enumerable: true,
         configurable: true
@@ -2538,48 +3018,197 @@ var BMFontLabel = (function (_super) {
         },
         set: function (textureMap) {
             this._textureMap = textureMap;
-            this.setText(this._text);
+            this._reMeasureText();
         },
         enumerable: true,
         configurable: true
     });
-    BMFontLabel.prototype.setText = function (text) {
+    Object.defineProperty(BMFontLabel.prototype, "textAlign", {
+        get: function () {
+            return this._textAlign;
+        },
+        set: function (value) {
+            if (this._textAlign != value) {
+                this._textAlign = value;
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BMFontLabel.prototype, "lineHeight", {
+        get: function () {
+            return this._lineHeight;
+        },
+        set: function (value) {
+            if (this._lineHeight != value) {
+                this._lineHeight = value;
+                if (this.autoResize && this._lines.length) {
+                    this.height = this._lines.length * value;
+                }
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BMFontLabel.prototype, "wordSpace", {
+        get: function () {
+            return this._wordSpace;
+        },
+        set: function (value) {
+            if (this._wordSpace !== value) {
+                this._wordSpace = value;
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BMFontLabel.prototype, "wordWrap", {
+        get: function () {
+            return this._wordWrap;
+        },
+        set: function (value) {
+            if (this._wordWrap !== value) {
+                this._wordWrap = value;
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BMFontLabel.prototype, "fontSize", {
+        get: function () {
+            return this._fontSize;
+        },
+        set: function (value) {
+            if (this._fontSize !== value) {
+                this._fontSize = value;
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BMFontLabel.prototype, "width", {
+        get: function () {
+            return this._width;
+        },
+        set: function (value) {
+            if (this._width === value) {
+                return;
+            }
+            this._width = value;
+            this._originPixelX = this._width * this._originX;
+            if (this.left != null || this.right != null) {
+                this._reCalcX();
+            }
+            else {
+                this._adjustAlignX();
+            }
+            this._reMeasureText();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BMFontLabel.prototype, "height", {
+        get: function () {
+            return this._height;
+        },
+        set: function (value) {
+            if (this._height === value) {
+                return;
+            }
+            this._height = value;
+            this._originPixelY = this._height * this._originY;
+            if (this.top != null || this.bottom != null) {
+                this._reCalcY();
+            }
+            else {
+                this._adjustAlignY();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    BMFontLabel.prototype._reMeasureText = function () {
         var _this = this;
-        this._text = text || '';
         if (!this.textureMap || !this._text) {
+            this._lines.length = 0;
             return;
         }
+        var _a = this, textureMap = _a.textureMap, text = _a.text, width = _a.width, lineHeight = _a.lineHeight, fontSize = _a.fontSize, wordWrap = _a.wordWrap, wordSpace = _a.wordSpace, _lines = _a._lines;
+        _lines.length = 0;
         var words = this._text.split('');
-        if (!words.length) {
-            this._words.length = 0;
-        }
-        else {
-            this._words = words.map(function (word) {
-                if (!_this._textureMap[word]) {
+        var currLine = _lines[0] = { width: 0, words: [] };
+        words.forEach(function (word) {
+            var texture;
+            if (word === " ") {
+                texture = null;
+            }
+            else {
+                texture = textureMap[word];
+                if (!texture) {
                     console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" not found.", _this);
+                    texture = null;
                 }
-                return _this._textureMap[word];
-            });
-        }
-        this.removeAllChildren();
-        if (this._words && this._words.length) {
-            this._words.forEach(function (word, i) {
-                if (!word) {
-                    return;
+                if (!texture.ready) {
+                    console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" is not ready to use.", _this);
+                    texture = null;
                 }
-                _super.prototype.addChild.call(_this, new Sprite({
-                    x: i * word.width,
-                    texture: word,
-                    originX: 0,
-                    originY: 0
-                }));
-            });
-            this.width = this._words.length * this._words[0].width;
-            this.height = this._words[0].height;
+            }
+            if (!wordWrap || currLine.width + fontSize <= width) {
+                currLine.width += fontSize;
+                currLine.words.push(texture);
+                if (currLine.width + wordSpace >= width) {
+                    currLine = _lines[_lines.length] = {
+                        width: 0, words: []
+                    };
+                }
+            }
+            else {
+                currLine = _lines[_lines.length] = {
+                    width: fontSize, words: [texture]
+                };
+            }
+        });
+        if (this.autoResize) {
+            this.height = _lines.length * lineHeight;
         }
     };
-    BMFontLabel.prototype.addChild = function () {
-        throw new Error("canvas2d.BMFontLabel.addChild(): Don't call this method.");
+    BMFontLabel.prototype.draw = function (context) {
+        _super.prototype.draw.call(this, context);
+        var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace, width = _a.width;
+        var lineSpace = (lineHeight - fontSize) * 0.5;
+        var y = -_originPixelY + lineSpace;
+        this._lines.forEach(function (line, i) {
+            var x;
+            if (_textAlign === "right") {
+                x = width - line.width - _originPixelX;
+            }
+            else if (_textAlign == "center") {
+                x = (width - line.width) * 0.5 - _originPixelX;
+            }
+            else {
+                x = -_originPixelX;
+            }
+            line.words.forEach(function (word, j) {
+                if (word) {
+                    context.drawImage(word.source, 0, 0, word.width, word.height, x, y, fontSize, fontSize);
+                }
+                x += fontSize + wordSpace;
+            });
+            y += lineHeight;
+        });
+    };
+    BMFontLabel.prototype.addChild = function (target) {
+        this._text = (this._text || "") + target;
+    };
+    BMFontLabel.prototype.addChildren = function () {
+        var children = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            children[_i] = arguments[_i];
+        }
+        this._text = (this._text || "") + children.join("");
     };
     return BMFontLabel;
 }(Sprite));
@@ -2629,9 +3258,6 @@ function createSprite(type, props) {
 function createLabel(tag, ctor, props, children) {
     var sprite = new ctor(props);
     if (children.length) {
-        if (!ensureString(children)) {
-            throw new Error("canvas2d: <" + tag + "> only support string children.");
-        }
         sprite.text = children.join('');
     }
     return sprite;
@@ -2646,9 +3272,6 @@ function createStage(props, children) {
         children.forEach(function (child) { return child && stage.addChild(child); });
     }
     return stage;
-}
-function ensureString(list) {
-    return list.every(function (item) { return typeof item === 'string'; });
 }
 function addChildren(sprite, children) {
     if (!children.length) {

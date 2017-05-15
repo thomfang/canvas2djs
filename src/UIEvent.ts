@@ -328,6 +328,10 @@ export class UIEvent {
         offsetX += sprite.x - (sprite as any)._originPixelX;
         offsetY += sprite.y - (sprite as any)._originPixelY;
 
+        if (sprite.clipOverflow) {
+            return this._detectTouchOnClipArea(sprite, offsetX, offsetY, helpers, event, methodName, eventName, needTriggerClick);
+        }
+
         var children = sprite.children;
         var tmpHelpers: EventHelper[] = helpers.slice();
         var triggerreds: EventHelper[] = [];
@@ -367,14 +371,9 @@ export class UIEvent {
             radius: sprite.radius
         };
         var count = 0;
-        var detect = rect.width === 0 && rect.height === 0 ? (helper: EventHelper) => {
-            return isCircleContainPoint(circle, helper);
-        } : (helper: EventHelper) => {
-            return isRectContainPoint(rect, helper);
-        };
 
         for (let i = 0, helper: EventHelper; helper = tmpHelpers[i]; i++) {
-            if (detect(helper)) {
+            if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
                 if (!helper.target) {
                     helper.target = sprite;
                 }
@@ -406,6 +405,86 @@ export class UIEvent {
         return triggerreds;
     }
 
+    private _detectTouchOnClipArea(
+        sprite: Sprite<any>,
+        offsetX: number,
+        offsetY: number,
+        helpers: EventHelper[],
+        event: TouchEvent,
+        methodName: string,
+        eventName: string,
+        needTriggerClick?: boolean
+    ) {
+        var hits: EventHelper[] = [];
+        var rect: Rect = {
+            x: offsetX,
+            y: offsetY,
+            width: sprite.width,
+            height: sprite.height
+        };
+        var circle = {
+            x: offsetX,
+            y: offsetY,
+            radius: sprite.radius
+        };
+        var count = 0;
+
+        for (let i = 0, helper: EventHelper; helper = helpers[i]; i++) {
+            if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+                if (!helper.target) {
+                    helper.target = sprite;
+                }
+                helper.localX = helper.stageX - offsetX;
+                helper.localY = helper.stageY - offsetY;
+
+                // Add for current sprite hit list
+                hits.push(helper);
+                count++;
+            }
+        }
+
+        if (hits.length) {
+            let children = sprite.children;
+            let triggerreds = [];
+            if (children && children.length) {
+                let index = children.length;
+                let result;
+                let filterUnTriggerred = helper => result.indexOf(helper) === -1;
+                let tmpHelpers = hits.slice();
+
+                while (--index >= 0) {
+                    result = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, eventName, needTriggerClick);
+                    if (result && result.length) {
+                        triggerreds.push(...result);
+
+                        // Remove triggerred touch helper, it won't pass to other child sprites
+                        tmpHelpers = tmpHelpers.filter(filterUnTriggerred);
+
+                        // All triggerred then exit the loop
+                        if (!tmpHelpers.length) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            hits = triggerreds.filter(helper => !helper.cancelBubble);
+
+            if (hits.length) {
+                sprite.emit(eventName, hits, event);
+                sprite[methodName] && sprite[methodName](hits, event);
+
+                // Click event would just trigger by only a touch
+                if (needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
+                    sprite.emit(UIEvent.CLICK, hits[0], event);
+                    sprite[onClick] && sprite[onClick](hits[0], event as any);
+                }
+            }
+
+            return triggerreds;
+        }
+    }
+
     private _dispatchMouse(
         sprite: Sprite<any>,
         offsetX: number,
@@ -422,6 +501,10 @@ export class UIEvent {
 
         offsetX += sprite.x - (sprite as any)._originPixelX;
         offsetY += sprite.y - (sprite as any)._originPixelY;
+
+        if (sprite.clipOverflow) {
+            return this._detectMouseOnClipArea(sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick);
+        }
 
         var children = sprite.children;
         var triggerred = false;
@@ -452,13 +535,66 @@ export class UIEvent {
             y: offsetY,
             radius: sprite.radius
         };
-        var detect = rect.width === 0 && rect.height === 0 ? (helper: EventHelper) => {
-            return isCircleContainPoint(circle, helper);
-        } : (helper: EventHelper) => {
-            return isRectContainPoint(rect, helper);
+
+        if (triggerred || isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+            if (!helper.target) {
+                helper.target = sprite;
+            }
+            helper.localX = helper.stageX - rect.x;
+            helper.localY = helper.stageY - rect.y;
+
+            sprite.emit(eventName, helper, event);
+            sprite[methodName] && sprite[methodName](helper, event);
+            if (needTriggerClick) {
+                sprite.emit(UIEvent.CLICK, helper, event);
+                sprite[onClick] && sprite[onClick](helper, event);
+            }
+
+            return true;
+        }
+    }
+
+    private _detectMouseOnClipArea(
+        sprite: Sprite<any>,
+        offsetX: number,
+        offsetY: number,
+        helper: EventHelper,
+        event: MouseEvent,
+        methodName: string,
+        eventName: string,
+        needTriggerClick?: boolean
+    ): boolean {
+        var rect: Rect = {
+            x: offsetX,
+            y: offsetY,
+            width: sprite.width,
+            height: sprite.height
+        };
+        var circle = {
+            x: offsetX,
+            y: offsetY,
+            radius: sprite.radius
         };
 
-        if (triggerred || detect(helper)) {
+        if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+            var children = sprite.children;
+            var triggerred = false;
+
+            if (children && children.length) {
+                var index = children.length;
+
+                while (--index >= 0) {
+                    triggerred = this._dispatchMouse(children[index], offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick);
+                    if (triggerred) {
+                        break;
+                    }
+                }
+
+                if (helper.cancelBubble) {
+                    return true;
+                }
+            }
+
             if (!helper.target) {
                 helper.target = sprite;
             }

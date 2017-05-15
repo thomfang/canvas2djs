@@ -5,6 +5,7 @@ import { Texture } from '../Texture';
 import { EventEmitter } from '../EventEmitter';
 import { ReleasePool } from '../ReleasePool';
 import { Stage } from '../Stage';
+import { SpriteProps } from '../createSprite';
 
 export const RAD_PER_DEG: number = Math.PI / 180;
 
@@ -16,9 +17,12 @@ export enum AlignType {
     CENTER
 }
 
+const sharedCanvas = document.createElement("canvas");
+const sharedContext = sharedCanvas.getContext("2d");
+
 export class Sprite<T extends ISprite> extends EventEmitter {
 
-    protected _props: T & ISprite; // Define for tsx
+    protected _props: T & SpriteProps; // Define for tsx
 
     protected _width: number = 0;
     protected _height: number = 0;
@@ -77,20 +81,24 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     onMouseEnded: ISprite["onMouseEnded"];
     onTouchBegin: ISprite["onTouchBegin"];
     onTouchMoved: ISprite["onTouchMoved"];
-    onKeyDown: ISprite["onKeyDown"];
-    onKeyUp: ISprite["onKeyUp"];
     onTouchEnded: ISprite["onTouchEnded"];
 
-    constructor(props?: ISprite) {
+    constructor(props?: T & SpriteProps) {
         super();
         this.id = uid(this);
         this._init(props);
     }
 
-    protected _init(attrs?: ISprite) {
-        if (attrs) {
-            Object.keys(attrs).forEach(name => this[name] = attrs[name]);
+    protected _init(props?: T & SpriteProps) {
+        if (props) {
+            this.setProps(props);
         }
+    }
+
+    setProps(props: T & SpriteProps) {
+        Object.keys(props).forEach(key => {
+            this[key] = props[key];
+        });
     }
 
     set width(value: number) {
@@ -100,7 +108,14 @@ export class Sprite<T extends ISprite> extends EventEmitter {
 
         this._width = value;
         this._originPixelX = this._width * this._originX;
-        this._adjustAlignX();
+
+        if (this.left != null || this.right != null) {
+            this._reCalcX();
+        }
+        else {
+            this._adjustAlignX();
+        }
+
         this._reLayoutChildrenOnWidthChanged();
     }
 
@@ -115,7 +130,14 @@ export class Sprite<T extends ISprite> extends EventEmitter {
 
         this._height = value;
         this._originPixelY = this._height * this._originY;
-        this._adjustAlignY();
+
+        if (this.top != null || this.bottom != null) {
+            this._reCalcY();
+        }
+        else {
+            this._adjustAlignY();
+        }
+
         this._reLayoutChildrenOnHeightChanged();
     }
 
@@ -130,7 +152,12 @@ export class Sprite<T extends ISprite> extends EventEmitter {
 
         this._originX = value;
         this._originPixelX = this._originX * this._width;
-        this._adjustAlignX();
+        if (this.left != null || this.right != null) {
+            this._reCalcX();
+        }
+        else {
+            this._adjustAlignX();
+        }
     }
 
     get originX(): number {
@@ -144,7 +171,12 @@ export class Sprite<T extends ISprite> extends EventEmitter {
 
         this._originY = value;
         this._originPixelY = this._originY * this._height;
-        this._adjustAlignY();
+        if (this.top != null || this.bottom != null) {
+            this._reCalcY();
+        }
+        else {
+            this._adjustAlignY();
+        }
     }
 
     get originY(): number {
@@ -280,11 +312,6 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
 
         this._parent = sprite;
-
-        if (sprite) {
-            this._adjustAlignX();
-            this._adjustAlignY();
-        }
     }
 
     get parent() {
@@ -411,12 +438,24 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             return;
         }
         const { parent, percentWidth, right, left } = this;
+
         if (left != null && right != null) {
             this.width = parent.width - left - right;
-            this.x = left + this._originPixelX;
         }
         else if (percentWidth != null) {
             this.width = parent.width * percentWidth;
+        }
+
+        this._reCalcX();
+    }
+
+    protected _reCalcX() {
+        const { left, right, parent, width, _originPixelX } = this;
+        if (left != null) {
+            this.x = left + _originPixelX;
+        }
+        else if (right != null && parent != null) {
+            this.x = parent.width - (width + right - _originPixelX);
         }
     }
 
@@ -428,15 +467,29 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         if (top != null && bottom != null) {
             this.height = parent.height - top - bottom;
             this.y = top + this._originPixelY;
+            return;
         }
-        else if (percentHeight != null) {
+
+        if (percentHeight != null) {
             this.height = parent.height * percentHeight;
+        }
+
+        this._reCalcY();
+    }
+
+    protected _reCalcY() {
+        const { top, bottom, parent, height, _originPixelY } = this;
+        if (top != null) {
+            this.y = top + _originPixelY;
+        }
+        else if (bottom != null && parent != null) {
+            this.y = parent.height - (height + bottom - _originPixelY);
         }
     }
 
     protected _adjustAlignX() {
-        if (!this.parent || this._alignX == null) {
-            return;
+        if (!this.parent || this._alignX == null || this.left != null || this.right != null) {
+            return false;
         }
 
         let x: number;
@@ -457,11 +510,12 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         if (x != null) {
             this.x = x;
         }
+        return true;
     }
 
     protected _adjustAlignY() {
-        if (!this.parent || this._alignY == null) {
-            return;
+        if (!this.parent || this._alignY == null || this.top != null || this.bottom != null) {
+            return false;
         }
 
         let y: number;
@@ -482,6 +536,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         if (y != null) {
             this.y = y;
         }
+        return true;
     }
 
     protected _visitChildren(context: CanvasRenderingContext2D): void {
@@ -531,8 +586,8 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     protected _drawBorder(context: CanvasRenderingContext2D): void {
-        if (this.borderWidth != null) {
-            context.lineWidth = this.borderWidth;
+        if (this.borderColor != null) {
+            context.lineWidth = this.borderWidth || 1;
             context.strokeStyle = convertColor(this.borderColor || 0x000);
             context.beginPath();
             if (this.radius > 0) {
@@ -570,22 +625,30 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             context.drawImage(texture.source, sx, sy, sw, sh, -ox, -oy, w, h);
         }
         else {
-            // this.grid: [top, right, bottom, left]
             let [top, right, bottom, left] = grid;
             let grids = [
-                { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top },
-                { x: left, y: 0, w: w - left - right, h: top, sx: left, sy: 0, sw: sw - left - right, sh: top },
-                { x: w - right, y: 0, w: right, h: top, sx: sw - right, sy: 0, sw: right, sh: top },
-                { x: 0, y: top, w: left, h: h - top - bottom, sx: 0, sy: top, sw: left, sh: sh - top - bottom },
-                { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: left, sy: top, sw: sw - left - right, sh: sh - top - bottom },
-                { x: w - right, y: top, w: right, h: h - top - bottom, sx: sw - right, sy: top, sw: right, sh: sh - top - bottom },
-                { x: 0, y: h - bottom, w: left, h: bottom, sx: 0, sy: sh - bottom, sw: left, sh: bottom },
-                { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: left, sy: sh - bottom, sw: sw - left - right, sh: bottom },
-                { x: w - right, y: h - bottom, w: right, h: bottom, sx: sw - right, sy: sh - bottom, sw: right, sh: bottom },
+                { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top }, // left top
+                { x: w - right, y: 0, w: right, h: top, sx: sx + sw - right, sy: sy, sw: right, sh: top }, // right top
+                { x: 0, y: h - bottom, w: left, h: bottom, sx: sx, sy: sy + sh - bottom, sw: left, sh: bottom }, // left bottom
+                { x: w - right, y: h - bottom, w: right, h: bottom, sx: sx + sw - right, sy: sh - bottom + sy, sw: right, sh: bottom }, // right bottom
+                { x: left, y: 0, w: w - left - right, h: top, sx: sx + left, sy: sy, sw: sw - left - right, sh: top }, // top
+                { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: sx + left, sy: sh - bottom + sy, sw: sw - left - right, sh: bottom }, // bottom
+                { x: 0, y: top, w: left, h: h - top - bottom, sx: sx, sy: top, sw: left, sh: sh - top - bottom }, // left
+                { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom }, // right
+                { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom }, // center
             ];
+            sharedCanvas.width = w;
+            sharedCanvas.height = h;
             grids.forEach(g => {
-                context.drawImage(texture.source, g.sx, g.sy, g.sw, g.sh, g.x - ox, g.y - oy, g.w, g.h);
+                if (g.w && g.h) {
+                    sharedContext.drawImage(texture.source, g.sx, g.sy, g.sw, g.sh,
+                        Math.ceil(g.x),
+                        Math.ceil(g.y),
+                        Math.ceil(g.w),
+                        Math.ceil(g.h));
+                }
             });
+            context.drawImage(sharedCanvas, -ox, -oy, w, h);
         }
     }
 
@@ -613,7 +676,15 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             }
             target._resizeWidth();
             target._resizeHeight();
+            target._adjustAlignX();
+            target._adjustAlignY();
         }
+    }
+
+    addChildren(...children: Sprite<any>[]) {
+        children.forEach(child => {
+            this.addChild(child);
+        });
     }
 
     removeChild(target: Sprite<any>): void {
@@ -626,6 +697,12 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             target.parent = null;
             target.stage = null;
         }
+    }
+
+    removeChildren(...children: Sprite<any>[]) {
+        children.forEach(child => {
+            this.removeChild(child);
+        });
     }
 
     removeAllChildren(recusive?: boolean): void {
@@ -740,7 +817,6 @@ export interface ISprite {
 
     touchEnabled?: boolean;
     mouseEnabled?: boolean;
-    keyboardEnabled?: boolean;
 
     /**
      * Sprite would call this method each frame
@@ -782,14 +858,4 @@ export interface ISprite {
      * Touch ended event hadndler
      */
     onTouchEnded?(touches: EventHelper[], event: TouchEvent): any;
-
-    /**
-     * KeyDown event handler
-     */
-    onKeyDown?(event: KeyboardEvent): any;
-
-    /**
-     * KeyUp event handler
-     */
-    onKeyUp?(event: KeyboardEvent): any;
 }

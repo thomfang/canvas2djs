@@ -3,6 +3,7 @@ import { Color } from '../Util';
 import { Texture } from '../Texture';
 import { EventEmitter } from '../EventEmitter';
 import { Stage } from '../Stage';
+import { SpriteProps } from '../createSprite';
 export declare const RAD_PER_DEG: number;
 export declare enum AlignType {
     TOP = 0,
@@ -12,7 +13,7 @@ export declare enum AlignType {
     CENTER = 4,
 }
 export declare class Sprite<T extends ISprite> extends EventEmitter {
-    protected _props: T & ISprite;
+    protected _props: T & SpriteProps;
     protected _width: number;
     protected _height: number;
     protected _originX: number;
@@ -62,11 +63,10 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     onMouseEnded: ISprite["onMouseEnded"];
     onTouchBegin: ISprite["onTouchBegin"];
     onTouchMoved: ISprite["onTouchMoved"];
-    onKeyDown: ISprite["onKeyDown"];
-    onKeyUp: ISprite["onKeyUp"];
     onTouchEnded: ISprite["onTouchEnded"];
-    constructor(props?: ISprite);
-    protected _init(attrs?: ISprite): void;
+    constructor(props?: T & SpriteProps);
+    protected _init(props?: T & SpriteProps): void;
+    setProps(props: T & SpriteProps): void;
     width: number;
     height: number;
     originX: number;
@@ -89,16 +89,20 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     protected _reLayoutChildrenOnWidthChanged(): void;
     protected _reLayoutChildrenOnHeightChanged(): void;
     protected _resizeWidth(): void;
+    protected _reCalcX(): void;
     protected _resizeHeight(): void;
-    protected _adjustAlignX(): void;
-    protected _adjustAlignY(): void;
+    protected _reCalcY(): void;
+    protected _adjustAlignX(): boolean;
+    protected _adjustAlignY(): boolean;
     protected _visitChildren(context: CanvasRenderingContext2D): void;
     protected _clip(context: CanvasRenderingContext2D): void;
     protected _drawBgColor(context: CanvasRenderingContext2D): void;
     protected _drawBorder(context: CanvasRenderingContext2D): void;
     protected draw(context: CanvasRenderingContext2D): void;
     addChild(target: Sprite<any>, position?: number): void;
+    addChildren(...children: Sprite<any>[]): void;
     removeChild(target: Sprite<any>): void;
+    removeChildren(...children: Sprite<any>[]): void;
     removeAllChildren(recusive?: boolean): void;
     contains(target: Sprite<any>): any;
     release(recusive?: boolean): void;
@@ -159,7 +163,6 @@ export interface ISprite {
     autoResize?: boolean;
     touchEnabled?: boolean;
     mouseEnabled?: boolean;
-    keyboardEnabled?: boolean;
     /**
      * Sprite would call this method each frame
      * @param  deltaTime  Duration between now and last frame
@@ -193,12 +196,4 @@ export interface ISprite {
      * Touch ended event hadndler
      */
     onTouchEnded?(touches: EventHelper[], event: TouchEvent): any;
-    /**
-     * KeyDown event handler
-     */
-    onKeyDown?(event: KeyboardEvent): any;
-    /**
-     * KeyUp event handler
-     */
-    onKeyUp?(event: KeyboardEvent): any;
 }

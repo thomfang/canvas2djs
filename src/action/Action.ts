@@ -6,6 +6,7 @@ import { Tween, EasingFunc } from '../Tween';
 import { IActionListener, ActionListener } from './ActionListener';
 import { TransByProps, TransToProps, Transition } from './Transition';
 import { addArrayItem, removeArrayItem } from '../Util';
+import { BaseAction } from './BaseAction';
 
 export enum ActionType {
     TO,
@@ -15,41 +16,52 @@ export enum ActionType {
     CALLBACK,
 }
 
-export type ActionQueue = Array<{
+export type TransToAction = {
     type: ActionType.TO;
     options: TransToProps;
     duration: number;
-} | {
-        type: ActionType.BY;
-        options: TransByProps;
-        duration: number;
-    } | {
-        type: ActionType.ANIM;
-        frameList: Array<Texture | string>;
-        frameRate: number;
-        repetitions?: number;
-    } | {
-        type: ActionType.WAIT;
-        duration: number;
-    } | {
-        type: ActionType.CALLBACK;
-        callback: Function;
-    }>;
+};
 
-export interface IAction {
-    immediate?: boolean;
-    done: boolean;
+export type TransByAction = {
+    type: ActionType.BY;
+    options: TransByProps;
+    duration: number;
+};
 
-    step(deltaTime: number, target: any): void;
-    end(target: any): void;
+export type AnimationAction = {
+    type: ActionType.ANIM;
+    frameList: Array<Texture | string>;
+    frameRate: number;
+    repetitions?: number;
+}
+
+export type WaitAction = {
+    type: ActionType.WAIT;
+    duration: number;
+}
+
+export type CallbackAction = {
+    type: ActionType.CALLBACK;
+    callback: Function;
+}
+
+export type ActionQueue = Array<TransToAction | TransByAction | AnimationAction | WaitAction | CallbackAction>;
+
+export enum ActionRepeatMode {
+    NONE,
+    REPEAT,
+    REVERSE_REPEAT,
 }
 
 export class Action {
 
+    private static _actionList: Array<Action> = [];
+    private static _listenerList: Array<IActionListener> = [];
+
     /**
      * Stop action by target
      */
-    static stop(target: any) {
+    public static stop(target: any) {
         Action._actionList.slice().forEach((action) => {
             if (action.target === target) {
                 action.stop();
@@ -60,13 +72,17 @@ export class Action {
     /**
      * Listen a action list, when all actions are done then publish to listener
      */
-    static listen(actions: Array<Action>): IActionListener {
+    public static listen(actions: Array<Action>): IActionListener {
         var listener = new ActionListener(actions);
         Action._listenerList.push(listener);
         return listener;
     }
 
-    static schedule(deltaTime: number): void {
+    public static removeListener(listener: IActionListener) {
+        removeArrayItem(this._listenerList, this);
+    }
+
+    public static schedule(deltaTime: number): void {
         Action._actionList.slice().forEach(action => {
             action._step(deltaTime);
 
@@ -80,21 +96,36 @@ export class Action {
         });
     }
 
-    static _actionList: Array<Action> = [];
-    static _listenerList: Array<IActionListener> = [];
-
-    private _queue: Array<IAction> = [];
-
-    _done: boolean = false;
+    protected _queue: Array<BaseAction> = [];
+    protected _currentIndex: number = 0;
+    protected _done: boolean = false;
+    protected _repeatMode: ActionRepeatMode = ActionRepeatMode.NONE;
 
     /**
      * Action running state
      */
-    isRunning: boolean = false;
-    target: any;
+    public isRunning: boolean = false;
+    public target: any;
 
     constructor(target: any) {
         this.target = target;
+    }
+
+    isDone() {
+        return this._done;
+    }
+
+    setRepeatMode(mode: ActionRepeatMode) {
+        this._repeatMode = mode;
+        return this;
+    }
+
+    set repeatMode(mode: ActionRepeatMode) {
+        this._repeatMode = mode;
+    }
+
+    get repeatMode() {
+        return this._repeatMode;
     }
 
     queue(actions: ActionQueue) {
@@ -177,6 +208,8 @@ export class Action {
      * Stop the action
      */
     stop() {
+        this._queue.forEach(action => action.destroy());
+
         this._done = true;
         this.isRunning = false;
         this._queue.length = 0;
@@ -184,26 +217,56 @@ export class Action {
         removeArrayItem(Action._actionList, this);
     }
 
-    private _step(deltaTime: number): void {
-        if (!this._queue.length) {
+    clear() {
+        this._queue.forEach(action => action.destroy());
+
+        this._done = false;
+        this.isRunning = false;
+        this._queue.length = 0;
+        this._currentIndex = 0;
+        this._repeatMode = ActionRepeatMode.NONE;
+
+        removeArrayItem(Action._actionList, this);
+    }
+
+    protected _step(deltaTime: number): void {
+        if (!this._queue.length || this._currentIndex >= this._queue.length) {
             return;
         }
 
-        var action = this._queue[0];
+        var action = this._queue[this._currentIndex];
 
         action.step(deltaTime, this.target);
 
         if (action.done) {
-            this._queue.shift();
+            this._currentIndex += 1;
 
-            if (!this._queue.length) {
-                this._done = true;
-                this.isRunning = false;
-                this.target = null;
+            if (this._currentIndex >= this._queue.length) {
+                this._onAllActionDone();
             }
             else if (action.immediate) {
                 this._step(deltaTime);
             }
+        }
+    }
+
+    protected _onAllActionDone() {
+        switch (this._repeatMode) {
+            case ActionRepeatMode.REPEAT:
+                this._queue.forEach(a => a.reset());
+                this._currentIndex = 0;
+                break;
+            case ActionRepeatMode.REVERSE_REPEAT:
+                this._queue.forEach(a => a.reverse());
+                this._currentIndex = 0;
+                break;
+            default:
+                this._done = true;
+                this.isRunning = false;
+                this.target = null;
+                this._queue.forEach(a => a.destroy());
+                this._queue.length = 0;
+                break;
         }
     }
 }

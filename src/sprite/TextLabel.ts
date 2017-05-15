@@ -1,66 +1,165 @@
 ﻿import { convertColor, Color } from '../Util';
 import { Sprite, ISprite } from './Sprite';
-
-var measureContext = document.createElement("canvas").getContext("2d");
-var regEnter = /\n/;
+import { measureText } from '../measureText';
 
 export type FontWeight = "lighter" | "normal" | "bold" | "bolder";
 export type FontStyle = "oblique" | "normal" | "italic";
 export type TextAlign = "left" | "right" | "center" | "start" | "end";
 
-export interface ITextLabel extends ISprite {
+const DefaultFontSize = 24;
+
+export type ITextLabel = ISprite & {
     text?: string;
     fontName?: string;
     textAlign?: TextAlign;
     fontColor?: Color;
     fontSize?: number;
-    lineSpace?: number;
+    lineHeight?: number;
     fontStyle?: FontStyle;
     fontWeight?: FontWeight;
-    maxWidth?: number;
     strokeColor?: Color;
     strokeWidth?: number;
+    wordWrap?: boolean;
 }
 
 export class TextLabel extends Sprite<ITextLabel> {
 
-    maxWidth: number;
-    fontName: string = 'sans-serif';
     textAlign: TextAlign = 'center';
-    lineSpace: number = 5;
-    fontColor: Color = 0x000;
-    fontSize: number = 20;
-    fontWeight: FontWeight = 'normal';
-    fontStyle: FontStyle = 'normal';
     strokeColor: Color;
     strokeWidth: number;
+    fontColor: Color = 0x000;
 
-    private _lines: string[];
-    private _text: string = '';
+    protected _wordWrap: boolean = true;
+    protected _fontName: string = 'sans-serif';
+    protected _lineHeight: number;
+    protected _fontSize: number = DefaultFontSize;
+    protected _fontWeight: FontWeight = 'normal';
+    protected _fontStyle: FontStyle = 'normal';
+
+    protected _lines: { width: number; text: string; }[] = [];
+    protected _text: string;
 
     constructor(props?: ITextLabel) {
         super();
-        super._init(props);
+
+        props && this.setProps(props);
     }
 
-    protected _init(props?: ISprite) {
+    set width(value: number) {
+        if (this._width === value) {
+            return;
+        }
 
+        this._width = value;
+        this._originPixelX = this._width * this._originX;
+
+        if (this.left != null || this.right != null) {
+            this._reCalcX();
+        }
+        else {
+            this._adjustAlignX();
+        }
+
+        this._reMeasureText();
     }
 
-    set texture(value: any) {
-        throw new Error(`canvas2d: TextLabel cannot set texture.`);
+    get width() {
+        return this._width;
+    }
+
+    set height(value: number) {
+        if (this._height === value) {
+            return;
+        }
+
+        this._height = value;
+        this._originPixelY = this._height * this._originY;
+
+        if (this.top != null || this.bottom != null) {
+            this._reCalcY();
+        }
+        else {
+            this._adjustAlignY();
+        }
+    }
+
+    get height() {
+        return this._height;
+    }
+
+    set fontSize(value: number) {
+        if (this._fontSize != value) {
+            this._fontSize = value;
+            if (this._lineHeight == null) {
+                this._lineHeight = value;
+            }
+            this._reMeasureText();
+        }
+    }
+
+    get fontSize() {
+        return this._fontSize;
+    }
+
+    set fontName(value: string) {
+        if (this._fontName != value) {
+            this._fontName = value;
+            this._reMeasureText();
+        }
+    }
+
+    get fontName() {
+        return this._fontName;
+    }
+
+    set fontStyle(value: FontStyle) {
+        if (this._fontStyle != value) {
+            this._fontStyle = value;
+            this._reMeasureText();
+        }
+    }
+
+    get fontStyle() {
+        return this._fontStyle;
+    }
+
+    set fontWeight(value: FontWeight) {
+        if (this._fontWeight != value) {
+            this._fontWeight = value;
+            this._reMeasureText();
+        }
+    }
+
+    get fontWeight() {
+        return this._fontWeight;
+    }
+
+    get lineHeight() {
+        return this._lineHeight == null ? this._fontSize : this._lineHeight;
+    }
+
+    set lineHeight(value: number) {
+        if (this._lineHeight != value) {
+            this._lineHeight = value;
+            this._reMeasureText();
+        }
+    }
+
+    set wordWrap(value: boolean) {
+        if (this._wordWrap !== value) {
+            this._wordWrap = value;
+            this._reMeasureText();
+        }
+    }
+
+    get wordWrap() {
+        return this._wordWrap;
     }
 
     set text(content: string) {
         if (this._text !== content) {
             this._text = content;
-
-            if (this.autoResize) {
-                this._resize();
-            }
-            else {
-                this._lines = content.split(regEnter);
-            }
+            this._reMeasureText();
         }
     }
 
@@ -68,62 +167,73 @@ export class TextLabel extends Sprite<ITextLabel> {
         return this._text;
     }
 
-    private _resize(): void {
-        this._lines = this._text.split(regEnter);
+    private _reMeasureText(): void {
+        if (!this._text || this.width <= 0) {
+            return;
+        }
+        if (!this.wordWrap) {
+            this.height = this.lineHeight;
+            this._lines = [{
+                text: this._text || "",
+                width: this._width,
+            }];
+            return;
+        }
+        let res = measureText(this._text, this.width, {
+            style: this.fontStyle,
+            name: this.fontName,
+            weight: this.fontWeight,
+        }, this.fontSize, this.lineHeight);
 
-        var width = 0;
-        var height = 0;
-        var fontSize = this.fontSize;
-        var lineSpace = this.lineSpace;
-
-        measureContext.save();
-        measureContext.font = this.fontStyle + ' ' + this.fontWeight + ' ' + fontSize + 'px ' + this.fontName;
-
-        this._lines.forEach((text, i) => {
-            width = Math.max(width, measureContext.measureText(text).width);
-            height = lineSpace * i + fontSize * (i + 1);
-        });
-
-        measureContext.restore();
-
-        this.width = width;
-        this.height = height;
+        this._lines = res.lines;
+        this.height = res.height;
     }
 
-    addChild(): void {
-        throw new Error(`canvas2d.TextLabel.addChild(): Don't call this method.`);
+    addChild(target: any): void {
+        if (Array.isArray(target)) {
+            this.text += target.join("");
+        }
+        else {
+            this.text += String(target);
+        }
+    }
+
+    addChildren(...children: any[]) {
+
     }
 
     protected draw(context: CanvasRenderingContext2D): void {
-        this._drawBgColor(context);
-        this._drawBorder(context);
+        super.draw(context);
 
-        if (this._text.length === 0) {
+        if (!this._lines || this._lines.length === 0) {
             return;
         }
 
-        context.font = this.fontStyle + ' ' + this.fontWeight + ' ' + this.fontSize + 'px ' + this.fontName;
-        context.fillStyle = convertColor(this.fontColor);
-        context.textAlign = this.textAlign;
-        context.textBaseline = 'middle';
+        const { strokeWidth, strokeColor, textAlign, lineHeight, _originPixelX, _originPixelY, fontSize, fontWeight, fontStyle, fontName, fontColor, width } = this;
+
+        context.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
+        context.fillStyle = convertColor(fontColor);
+        context.textAlign = textAlign;
+        context.textBaseline = 'top';
         context.lineJoin = 'round';
 
-        if (this.strokeWidth) {
-            context.strokeStyle = convertColor(this.strokeColor || 0x000);
-            context.lineWidth = this.strokeWidth * 2;
+        if (strokeColor != null) {
+            context.strokeStyle = convertColor(strokeColor || 0x000);
+            context.lineWidth = (strokeWidth || 1) * 2;
         }
 
-        var y = 0;
-        var h = this.fontSize + this.lineSpace;
+        var x = textAlign === 'left' ? -_originPixelX : textAlign === 'center' ? 0 : width - _originPixelX;
+        var lineSpace = lineHeight - fontSize;
+        var y = -_originPixelY + lineSpace;
 
-        this._lines.forEach((text) => {
-            if (text.length > 0) {
-                if (this.strokeWidth) {
-                    context.strokeText(text, 0, y, 0xffff);
+        this._lines.forEach((line) => {
+            if (line.text.length > 0) {
+                if (strokeColor != null) {
+                    context.strokeText(line.text, x, y);
                 }
-                context.fillText(text, 0, y, 0xffff);
+                context.fillText(line.text, x, y);
             }
-            y += h;
+            y += lineHeight;
         });
     }
 }
