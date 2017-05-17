@@ -15,6 +15,8 @@ export type Rect = {
 export class Texture {
 
     private _readyCallbacks: any[] = [];
+    private _gridSourceCache: { [key: string]: HTMLCanvasElement } = {};
+    private _gridSourceCount = 0;
 
     /**
      * Texture resource loading state
@@ -34,8 +36,8 @@ export class Texture {
      * @param  source  Drawable source
      * @param  rect    Clipping rect
      */
-    static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture {
-        var name = generateTextureName(source, sourceRect, textureRect);
+    public static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture {
+        var name = getCacheKey(source, sourceRect, textureRect);
 
         if (name && cache[name]) {
             return cache[name];
@@ -44,18 +46,26 @@ export class Texture {
         return new Texture(source, sourceRect, textureRect);
     }
 
+    public static getByName(name: string) {
+        return cache[name];
+    }
+
     /**
      * 缓存Texture实例
      */
-    static cacheAs(name: string, texture: Texture) {
+    public static cacheAs(name: string, texture: Texture) {
         cache[name] = texture;
     }
 
     /**
      * 清除缓存
      */
-    static clearCache(name?: string) {
+    public static clearCache(name?: string) {
         if (name != null) {
+            let texture = cache[name];
+            if (texture) {
+                texture.clearCacheGridSources();
+            }
             delete cache[name];
         }
         else {
@@ -68,7 +78,7 @@ export class Texture {
      * @param  rect    Clipping rect
      */
     constructor(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect) {
-        var name: any = generateTextureName(source, sourceRect, textureRect);
+        var name: any = getCacheKey(source, sourceRect, textureRect);
 
         if (cache[name]) {
             return cache[name];
@@ -96,6 +106,49 @@ export class Texture {
         else {
             this._readyCallbacks.push(callback);
         }
+    }
+
+    public createGridSource(w: number, h: number, sx: number, sy: number, sw: number, sh: number, grid: number[]) {
+        let cacheKey = getGridCacheKey(w, h, sx, sy, sw, sh, grid);
+
+        if (this._gridSourceCache[cacheKey]) {
+            return this._gridSourceCache[cacheKey];
+        }
+
+        const [top, right, bottom, left] = grid;
+        let grids = [
+            { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top }, // left top
+            { x: w - right, y: 0, w: right, h: top, sx: sx + sw - right, sy: sy, sw: right, sh: top }, // right top
+            { x: 0, y: h - bottom, w: left, h: bottom, sx: sx, sy: sy + sh - bottom, sw: left, sh: bottom }, // left bottom
+            { x: w - right, y: h - bottom, w: right, h: bottom, sx: sx + sw - right, sy: sh - bottom + sy, sw: right, sh: bottom }, // right bottom
+            { x: left, y: 0, w: w - left - right, h: top, sx: sx + left, sy: sy, sw: sw - left - right, sh: top }, // top
+            { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: sx + left, sy: sh - bottom + sy, sw: sw - left - right, sh: bottom }, // bottom
+            { x: 0, y: top, w: left, h: h - top - bottom, sx: sx, sy: top, sw: left, sh: sh - top - bottom }, // left
+            { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom }, // right
+            { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom }, // center
+        ];
+        let canvas = document.createElement("canvas");
+        let context = canvas.getContext("2d");
+
+        canvas.width = w;
+        canvas.height = h;
+        grids.forEach(g => {
+            if (g.w && g.h) {
+                context.drawImage(this.source, g.sx, g.sy, g.sw, g.sh,
+                    Math.ceil(g.x),
+                    Math.ceil(g.y),
+                    Math.ceil(g.w),
+                    Math.ceil(g.h));
+            }
+        });
+        this._gridSourceCache[cacheKey] = canvas;
+        this._gridSourceCount += 1;
+        return canvas;
+    }
+
+    public clearCacheGridSources() {
+        this._gridSourceCache = {};
+        this._gridSourceCount = 0;
     }
 
     private _createByPath(path: string, sourceRect?: Rect, textureRect?: Rect): void {
@@ -159,7 +212,11 @@ export class Texture {
     }
 }
 
-function generateTextureName(source: any, sourceRect?: Rect, textureRect?: Rect): any {
+function getGridCacheKey(...args: any[]) {
+    return args.join(':');
+}
+
+function getCacheKey(source: any, sourceRect?: Rect, textureRect?: Rect): any {
     var isStr = typeof source === 'string';
 
     if (!isStr && !source.src) {

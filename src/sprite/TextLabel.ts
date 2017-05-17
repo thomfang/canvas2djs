@@ -199,7 +199,7 @@ export class TextLabel extends Sprite<ITextLabel> {
     }
 
     addChildren(...children: any[]) {
-
+        this.text += children.join("");
     }
 
     protected draw(context: CanvasRenderingContext2D): void {
@@ -214,7 +214,7 @@ export class TextLabel extends Sprite<ITextLabel> {
         context.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
         context.fillStyle = convertColor(fontColor);
         context.textAlign = textAlign;
-        context.textBaseline = 'top';
+        context.textBaseline = 'middle';
         context.lineJoin = 'round';
 
         if (strokeColor != null) {
@@ -223,8 +223,7 @@ export class TextLabel extends Sprite<ITextLabel> {
         }
 
         var x = textAlign === 'left' ? -_originPixelX : textAlign === 'center' ? 0 : width - _originPixelX;
-        var lineSpace = lineHeight - fontSize;
-        var y = -_originPixelY + lineSpace;
+        var y = -_originPixelY + lineHeight * 0.5;
 
         this._lines.forEach((line) => {
             if (line.text.length > 0) {

@@ -9,6 +9,8 @@ export declare type Rect = {
  */
 export declare class Texture {
     private _readyCallbacks;
+    private _gridSourceCache;
+    private _gridSourceCount;
     /**
      * Texture resource loading state
      */
@@ -25,6 +27,7 @@ export declare class Texture {
      * @param  rect    Clipping rect
      */
     static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture;
+    static getByName(name: string): Texture;
     /**
      * 缓存Texture实例
      */
@@ -42,6 +45,8 @@ export declare class Texture {
         width: number;
         height: number;
     }) => any): void;
+    createGridSource(w: number, h: number, sx: number, sy: number, sw: number, sh: number, grid: number[]): HTMLCanvasElement;
+    clearCacheGridSources(): void;
     private _createByPath(path, sourceRect?, textureRect?);
     private _createByImage(image, sourceRect?, textureRect?);
 }

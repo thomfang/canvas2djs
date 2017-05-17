@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.3.0
+ * canvas2djs v2.3.1
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -323,13 +323,15 @@ var Texture = (function () {
      */
     function Texture(source, sourceRect, textureRect) {
         this._readyCallbacks = [];
+        this._gridSourceCache = {};
+        this._gridSourceCount = 0;
         /**
          * Texture resource loading state
          */
         this.ready = false;
         this.width = 0;
         this.height = 0;
-        var name = generateTextureName(source, sourceRect, textureRect);
+        var name = getCacheKey(source, sourceRect, textureRect);
         if (cache[name]) {
             return cache[name];
         }
@@ -352,11 +354,14 @@ var Texture = (function () {
      * @param  rect    Clipping rect
      */
     Texture.create = function (source, sourceRect, textureRect) {
-        var name = generateTextureName(source, sourceRect, textureRect);
+        var name = getCacheKey(source, sourceRect, textureRect);
         if (name && cache[name]) {
             return cache[name];
         }
         return new Texture(source, sourceRect, textureRect);
+    };
+    Texture.getByName = function (name) {
+        return cache[name];
     };
     /**
      * 缓存Texture实例
@@ -369,6 +374,10 @@ var Texture = (function () {
      */
     Texture.clearCache = function (name) {
         if (name != null) {
+            var texture = cache[name];
+            if (texture) {
+                texture.clearCacheGridSources();
+            }
             delete cache[name];
         }
         else {
@@ -382,6 +391,41 @@ var Texture = (function () {
         else {
             this._readyCallbacks.push(callback);
         }
+    };
+    Texture.prototype.createGridSource = function (w, h, sx, sy, sw, sh, grid) {
+        var _this = this;
+        var cacheKey = getGridCacheKey(w, h, sx, sy, sw, sh, grid);
+        if (this._gridSourceCache[cacheKey]) {
+            return this._gridSourceCache[cacheKey];
+        }
+        var top = grid[0], right = grid[1], bottom = grid[2], left = grid[3];
+        var grids = [
+            { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top },
+            { x: w - right, y: 0, w: right, h: top, sx: sx + sw - right, sy: sy, sw: right, sh: top },
+            { x: 0, y: h - bottom, w: left, h: bottom, sx: sx, sy: sy + sh - bottom, sw: left, sh: bottom },
+            { x: w - right, y: h - bottom, w: right, h: bottom, sx: sx + sw - right, sy: sh - bottom + sy, sw: right, sh: bottom },
+            { x: left, y: 0, w: w - left - right, h: top, sx: sx + left, sy: sy, sw: sw - left - right, sh: top },
+            { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: sx + left, sy: sh - bottom + sy, sw: sw - left - right, sh: bottom },
+            { x: 0, y: top, w: left, h: h - top - bottom, sx: sx, sy: top, sw: left, sh: sh - top - bottom },
+            { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom },
+            { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom },
+        ];
+        var canvas = document.createElement("canvas");
+        var context = canvas.getContext("2d");
+        canvas.width = w;
+        canvas.height = h;
+        grids.forEach(function (g) {
+            if (g.w && g.h) {
+                context.drawImage(_this.source, g.sx, g.sy, g.sw, g.sh, Math.ceil(g.x), Math.ceil(g.y), Math.ceil(g.w), Math.ceil(g.h));
+            }
+        });
+        this._gridSourceCache[cacheKey] = canvas;
+        this._gridSourceCount += 1;
+        return canvas;
+    };
+    Texture.prototype.clearCacheGridSources = function () {
+        this._gridSourceCache = {};
+        this._gridSourceCount = 0;
     };
     Texture.prototype._createByPath = function (path, sourceRect, textureRect) {
         var _this = this;
@@ -436,7 +480,14 @@ var Texture = (function () {
     };
     return Texture;
 }());
-function generateTextureName(source, sourceRect, textureRect) {
+function getGridCacheKey() {
+    var args = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i] = arguments[_i];
+    }
+    return args.join(':');
+}
+function getCacheKey(source, sourceRect, textureRect) {
     var isStr = typeof source === 'string';
     if (!isStr && !source.src) {
         return null;
@@ -1162,8 +1213,6 @@ var RAD_PER_DEG = Math.PI / 180;
     AlignType[AlignType["LEFT"] = 3] = "LEFT";
     AlignType[AlignType["CENTER"] = 4] = "CENTER";
 })(exports.AlignType || (exports.AlignType = {}));
-var sharedCanvas = document.createElement("canvas");
-var sharedContext = sharedCanvas.getContext("2d");
 var Sprite = (function (_super) {
     __extends(Sprite, _super);
     function Sprite(props) {
@@ -1713,26 +1762,8 @@ var Sprite = (function (_super) {
             context.drawImage(texture.source, sx, sy, sw, sh, -ox, -oy, w, h);
         }
         else {
-            var top = grid[0], right = grid[1], bottom = grid[2], left = grid[3];
-            var grids = [
-                { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top },
-                { x: w - right, y: 0, w: right, h: top, sx: sx + sw - right, sy: sy, sw: right, sh: top },
-                { x: 0, y: h - bottom, w: left, h: bottom, sx: sx, sy: sy + sh - bottom, sw: left, sh: bottom },
-                { x: w - right, y: h - bottom, w: right, h: bottom, sx: sx + sw - right, sy: sh - bottom + sy, sw: right, sh: bottom },
-                { x: left, y: 0, w: w - left - right, h: top, sx: sx + left, sy: sy, sw: sw - left - right, sh: top },
-                { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: sx + left, sy: sh - bottom + sy, sw: sw - left - right, sh: bottom },
-                { x: 0, y: top, w: left, h: h - top - bottom, sx: sx, sy: top, sw: left, sh: sh - top - bottom },
-                { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom },
-                { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom },
-            ];
-            sharedCanvas.width = w;
-            sharedCanvas.height = h;
-            grids.forEach(function (g) {
-                if (g.w && g.h) {
-                    sharedContext.drawImage(texture.source, g.sx, g.sy, g.sw, g.sh, Math.ceil(g.x), Math.ceil(g.y), Math.ceil(g.w), Math.ceil(g.h));
-                }
-            });
-            context.drawImage(sharedCanvas, -ox, -oy, w, h);
+            var gridSource = this.texture.createGridSource(w, h, sx, sy, sw, sh, grid);
+            context.drawImage(gridSource, -ox, -oy, w, h);
         }
     };
     Sprite.prototype.addChild = function (target, position) {
@@ -2660,11 +2691,11 @@ var Stage = (function (_super) {
 var canvas = document.createElement('canvas');
 var ctx = canvas.getContext('2d');
 var _cache = {};
-function getCacheKey(text, width, fontFace, fontSize, lineHeight) {
+function getCacheKey$1(text, width, fontFace, fontSize, lineHeight) {
     return text + width + fontFace.name + fontSize + lineHeight;
 }
 function measureText(text, width, fontFace, fontSize, lineHeight) {
-    var cacheKey = getCacheKey(text, width, fontFace, fontSize, lineHeight);
+    var cacheKey = getCacheKey$1(text, width, fontFace, fontSize, lineHeight);
     var cached = _cache[cacheKey];
     if (cached) {
         return cached;
@@ -2946,15 +2977,14 @@ var TextLabel = (function (_super) {
         context.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
         context.fillStyle = convertColor(fontColor);
         context.textAlign = textAlign;
-        context.textBaseline = 'top';
+        context.textBaseline = 'middle';
         context.lineJoin = 'round';
         if (strokeColor != null) {
             context.strokeStyle = convertColor(strokeColor || 0x000);
             context.lineWidth = (strokeWidth || 1) * 2;
         }
         var x = textAlign === 'left' ? -_originPixelX : textAlign === 'center' ? 0 : width - _originPixelX;
-        var lineSpace = lineHeight - fontSize;
-        var y = -_originPixelY + lineSpace;
+        var y = -_originPixelY + lineHeight * 0.5;
         this._lines.forEach(function (line) {
             if (line.text.length > 0) {
                 if (strokeColor != null) {

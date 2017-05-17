@@ -17,9 +17,6 @@ export enum AlignType {
     CENTER
 }
 
-const sharedCanvas = document.createElement("canvas");
-const sharedContext = sharedCanvas.getContext("2d");
-
 export class Sprite<T extends ISprite> extends EventEmitter {
 
     protected _props: T & SpriteProps; // Define for tsx
@@ -625,30 +622,8 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             context.drawImage(texture.source, sx, sy, sw, sh, -ox, -oy, w, h);
         }
         else {
-            let [top, right, bottom, left] = grid;
-            let grids = [
-                { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top }, // left top
-                { x: w - right, y: 0, w: right, h: top, sx: sx + sw - right, sy: sy, sw: right, sh: top }, // right top
-                { x: 0, y: h - bottom, w: left, h: bottom, sx: sx, sy: sy + sh - bottom, sw: left, sh: bottom }, // left bottom
-                { x: w - right, y: h - bottom, w: right, h: bottom, sx: sx + sw - right, sy: sh - bottom + sy, sw: right, sh: bottom }, // right bottom
-                { x: left, y: 0, w: w - left - right, h: top, sx: sx + left, sy: sy, sw: sw - left - right, sh: top }, // top
-                { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: sx + left, sy: sh - bottom + sy, sw: sw - left - right, sh: bottom }, // bottom
-                { x: 0, y: top, w: left, h: h - top - bottom, sx: sx, sy: top, sw: left, sh: sh - top - bottom }, // left
-                { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom }, // right
-                { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom }, // center
-            ];
-            sharedCanvas.width = w;
-            sharedCanvas.height = h;
-            grids.forEach(g => {
-                if (g.w && g.h) {
-                    sharedContext.drawImage(texture.source, g.sx, g.sy, g.sw, g.sh,
-                        Math.ceil(g.x),
-                        Math.ceil(g.y),
-                        Math.ceil(g.w),
-                        Math.ceil(g.h));
-                }
-            });
-            context.drawImage(sharedCanvas, -ox, -oy, w, h);
+            let gridSource = (<Texture>this.texture).createGridSource(w, h, sx, sy, sw, sh, grid);
+            context.drawImage(gridSource, -ox, -oy, w, h);
         }
     }
 
