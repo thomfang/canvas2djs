@@ -217,6 +217,9 @@ export class UIEvent {
             this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, UIEvent.TOUCH_ENDED, true);
 
             helpers.forEach(helper => {
+                if (!helper._moved || isMovedSmallRange(helper)) {
+                    stage.emit(UIEvent.CLICK, helper, event);
+                }
                 helper.target = null;
                 helper.beginTarget = null;
                 this._touchHelperMap[helper.identifier] = null;
@@ -304,6 +307,9 @@ export class UIEvent {
 
             var triggerClick = !helper._moved || isMovedSmallRange(helper);
             this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, UIEvent.MOUSE_ENDED, triggerClick);
+            if (!helper._moved || isMovedSmallRange(helper)) {
+                stage.emit(UIEvent.CLICK, helper, event);
+            }
             stage.emit(UIEvent.MOUSE_ENDED, helper, event);
             helper.target = helper.beginTarget = null;
         }
@@ -468,7 +474,8 @@ export class UIEvent {
                 }
             }
 
-            hits = triggerreds.filter(helper => !helper.cancelBubble);
+            // hits = triggerreds.filter(helper => !helper.cancelBubble);
+            hits = hits.filter(helper => triggerreds.indexOf(helper) < 0 || !helper.cancelBubble);
 
             if (hits.length) {
                 sprite.emit(eventName, hits, event);

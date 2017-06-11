@@ -14,7 +14,7 @@ var demo;
     var stageProps = {
         width: 960,
         height: 640,
-        scaleMode: canvas2d.ScaleMode.EXACTFIT,
+        scaleMode: canvas2d.ScaleMode.NO_BORDER,
         autoAdjustCanvasSize: true,
         touchEnabled: true,
         mouseEnabled: true,
@@ -77,15 +77,17 @@ var demo;
     ];
     canvas2d.createSprite("stage", __assign({}, stageProps, { ref: function (e) { return demo.stage = e; } }),
         canvas2d.createSprite("sprite", __assign({}, sceneProps),
-            canvas2d.createSprite("text", __assign({}, titleProps), "canvas2djs"),
-            canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; } })),
-            sprites,
-            canvas2d.createSprite("sprite", { ref: function (e) { return demo.btn = e; }, onClick: santaJump, bgColor: 0xf00, alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER, percentHeight: 0.1, percentWidth: 0.1 },
-                canvas2d.createSprite("text", { alignX: canvas2d.AlignType.CENTER, alignY: canvas2d.AlignType.CENTER }, "Jump")),
-            canvas2d.createSprite("sprite", { radius: 50, bgColor: 0xfff, alignX: canvas2d.AlignType.CENTER, y: 300, ref: function (e) { return ball = e; } })));
+            canvas2d.createSprite("sprite", { radius: 50, bgColor: 0xfff, alignX: canvas2d.AlignType.CENTER, y: 300, ref: function (e) { return ball = e; }, onClick: function (e) { return console.log("white circle"); }, clipOverflow: true },
+                canvas2d.createSprite("sprite", { width: 50, height: 50, bgColor: 0xf00, onClick: function (e) {
+                        console.log("red box");
+                        { }
+                    } }))));
     demo.stage.on(canvas2d.UIEvent.TOUCH_MOVED, function (helpers, event) {
         console.log(helpers[0].target);
     });
-    new canvas2d.Action(ball).by({ y: 100 }, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
+    demo.stage.on(canvas2d.UIEvent.CLICK, function (helper) {
+        console.log(helper.target);
+    });
+    // new canvas2d.Action(ball).by({y: 100}, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
 })(demo || (demo = {}));
 //# sourceMappingURL=main.js.map

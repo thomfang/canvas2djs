@@ -13,7 +13,7 @@ namespace demo {
     var stageProps: canvas2d.StageProps = {
         width: 960,
         height: 640,
-        scaleMode: canvas2d.ScaleMode.EXACTFIT,
+        scaleMode: canvas2d.ScaleMode.NO_BORDER,
         autoAdjustCanvasSize: true,
         touchEnabled: true,
         mouseEnabled: true,
@@ -85,7 +85,7 @@ namespace demo {
 
     <stage {...stageProps} ref={e => stage = e} >
         <sprite {...sceneProps}>
-            <text {...titleProps}>
+            {/*<text {...titleProps}>
                 canvas2djs
             </text>
             <sprite {...santaProps} ref={e => santa = e} />
@@ -99,8 +99,13 @@ namespace demo {
                 percentHeight={0.1}
                 percentWidth={0.1}>
                 <text alignX={canvas2d.AlignType.CENTER} alignY={canvas2d.AlignType.CENTER}>Jump</text>
+            </sprite>*/}
+            <sprite radius={50} bgColor={0xfff} alignX={canvas2d.AlignType.CENTER} y={300} ref={e => ball = e} onClick={e => console.log("white circle")} clipOverflow>
+                <sprite width={50} height={50} bgColor={0xf00} onClick={(e) => {
+                    console.log("red box");
+                    {/*e.stopPropagation();*/}
+                }} />
             </sprite>
-            <sprite radius={50} bgColor={0xfff} alignX={canvas2d.AlignType.CENTER} y={300} ref={e => ball = e}/>
             {/*<sprite touchEnabled={false} left={10} right={10} top={10} bottom={10} grid={[20,20,20,20]} texture="img/roundrect-bg.png" />*/}
         </sprite>
     </stage>;
@@ -108,6 +113,9 @@ namespace demo {
     stage.on(canvas2d.UIEvent.TOUCH_MOVED, (helpers, event) => {
         console.log(helpers[0].target)
     });
+    stage.on(canvas2d.UIEvent.CLICK, (helper) => {
+        console.log(helper.target);
+    });
 
-    new canvas2d.Action(ball).by({y: 100}, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
+    // new canvas2d.Action(ball).by({y: 100}, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
 }

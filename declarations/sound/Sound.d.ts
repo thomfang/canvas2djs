@@ -17,14 +17,14 @@ export declare class SoundManager {
     constructor();
     getAudio(name: string): WebAudio | HTMLAudio;
     getAudio(name: string, returnAll: boolean): Array<WebAudio | HTMLAudio>;
-    load(baseUri: string, name: string, onComplete: () => any, channels?: number): void;
+    load(baseUri: string, name: string, onComplete: (loaded: boolean) => any, channels?: number): void;
     /**
      * Load multiple sound resources
      */
     loadList(baseUri: string, resources: {
         name: string;
         channels?: number;
-    }[], onAllCompleted?: () => any, onProgress?: (percent: number) => any): void;
+    }[], onAllCompleted?: (success: string[], errors: string[]) => any, onProgress?: (percent: number) => any): void;
     /**
      * Get all audioes by name
      */

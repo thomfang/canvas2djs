@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.3.1
+ * canvas2djs v2.3.3
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1903,6 +1903,9 @@ var UIEvent = (function () {
                 var helpers = _this._transformTouches(event.changedTouches, true);
                 _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, UIEvent.TOUCH_ENDED, true);
                 helpers.forEach(function (helper) {
+                    if (!helper._moved || isMovedSmallRange(helper)) {
+                        stage.emit(UIEvent.CLICK, helper, event);
+                    }
                     helper.target = null;
                     helper.beginTarget = null;
                     _this._touchHelperMap[helper.identifier] = null;
@@ -1977,6 +1980,9 @@ var UIEvent = (function () {
                 target = helper.target;
                 var triggerClick = !helper._moved || isMovedSmallRange(helper);
                 _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, UIEvent.MOUSE_ENDED, triggerClick);
+                if (!helper._moved || isMovedSmallRange(helper)) {
+                    stage.emit(UIEvent.CLICK, helper, event);
+                }
                 stage.emit(UIEvent.MOUSE_ENDED, helper, event);
                 helper.target = helper.beginTarget = null;
             }
@@ -2176,7 +2182,7 @@ var UIEvent = (function () {
         }
         if (hits.length) {
             var children = sprite.children;
-            var triggerreds = [];
+            var triggerreds_1 = [];
             if (children && children.length) {
                 var index = children.length;
                 var result_1;
@@ -2185,7 +2191,7 @@ var UIEvent = (function () {
                 while (--index >= 0) {
                     result_1 = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, eventName, needTriggerClick);
                     if (result_1 && result_1.length) {
-                        triggerreds.push.apply(triggerreds, result_1);
+                        triggerreds_1.push.apply(triggerreds_1, result_1);
                         // Remove triggerred touch helper, it won't pass to other child sprites
                         tmpHelpers = tmpHelpers.filter(filterUnTriggerred);
                         // All triggerred then exit the loop
@@ -2195,7 +2201,8 @@ var UIEvent = (function () {
                     }
                 }
             }
-            hits = triggerreds.filter(function (helper) { return !helper.cancelBubble; });
+            // hits = triggerreds.filter(helper => !helper.cancelBubble);
+            hits = hits.filter(function (helper) { return triggerreds_1.indexOf(helper) < 0 || !helper.cancelBubble; });
             if (hits.length) {
                 sprite.emit(eventName, hits, event);
                 sprite[methodName] && sprite[methodName](hits, event);
@@ -2205,7 +2212,7 @@ var UIEvent = (function () {
                     sprite[onClick] && sprite[onClick](hits[0], event);
                 }
             }
-            return triggerreds;
+            return triggerreds_1;
         }
     };
     UIEvent.prototype._dispatchMouse = function (sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick) {
@@ -2967,6 +2974,7 @@ var TextLabel = (function (_super) {
         for (var _i = 0; _i < arguments.length; _i++) {
             children[_i] = arguments[_i];
         }
+        this.text += children.join("");
     };
     TextLabel.prototype.draw = function (context) {
         _super.prototype.draw.call(this, context);
@@ -3687,7 +3695,7 @@ var SoundManager = (function () {
         var audio = WebAudio.isSupported ? new WebAudio(src) : new HTMLAudio(src);
         audio.on('load', function () {
             if (onComplete) {
-                onComplete();
+                onComplete(true);
             }
             var cloned;
             while (--channels > 0) {
@@ -3698,6 +3706,9 @@ var SoundManager = (function () {
         audio.on('error', function (e) {
             console.warn("canvas2d.Sound.load() Error: " + src + " could not be loaded.");
             removeArrayItem(_this._audioCache[name], audio);
+            if (onComplete) {
+                onComplete(false);
+            }
         });
         if (!this._audioCache[name]) {
             this._audioCache[name] = [];
@@ -3712,16 +3723,24 @@ var SoundManager = (function () {
         var _this = this;
         var totalCount = resources.length;
         var endedCount = 0;
-        var onCompleted = function () {
+        var errors = [];
+        var success = [];
+        var onCompleted = function (name, loaded) {
             ++endedCount;
+            if (loaded) {
+                success.push(name);
+            }
+            else {
+                errors.push(name);
+            }
             if (onProgress) {
                 onProgress(endedCount / totalCount);
             }
             if (endedCount === totalCount && onAllCompleted) {
-                onAllCompleted();
+                onAllCompleted(success, errors);
             }
         };
-        resources.forEach(function (res) { return _this.load(baseUri, res.name, onCompleted, res.channels); });
+        resources.forEach(function (res) { return _this.load(baseUri, res.name, function (loaded) { return onCompleted(res.name, loaded); }, res.channels); });
     };
     /**
      * Get all audioes by name

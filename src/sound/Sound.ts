@@ -67,13 +67,13 @@ export class SoundManager {
         return returnAll ? all : all[0];
     }
 
-    load(baseUri: string, name: string, onComplete: () => any, channels = 1) {
+    load(baseUri: string, name: string, onComplete: (loaded: boolean) => any, channels = 1) {
         var src = baseUri + name + this._ext;
         var audio = WebAudio.isSupported ? new WebAudio(src) : new HTMLAudio(src);
 
         audio.on('load', () => {
             if (onComplete) {
-                onComplete();
+                onComplete(true);
             }
 
             var cloned;
@@ -85,6 +85,9 @@ export class SoundManager {
         audio.on('error', (e: ErrorEvent) => {
             console.warn("canvas2d.Sound.load() Error: " + src + " could not be loaded.");
             removeArrayItem(this._audioCache[name], audio);
+            if (onComplete) {
+                onComplete(false);
+            }
         });
 
         if (!this._audioCache[name]) {
@@ -98,22 +101,31 @@ export class SoundManager {
     /**
      * Load multiple sound resources
      */
-    loadList(baseUri: string, resources: { name: string; channels?: number; }[], onAllCompleted?: () => any, onProgress?: (percent: number) => any) {
+    loadList(baseUri: string, resources: { name: string; channels?: number; }[], onAllCompleted?: (success: string[], errors: string[]) => any, onProgress?: (percent: number) => any) {
         let totalCount = resources.length;
         let endedCount = 0;
+        let errors: string[] = [];
+        let success: string[] = [];
 
-        let onCompleted = () => {
+        let onCompleted = (name: string, loaded: boolean) => {
             ++endedCount;
+
+            if (loaded) {
+                success.push(name);
+            }
+            else {
+                errors.push(name);
+            }
 
             if (onProgress) {
                 onProgress(endedCount / totalCount);
             }
             if (endedCount === totalCount && onAllCompleted) {
-                onAllCompleted();
+                onAllCompleted(success, errors);
             }
         }
 
-        resources.forEach(res => this.load(baseUri, res.name, onCompleted, res.channels));
+        resources.forEach(res => this.load(baseUri, res.name, (loaded) => onCompleted(res.name, loaded), res.channels));
     }
 
     /**
