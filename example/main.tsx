@@ -28,7 +28,7 @@ namespace demo {
         bgColor: 0x333
     };
     var titleProps: canvas2d.TextProps = {
-        y: 30,
+        top: 30,
         alignX: canvas2d.AlignType.CENTER,
         fontName: 'Arial',
         fontSize: 30,
@@ -36,6 +36,7 @@ namespace demo {
         strokeWidth: 2,
         strokeColor: 0x00f,
         percentWidth: 1,
+        lineHeight: 50,
     };
     var jumpBtnProps: canvas2d.SpriteProps = {
         bgColor: 0xf00,
@@ -48,6 +49,7 @@ namespace demo {
         alignX: canvas2d.AlignType.CENTER,
         alignY: canvas2d.AlignType.CENTER,
         percentWidth: 1,
+        fontColor: 0xfff,
     }
 
     var santaFrames = [];
@@ -95,19 +97,16 @@ namespace demo {
     var sprites = [
         <sprite width={100} height={100} bgColor={0xfff} alignY={canvas2d.AlignType.CENTER} left={50} onClick={() => { console.log("Click white box") }} />,
         <sprite width={100} height={100} bgColor={0x0f0} alignY={canvas2d.AlignType.CENTER} right={50}
-        blendMode={canvas2d.BlendMode.DESTINATION_IN} onClick={() => {
-            setTimeout(() => {
-                stage.orientation = stage.orientation === canvas2d.Orientation.LANDSCAPE ?
-                    canvas2d.Orientation.LANDSCAPE2 : canvas2d.Orientation.LANDSCAPE;
-            }, 100);
-        }} />,
+            onClick={() => {
+                setTimeout(() => {
+                    stage.orientation = stage.orientation === canvas2d.Orientation.LANDSCAPE ?
+                        canvas2d.Orientation.LANDSCAPE2 : canvas2d.Orientation.LANDSCAPE;
+                }, 100);
+            }} />,
     ];
 
     <stage {...stageProps} ref={e => stage = e} >
         <sprite {...sceneProps}>
-            <text {...titleProps}>
-                canvas2djs
-            </text>
             <sprite {...santaProps} ref={e => santa = e} />
             {...sprites}
             <sprite
@@ -122,6 +121,12 @@ namespace demo {
                 }} />
             </sprite>*/}
             {/*<sprite touchEnabled={false} left={10} right={10} top={10} bottom={10} grid={[20,20,20,20]} texture="img/roundrect-bg.png" />*/}
+            <text {...titleProps} textFlow={[
+                { text: "canvas2d" },
+                { text: "JS\n", fontColor: 0xf00, strokeColor: 0xfff, fontSize: 40, },
+                { text: "--  " },
+                { text: "Todd Fon", fontColor: 0xff0, fontWeight: "bold" }
+            ]} />
         </sprite>
     </stage>;
 
@@ -133,4 +138,43 @@ namespace demo {
     // });
 
     // new canvas2d.Action(ball).by({y: 100}, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
+
+    function loadImage(src, onCompleted) {
+        let img = new Image();
+        img.onload = () => {
+            onCompleted(img);
+        };
+        img.src = src;
+    }
+
+    let numSources = [
+        "img/0.png",
+        "img/1.png",
+        "img/2.png",
+        "img/3.png",
+        "img/4.png",
+        "img/5.png",
+        "img/6.png",
+        "img/7.png",
+        "img/8.png",
+        "img/9.png",
+    ];
+    let loaded = 0;
+    let textureMap = {};
+
+    numSources.forEach((src, i) => {
+        loadImage(src, (img) => {
+            textureMap[i] = canvas2d.Texture.create(img);
+            if (++loaded === numSources.length) {
+                stage.addChild(
+                    <bmfont textureMap={textureMap} text="10086"
+                        percentWidth={1}
+                        lineHeight={80}
+                        fontSize={46}
+                        alignX={canvas2d.AlignType.CENTER}
+                        bottom={30}/>
+                );
+            }
+        });
+    })
 }

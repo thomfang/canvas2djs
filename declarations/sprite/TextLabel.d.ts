@@ -1,5 +1,6 @@
 import { Color } from '../Util';
 import { Sprite, ISprite } from './Sprite';
+import { TextFlow, TextFragment } from '../measureText';
 export declare type FontWeight = "lighter" | "normal" | "bold" | "bolder";
 export declare type FontStyle = "oblique" | "normal" | "italic";
 export declare type TextAlign = "left" | "right" | "center" | "start" | "end";
@@ -15,6 +16,7 @@ export declare type ITextLabel = ISprite & {
     strokeColor?: Color;
     strokeWidth?: number;
     wordWrap?: boolean;
+    textFlow?: TextFlow[];
 };
 export declare class TextLabel extends Sprite<ITextLabel> {
     textAlign: TextAlign;
@@ -27,9 +29,10 @@ export declare class TextLabel extends Sprite<ITextLabel> {
     protected _fontSize: number;
     protected _fontWeight: FontWeight;
     protected _fontStyle: FontStyle;
-    protected _lines: {
+    protected _textFlow: Array<TextFlow>;
+    protected _textLines: {
+        fragments: TextFragment[];
         width: number;
-        text: string;
     }[];
     protected _text: string;
     constructor(props?: ITextLabel);
@@ -42,6 +45,7 @@ export declare class TextLabel extends Sprite<ITextLabel> {
     lineHeight: number;
     wordWrap: boolean;
     text: string;
+    textFlow: Array<TextFlow>;
     private _reMeasureText();
     addChild(target: any): void;
     addChildren(...children: any[]): void;

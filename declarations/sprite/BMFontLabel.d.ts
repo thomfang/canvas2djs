@@ -9,8 +9,9 @@ export declare type IBMFontLabel = ISprite & {
     textAlign?: TextAlign;
     wordWrap?: boolean;
     wordSpace?: number;
-    lineHeight?: number;
-    fontSize?: number;
+    lineHeight: number;
+    fontSize: number;
+    autoResizeHeight?: boolean;
 };
 export declare class BMFontLabel extends Sprite<IBMFontLabel> {
     protected _lineHeight: number;
@@ -26,9 +27,9 @@ export declare class BMFontLabel extends Sprite<IBMFontLabel> {
         width: number;
         words: Texture[];
     }[];
-    protected _autoResize: boolean;
+    protected _autoResizeHeight: boolean;
     constructor(props?: IBMFontLabel);
-    autoResize: boolean;
+    autoResizeHeight: boolean;
     text: string;
     textureMap: {
         [word: string]: Texture;
