@@ -10,6 +10,7 @@ export declare enum ScaleMode {
 export declare enum Orientation {
     LANDSCAPE = 0,
     PORTRAIT = 1,
+    LANDSCAPE2 = 2,
 }
 export declare type VisibleRect = {
     left: number;

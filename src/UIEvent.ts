@@ -111,13 +111,19 @@ export class UIEvent {
         var clientRect = this.element.getBoundingClientRect();
         var scaleX = this.stage.scaleX;
         var scaleY = this.stage.scaleY;
-        var isRotated = this.stage.isPortrait && this.stage.orientation === Orientation.LANDSCAPE;
+        var isRotated = this.stage.isPortrait && this.stage.orientation !== Orientation.PORTRAIT;
         var x: number;
         var y: number;
 
         if (isRotated) {
-            x = (event.clientY - clientRect.top) / scaleX;
-            y = this.stage.height - (event.clientX - clientRect.left) / scaleY;
+            if (this.stage.orientation === Orientation.LANDSCAPE2) {
+                x = this.stage.width - (event.clientY - clientRect.top) / scaleX;
+                y = (event.clientX - clientRect.left) / scaleY;
+            }
+            else {
+                x = (event.clientY - clientRect.top) / scaleX;
+                y = this.stage.height - (event.clientX - clientRect.left) / scaleY;
+            }
         }
         else {
             x = (event.clientX - clientRect.left) / scaleX;
@@ -131,7 +137,7 @@ export class UIEvent {
         var clientRect = this.element.getBoundingClientRect();
         var scaleX = this.stage.scaleX;
         var scaleY = this.stage.scaleY;
-        var isRotated = this.stage.isPortrait && this.stage.orientation === Orientation.LANDSCAPE;
+        var isRotated = this.stage.isPortrait && this.stage.orientation !== Orientation.PORTRAIT;
         var touchHelperMap = this._touchHelperMap;
 
         for (var i: number = 0, x: number, y: number, id: number, helper, touch; touch = touches[i]; i++) {
@@ -140,8 +146,14 @@ export class UIEvent {
             var y: number;
 
             if (isRotated) {
-                x = (touch.clientY - clientRect.top) / scaleX;
-                y = this.stage.height - (touch.clientX - clientRect.left) / scaleY;
+                if (this.stage.orientation === Orientation.LANDSCAPE2) {
+                    x = this.stage.width - (touch.clientY - clientRect.top) / scaleX;
+                    y = (touch.clientX - clientRect.left) / scaleY;
+                }
+                else {
+                    x = (touch.clientY - clientRect.top) / scaleX;
+                    y = this.stage.height - (touch.clientX - clientRect.left) / scaleY;
+                }
             }
             else {
                 x = (touch.clientX - clientRect.left) / scaleX;

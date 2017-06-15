@@ -17,6 +17,34 @@ export enum AlignType {
     CENTER
 }
 
+export enum BlendMode {
+    SOURCE_IN,
+    SOURCE_OVER,
+    SOURCE_ATOP,
+    SOURCE_OUT,
+    DESTINATION_OVER,
+    DESTINATION_IN,
+    DESTINATION_OUT,
+    DESTINATION_ATOP,
+    LIGHTER,
+    COPY,
+    XOR,
+}
+const BlendModeStrings = {
+    [BlendMode.SOURCE_IN]: "source-in",
+    [BlendMode.SOURCE_OVER]: "source-over",
+    [BlendMode.SOURCE_ATOP]: "source-atop",
+    [BlendMode.SOURCE_OUT]: "source-out",
+    [BlendMode.DESTINATION_OVER]: "destination-over",
+    [BlendMode.DESTINATION_IN]: "destination-in",
+    [BlendMode.DESTINATION_OUT]: "destination-out",
+    [BlendMode.DESTINATION_ATOP]: "destination-atop",
+    [BlendMode.LIGHTER]: "lighter",
+    [BlendMode.COPY]: "copy",
+    [BlendMode.XOR]: "xor",
+}
+
+
 export class Sprite<T extends ISprite> extends EventEmitter {
 
     protected _props: T & SpriteProps; // Define for tsx
@@ -58,7 +86,6 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     sourceY: number = 0;
     sourceWidth: number;
     sourceHeight: number;
-    lighterMode: boolean = false;
     autoResize: boolean = true;
     flippedX: boolean = false;
     flippedY: boolean = false;
@@ -68,6 +95,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     borderColor: Color;
     borderWidth: number;
     children: Sprite<any>[];
+    blendMode: BlendMode;
 
     touchEnabled: boolean = true;
     mouseEnabled: boolean = true;
@@ -376,8 +404,8 @@ export class Sprite<T extends ISprite> extends EventEmitter {
 
         context.save();
 
-        if (this.lighterMode) {
-            context.globalCompositeOperation = "lighter";
+        if (this.blendMode != null) {
+            context.globalCompositeOperation = BlendModeStrings[this.blendMode];
         }
         if (this.x !== 0 || this.y !== 0) {
             context.translate(this.x, this.y);
@@ -779,11 +807,8 @@ export interface ISprite {
      * Height of the clipping rect on texture
      */
     sourceHeight?: number;
-
-    /**
-     * Use lighter mode
-     */
-    lighterMode?: boolean;
+    
+    blendMode?: BlendMode;
 
     /**
      * Auto resize by the texture

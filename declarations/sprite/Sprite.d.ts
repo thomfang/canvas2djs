@@ -12,6 +12,19 @@ export declare enum AlignType {
     LEFT = 3,
     CENTER = 4,
 }
+export declare enum BlendMode {
+    SOURCE_IN = 0,
+    SOURCE_OVER = 1,
+    SOURCE_ATOP = 2,
+    SOURCE_OUT = 3,
+    DESTINATION_OVER = 4,
+    DESTINATION_IN = 5,
+    DESTINATION_OUT = 6,
+    DESTINATION_ATOP = 7,
+    LIGHTER = 8,
+    COPY = 9,
+    XOR = 10,
+}
 export declare class Sprite<T extends ISprite> extends EventEmitter {
     protected _props: T & SpriteProps;
     protected _width: number;
@@ -45,7 +58,6 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     sourceY: number;
     sourceWidth: number;
     sourceHeight: number;
-    lighterMode: boolean;
     autoResize: boolean;
     flippedX: boolean;
     flippedY: boolean;
@@ -55,6 +67,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     borderColor: Color;
     borderWidth: number;
     children: Sprite<any>[];
+    blendMode: BlendMode;
     touchEnabled: boolean;
     mouseEnabled: boolean;
     onClick: ISprite["onClick"];
@@ -153,10 +166,7 @@ export interface ISprite {
      * Height of the clipping rect on texture
      */
     sourceHeight?: number;
-    /**
-     * Use lighter mode
-     */
-    lighterMode?: boolean;
+    blendMode?: BlendMode;
     /**
      * Auto resize by the texture
      */

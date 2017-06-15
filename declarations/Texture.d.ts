@@ -17,15 +17,7 @@ export declare class Texture {
     ready: boolean;
     width: number;
     height: number;
-    /**
-     * Texture drawable source
-     */
     source: HTMLCanvasElement;
-    /**
-     * Create a texture by source and clipping rectangle
-     * @param  source  Drawable source
-     * @param  rect    Clipping rect
-     */
     static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture;
     static getByName(name: string): Texture;
     /**
@@ -36,10 +28,6 @@ export declare class Texture {
      * 清除缓存
      */
     static clearCache(name?: string): void;
-    /**
-     * @param  source  Drawable source
-     * @param  rect    Clipping rect
-     */
     constructor(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect);
     onReady(callback: (size: {
         width: number;

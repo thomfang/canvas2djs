@@ -14,6 +14,7 @@ export enum ScaleMode {
 export enum Orientation {
     LANDSCAPE,
     PORTRAIT,
+    LANDSCAPE2,
 }
 
 export type VisibleRect = {
@@ -135,6 +136,7 @@ export class Stage extends EventEmitter {
     set orientation(orientation: Orientation) {
         if (this._orientation != orientation) {
             this._orientation = orientation;
+            this.adjustCanvasSize();
         }
     }
 
@@ -175,7 +177,7 @@ export class Stage extends EventEmitter {
         this._scaleX = this._scaleY = 1;
         this._isPortrait = false;
         this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
-        this.orientation = orientation;
+        this._orientation = orientation;
         this.autoAdjustCanvasSize = autoAdjustCanvasSize;
 
         this._uiEvent = new UIEvent(this);
@@ -214,7 +216,7 @@ export class Stage extends EventEmitter {
         };
         var isPortrait = container.width < container.height;
 
-        if (orientation === Orientation.LANDSCAPE && isPortrait) {
+        if (orientation !== Orientation.PORTRAIT && isPortrait) {
             let tmpHeight = container.height;
             container.height = container.width;
             container.width = tmpHeight;
@@ -280,11 +282,15 @@ export class Stage extends EventEmitter {
         visibleRect.top = deltaHeight;
         visibleRect.bottom = stageHeight - deltaHeight;
 
-        if (orientation === Orientation.LANDSCAPE && isPortrait) {
-            style.top = ((container.width - width) * 0.5) + 'px';
-            style.left = ((container.height - height) * 0.5) + 'px';
-            style.transformOrigin = style['webkitTransformOrigin'] = '0 0 0';
-            style.transform = style['webkitTransform'] = `translateX(${height}px) rotate(90deg)`;
+        if (orientation !== Orientation.PORTRAIT && isPortrait) {
+            // style.top = ((container.width - width) * 0.5) + 'px';
+            // style.left = ((container.height - height) * 0.5) + 'px';
+            // style.transformOrigin = style['webkitTransformOrigin'] = '0 0 0';
+            // style.transform = style['webkitTransform'] = `translateX(${height}px) rotate(90deg)`;
+            let rotate = orientation === Orientation.LANDSCAPE2 ? -90 : 90;
+            style.top = '50%';
+            style.left = '50%';
+            style.transform = style['webkitTransform'] = `translate(-50%, -50%) rotate(${rotate}deg)`;
         }
         else {
             style.transform = '';

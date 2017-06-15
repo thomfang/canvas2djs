@@ -1,13 +1,13 @@
 /**
- * canvas2djs v2.3.3
+ * canvas2djs v2.3.4
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
 
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
-	(factory((global.canvas2d = global.canvas2d || {})));
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
+    (factory((global.canvas2d = global.canvas2d || {})));
 }(this, (function (exports) { 'use strict';
 
 var Keys = {
@@ -317,10 +317,6 @@ var loading = {};
  * Sprite texture
  */
 var Texture = (function () {
-    /**
-     * @param  source  Drawable source
-     * @param  rect    Clipping rect
-     */
     function Texture(source, sourceRect, textureRect) {
         this._readyCallbacks = [];
         this._gridSourceCache = {};
@@ -348,11 +344,6 @@ var Texture = (function () {
             cache[name] = this;
         }
     }
-    /**
-     * Create a texture by source and clipping rectangle
-     * @param  source  Drawable source
-     * @param  rect    Clipping rect
-     */
     Texture.create = function (source, sourceRect, textureRect) {
         var name = getCacheKey(source, sourceRect, textureRect);
         if (name && cache[name]) {
@@ -398,7 +389,7 @@ var Texture = (function () {
         if (this._gridSourceCache[cacheKey]) {
             return this._gridSourceCache[cacheKey];
         }
-        var top = grid[0], right = grid[1], bottom = grid[2], left = grid[3];
+        var top = grid[0], right = grid[1], bottom = grid[2], left = grid[3], repeat = grid[4];
         var grids = [
             { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top },
             { x: w - right, y: 0, w: right, h: top, sx: sx + sw - right, sy: sy, sw: right, sh: top },
@@ -408,8 +399,8 @@ var Texture = (function () {
             { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: sx + left, sy: sh - bottom + sy, sw: sw - left - right, sh: bottom },
             { x: 0, y: top, w: left, h: h - top - bottom, sx: sx, sy: top, sw: left, sh: sh - top - bottom },
             { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom },
-            { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom },
         ];
+        var centerGrid = { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom };
         var canvas = document.createElement("canvas");
         var context = canvas.getContext("2d");
         canvas.width = w;
@@ -419,6 +410,25 @@ var Texture = (function () {
                 context.drawImage(_this.source, g.sx, g.sy, g.sw, g.sh, Math.ceil(g.x), Math.ceil(g.y), Math.ceil(g.w), Math.ceil(g.h));
             }
         });
+        if (repeat) {
+            var cvs = createCanvas(this.source, {
+                x: centerGrid.sx,
+                y: centerGrid.sy,
+                width: centerGrid.sw,
+                height: centerGrid.sh
+            }, {
+                x: 0,
+                y: 0,
+                width: centerGrid.sw,
+                height: centerGrid.sh
+            });
+            var pattern = context.createPattern(cvs, "repeat");
+            context.fillStyle = pattern;
+            context.fillRect(Math.ceil(centerGrid.x), Math.ceil(centerGrid.y), Math.ceil(centerGrid.w), Math.ceil(centerGrid.h));
+        }
+        else if (centerGrid.w && centerGrid.h) {
+            context.drawImage(this.source, centerGrid.sx, centerGrid.sy, centerGrid.sw, centerGrid.sh, Math.ceil(centerGrid.x), Math.ceil(centerGrid.y), Math.ceil(centerGrid.w), Math.ceil(centerGrid.h));
+        }
         this._gridSourceCache[cacheKey] = canvas;
         this._gridSourceCount += 1;
         return canvas;
@@ -548,6 +558,58 @@ function __rest(s, e) {
         for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
             t[p[i]] = s[p[i]];
     return t;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function __values(o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) return m.call(o);
+    return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+}
+
+function __read(o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+}
+
+
+
+
+
+
+
+function __asyncValues(o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator];
+    return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
 }
 
 var BaseAction = (function () {
@@ -1213,6 +1275,33 @@ var RAD_PER_DEG = Math.PI / 180;
     AlignType[AlignType["LEFT"] = 3] = "LEFT";
     AlignType[AlignType["CENTER"] = 4] = "CENTER";
 })(exports.AlignType || (exports.AlignType = {}));
+
+(function (BlendMode) {
+    BlendMode[BlendMode["SOURCE_IN"] = 0] = "SOURCE_IN";
+    BlendMode[BlendMode["SOURCE_OVER"] = 1] = "SOURCE_OVER";
+    BlendMode[BlendMode["SOURCE_ATOP"] = 2] = "SOURCE_ATOP";
+    BlendMode[BlendMode["SOURCE_OUT"] = 3] = "SOURCE_OUT";
+    BlendMode[BlendMode["DESTINATION_OVER"] = 4] = "DESTINATION_OVER";
+    BlendMode[BlendMode["DESTINATION_IN"] = 5] = "DESTINATION_IN";
+    BlendMode[BlendMode["DESTINATION_OUT"] = 6] = "DESTINATION_OUT";
+    BlendMode[BlendMode["DESTINATION_ATOP"] = 7] = "DESTINATION_ATOP";
+    BlendMode[BlendMode["LIGHTER"] = 8] = "LIGHTER";
+    BlendMode[BlendMode["COPY"] = 9] = "COPY";
+    BlendMode[BlendMode["XOR"] = 10] = "XOR";
+})(exports.BlendMode || (exports.BlendMode = {}));
+var BlendModeStrings = (_a = {},
+    _a[exports.BlendMode.SOURCE_IN] = "source-in",
+    _a[exports.BlendMode.SOURCE_OVER] = "source-over",
+    _a[exports.BlendMode.SOURCE_ATOP] = "source-atop",
+    _a[exports.BlendMode.SOURCE_OUT] = "source-out",
+    _a[exports.BlendMode.DESTINATION_OVER] = "destination-over",
+    _a[exports.BlendMode.DESTINATION_IN] = "destination-in",
+    _a[exports.BlendMode.DESTINATION_OUT] = "destination-out",
+    _a[exports.BlendMode.DESTINATION_ATOP] = "destination-atop",
+    _a[exports.BlendMode.LIGHTER] = "lighter",
+    _a[exports.BlendMode.COPY] = "copy",
+    _a[exports.BlendMode.XOR] = "xor",
+    _a);
 var Sprite = (function (_super) {
     __extends(Sprite, _super);
     function Sprite(props) {
@@ -1233,7 +1322,6 @@ var Sprite = (function (_super) {
         _this.opacity = 1;
         _this.sourceX = 0;
         _this.sourceY = 0;
-        _this.lighterMode = false;
         _this.autoResize = true;
         _this.flippedX = false;
         _this.flippedY = false;
@@ -1550,8 +1638,8 @@ var Sprite = (function (_super) {
         var sx = this.scaleX;
         var sy = this.scaleY;
         context.save();
-        if (this.lighterMode) {
-            context.globalCompositeOperation = "lighter";
+        if (this.blendMode != null) {
+            context.globalCompositeOperation = BlendModeStrings[this.blendMode];
         }
         if (this.x !== 0 || this.y !== 0) {
             context.translate(this.x, this.y);
@@ -1862,6 +1950,7 @@ var Sprite = (function (_super) {
     };
     return Sprite;
 }(EventEmitter));
+var _a;
 
 var onClick = "onClick";
 var onTouchBegin = "onTouchBegin";
@@ -2032,12 +2121,18 @@ var UIEvent = (function () {
         var clientRect = this.element.getBoundingClientRect();
         var scaleX = this.stage.scaleX;
         var scaleY = this.stage.scaleY;
-        var isRotated = this.stage.isPortrait && this.stage.orientation === exports.Orientation.LANDSCAPE;
+        var isRotated = this.stage.isPortrait && this.stage.orientation !== exports.Orientation.PORTRAIT;
         var x;
         var y;
         if (isRotated) {
-            x = (event.clientY - clientRect.top) / scaleX;
-            y = this.stage.height - (event.clientX - clientRect.left) / scaleY;
+            if (this.stage.orientation === exports.Orientation.LANDSCAPE2) {
+                x = this.stage.width - (event.clientY - clientRect.top) / scaleX;
+                y = (event.clientX - clientRect.left) / scaleY;
+            }
+            else {
+                x = (event.clientY - clientRect.top) / scaleX;
+                y = this.stage.height - (event.clientX - clientRect.left) / scaleY;
+            }
         }
         else {
             x = (event.clientX - clientRect.left) / scaleX;
@@ -2050,15 +2145,21 @@ var UIEvent = (function () {
         var clientRect = this.element.getBoundingClientRect();
         var scaleX = this.stage.scaleX;
         var scaleY = this.stage.scaleY;
-        var isRotated = this.stage.isPortrait && this.stage.orientation === exports.Orientation.LANDSCAPE;
+        var isRotated = this.stage.isPortrait && this.stage.orientation !== exports.Orientation.PORTRAIT;
         var touchHelperMap = this._touchHelperMap;
         for (var i = 0, x, y, id, helper, touch; touch = touches[i]; i++) {
             id = touch.identifier;
             var x;
             var y;
             if (isRotated) {
-                x = (touch.clientY - clientRect.top) / scaleX;
-                y = this.stage.height - (touch.clientX - clientRect.left) / scaleY;
+                if (this.stage.orientation === exports.Orientation.LANDSCAPE2) {
+                    x = this.stage.width - (touch.clientY - clientRect.top) / scaleX;
+                    y = (touch.clientX - clientRect.left) / scaleY;
+                }
+                else {
+                    x = (touch.clientY - clientRect.top) / scaleX;
+                    y = this.stage.height - (touch.clientX - clientRect.left) / scaleY;
+                }
             }
             else {
                 x = (touch.clientX - clientRect.left) / scaleX;
@@ -2347,6 +2448,7 @@ function isMovedSmallRange(e) {
 (function (Orientation) {
     Orientation[Orientation["LANDSCAPE"] = 0] = "LANDSCAPE";
     Orientation[Orientation["PORTRAIT"] = 1] = "PORTRAIT";
+    Orientation[Orientation["LANDSCAPE2"] = 2] = "LANDSCAPE2";
 })(exports.Orientation || (exports.Orientation = {}));
 var Stage = (function (_super) {
     __extends(Stage, _super);
@@ -2379,7 +2481,7 @@ var Stage = (function (_super) {
                 height: canvas.parentElement.offsetHeight
             };
             var isPortrait = container.width < container.height;
-            if (orientation === exports.Orientation.LANDSCAPE && isPortrait) {
+            if (orientation !== exports.Orientation.PORTRAIT && isPortrait) {
                 var tmpHeight = container.height;
                 container.height = container.width;
                 container.width = tmpHeight;
@@ -2440,11 +2542,15 @@ var Stage = (function (_super) {
             visibleRect.right = stageWidth - deltaWidth;
             visibleRect.top = deltaHeight;
             visibleRect.bottom = stageHeight - deltaHeight;
-            if (orientation === exports.Orientation.LANDSCAPE && isPortrait) {
-                style.top = ((container.width - width) * 0.5) + 'px';
-                style.left = ((container.height - height) * 0.5) + 'px';
-                style.transformOrigin = style['webkitTransformOrigin'] = '0 0 0';
-                style.transform = style['webkitTransform'] = "translateX(" + height + "px) rotate(90deg)";
+            if (orientation !== exports.Orientation.PORTRAIT && isPortrait) {
+                // style.top = ((container.width - width) * 0.5) + 'px';
+                // style.left = ((container.height - height) * 0.5) + 'px';
+                // style.transformOrigin = style['webkitTransformOrigin'] = '0 0 0';
+                // style.transform = style['webkitTransform'] = `translateX(${height}px) rotate(90deg)`;
+                var rotate = orientation === exports.Orientation.LANDSCAPE2 ? -90 : 90;
+                style.top = '50%';
+                style.left = '50%';
+                style.transform = style['webkitTransform'] = "translate(-50%, -50%) rotate(" + rotate + "deg)";
             }
             else {
                 style.transform = '';
@@ -2472,7 +2578,7 @@ var Stage = (function (_super) {
         _this._scaleX = _this._scaleY = 1;
         _this._isPortrait = false;
         _this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
-        _this.orientation = orientation;
+        _this._orientation = orientation;
         _this.autoAdjustCanvasSize = autoAdjustCanvasSize;
         _this._uiEvent = new UIEvent(_this);
         return _this;
@@ -2597,6 +2703,7 @@ var Stage = (function (_super) {
         set: function (orientation) {
             if (this._orientation != orientation) {
                 this._orientation = orientation;
+                this.adjustCanvasSize();
             }
         },
         enumerable: true,
