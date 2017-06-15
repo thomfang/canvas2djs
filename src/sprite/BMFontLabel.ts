@@ -8,8 +8,9 @@ export type IBMFontLabel = ISprite & {
     textAlign?: TextAlign;
     wordWrap?: boolean;
     wordSpace?: number;
-    lineHeight?: number;
-    fontSize?: number;
+    lineHeight: number;
+    fontSize: number;
+    autoResizeHeight?: boolean;
 }
 
 export class BMFontLabel extends Sprite<IBMFontLabel> {
@@ -23,21 +24,21 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     protected _textureMap: { [word: string]: Texture };
 
     protected _lines: { width: number; words: Texture[] }[] = [];
-    protected _autoResize: boolean = true;
+    protected _autoResizeHeight: boolean = true;
 
     constructor(props?: IBMFontLabel) {
         super();
         props && this.setProps(props);
     }
 
-    get autoResize() {
-        return this._autoResize;
+    get autoResizeHeight() {
+        return this._autoResizeHeight;
     }
 
-    set autoResize(value: boolean) {
-        if (this._autoResize !== value) {
-            this._autoResize = value;
-            if (value && this._lines.length) {
+    set autoResizeHeight(value: boolean) {
+        if (this._autoResizeHeight !== value) {
+            this._autoResizeHeight = value;
+            if (value && this._lines && this._lines.length) {
                 this.height = this._lines.length * this.lineHeight;
             }
         }
@@ -80,7 +81,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     set lineHeight(value: number) {
         if (this._lineHeight != value) {
             this._lineHeight = value;
-            if (this.autoResize && this._lines.length) {
+            if (this._autoResizeHeight && this._lines && this._lines.length) {
                 this.height = this._lines.length * value;
             }
         }
@@ -207,7 +208,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
             }
         });
 
-        if (this.autoResize) {
+        if (this._autoResizeHeight) {
             this.height = _lines.length * lineHeight;
         }
     }
