@@ -26,16 +26,8 @@ export class Texture {
     width: number = 0;
     height: number = 0;
 
-    /**
-     * Texture drawable source
-     */
     source: HTMLCanvasElement;
 
-    /**
-     * Create a texture by source and clipping rectangle
-     * @param  source  Drawable source
-     * @param  rect    Clipping rect
-     */
     public static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture {
         var name = getCacheKey(source, sourceRect, textureRect);
 
@@ -73,10 +65,6 @@ export class Texture {
         }
     }
 
-    /**
-     * @param  source  Drawable source
-     * @param  rect    Clipping rect
-     */
     constructor(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect) {
         var name: any = getCacheKey(source, sourceRect, textureRect);
 
@@ -115,7 +103,7 @@ export class Texture {
             return this._gridSourceCache[cacheKey];
         }
 
-        const [top, right, bottom, left] = grid;
+        const [top, right, bottom, left, repeat] = grid;
         let grids = [
             { x: 0, y: 0, w: left, h: top, sx: sx, sy: sy, sw: left, sh: top }, // left top
             { x: w - right, y: 0, w: right, h: top, sx: sx + sw - right, sy: sy, sw: right, sh: top }, // right top
@@ -125,8 +113,8 @@ export class Texture {
             { x: left, y: h - bottom, w: w - left - right, h: bottom, sx: sx + left, sy: sh - bottom + sy, sw: sw - left - right, sh: bottom }, // bottom
             { x: 0, y: top, w: left, h: h - top - bottom, sx: sx, sy: top, sw: left, sh: sh - top - bottom }, // left
             { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom }, // right
-            { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom }, // center
         ];
+        let centerGrid = { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom };
         let canvas = document.createElement("canvas");
         let context = canvas.getContext("2d");
 
@@ -141,6 +129,32 @@ export class Texture {
                     Math.ceil(g.h));
             }
         });
+
+        if (repeat) {
+            let cvs = createCanvas(this.source,
+                {
+                    x: centerGrid.sx,
+                    y: centerGrid.sy,
+                    width: centerGrid.sw,
+                    height: centerGrid.sh
+                }, {
+                    x: 0,
+                    y: 0,
+                    width: centerGrid.sw,
+                    height: centerGrid.sh
+                });
+            let pattern = context.createPattern(cvs, "repeat");
+            context.fillStyle = pattern;
+            context.fillRect(Math.ceil(centerGrid.x), Math.ceil(centerGrid.y), Math.ceil(centerGrid.w), Math.ceil(centerGrid.h));
+        }
+        else if (centerGrid.w && centerGrid.h) {
+            context.drawImage(this.source, centerGrid.sx, centerGrid.sy, centerGrid.sw, centerGrid.sh,
+                Math.ceil(centerGrid.x),
+                Math.ceil(centerGrid.y),
+                Math.ceil(centerGrid.w),
+                Math.ceil(centerGrid.h));
+        }
+
         this._gridSourceCache[cacheKey] = canvas;
         this._gridSourceCount += 1;
         return canvas;
@@ -230,7 +244,7 @@ function getCacheKey(source: any, sourceRect?: Rect, textureRect?: Rect): any {
     return src + sourceRectStr + textureRectStr;
 }
 
-function createCanvas(image: HTMLImageElement, sourceRect: Rect, textureRect: Rect): HTMLCanvasElement {
+function createCanvas(image: HTMLImageElement | HTMLCanvasElement, sourceRect: Rect, textureRect: Rect): HTMLCanvasElement {
     var canvas: HTMLCanvasElement = document.createElement("canvas");
     var context: CanvasRenderingContext2D = canvas.getContext('2d');
 
