@@ -218,6 +218,47 @@ export function measureText2(
     return measuredSize;
 }
 
+type Breaker = {
+    pos: number;
+    words: string;
+    required: boolean;
+}
+
+function nextBreak(text: string, currPos: number, width: number, fontSize: number): Breaker {
+    if (width < fontSize) {
+        return {
+            pos: currPos,
+            words: "",
+            required: true,
+        };
+    }
+
+    let nextWords: string;
+    let required: boolean;
+    let breakPos: number;
+    let pos: number;
+    let num: number;
+
+    num = Math.min(text.length - currPos, Math.floor(width / fontSize));
+    nextWords = text.slice(currPos, currPos + num);
+    breakPos = nextWords.indexOf('\n');
+    required = breakPos > -1;
+
+    if (required) {
+        nextWords = nextWords.slice(0, breakPos);
+        pos = currPos + breakPos + 1;
+    }
+    else {
+        pos = currPos + num;
+    }
+
+    return {
+        pos,
+        words: nextWords,
+        required: required
+    };
+}
+
 
 // export function measureText(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number): MeasuredSize {
 //     var cacheKey = getCacheKey(text, width, fontFace, fontSize, lineHeight);
@@ -301,47 +342,6 @@ export function measureText2(
 
 //     return measuredSize;
 // }
-
-type Breaker = {
-    pos: number;
-    words: string;
-    required: boolean;
-}
-
-function nextBreak(text: string, currPos: number, width: number, fontSize: number): Breaker {
-    if (width < fontSize) {
-        return {
-            pos: currPos,
-            words: text.slice(currPos, currPos + 1),
-            required: true,
-        };
-    }
-
-    let nextWords: string;
-    let required: boolean;
-    let breakPos: number;
-    let pos: number;
-    let num: number;
-
-    num = Math.min(text.length - currPos, Math.floor(width / fontSize));
-    nextWords = text.slice(currPos, currPos + num);
-    breakPos = nextWords.indexOf('\n');
-    required = breakPos > -1;
-
-    if (required) {
-        nextWords = nextWords.slice(0, breakPos);
-        pos = currPos + breakPos + 1;
-    }
-    else {
-        pos = currPos + num;
-    }
-
-    return {
-        pos,
-        words: nextWords,
-        required: required
-    };
-}
 
 // class LineBreaker {
 

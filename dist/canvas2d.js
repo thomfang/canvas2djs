@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.1
+ * canvas2djs v2.4.2
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2930,7 +2930,7 @@ function nextBreak(text, currPos, width, fontSize) {
     if (width < fontSize) {
         return {
             pos: currPos,
-            words: text.slice(currPos, currPos + 1),
+            words: "",
             required: true,
         };
     }
@@ -2956,6 +2956,77 @@ function nextBreak(text, currPos, width, fontSize) {
         required: required
     };
 }
+// export function measureText(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number): MeasuredSize {
+//     var cacheKey = getCacheKey(text, width, fontFace, fontSize, lineHeight);
+//     var cached = _cache[cacheKey];
+//     if (cached) {
+//         return cached;
+//     }
+//     var measuredSize: MeasuredSize = {} as any;
+//     var textMetrics: TextMetrics;
+//     var lastMeasuredWidth: number;
+//     var tryLine: string;
+//     var currentLine: string;
+//     ctx.font = fontFace.style + ' ' + fontFace.weight + ' ' + fontSize + 'px ' + fontFace.name;
+//     textMetrics = ctx.measureText(text);
+//     measuredSize.width = textMetrics.width;
+//     measuredSize.height = lineHeight;
+//     measuredSize.lines = [];
+//     if (measuredSize.width <= width) {
+//         // The entire text string fits.
+//         measuredSize.lines.push({ width: measuredSize.width, text: text });
+//     }
+//     else {
+//         // Break into multiple lines.
+//         measuredSize.width = width;
+//         currentLine = '';
+//         let breaker = new LineBreaker(text, fontSize);
+//         let remainWidth = width;
+//         let index = 0;
+//         let words: string;
+//         while (index < text.length) {
+//             let res = breaker.nextBreak(remainWidth);
+//             if (res.len) {
+//                 words = text.slice(index, index + res.len);
+//                 tryLine = currentLine + words;
+//                 textMetrics = ctx.measureText(tryLine);
+//                 if (textMetrics.width > width) {
+//                     measuredSize.height += lineHeight;
+//                     measuredSize.lines.push({
+//                         width: lastMeasuredWidth,
+//                         text: currentLine.trim(),
+//                     });
+//                     currentLine = words;
+//                     lastMeasuredWidth = ctx.measureText(currentLine.trim()).width;
+//                     remainWidth = width;
+//                 }
+//                 else {
+//                     currentLine = tryLine;
+//                     lastMeasuredWidth = textMetrics.width;
+//                     remainWidth = width - lastMeasuredWidth;
+//                 }
+//             }
+//             else {
+//                 measuredSize.height += lineHeight;
+//                 measuredSize.lines.push({
+//                     width: lastMeasuredWidth,
+//                     text: currentLine.trim(),
+//                 });
+//                 currentLine = "";
+//                 lastMeasuredWidth = 0;
+//                 remainWidth = width;
+//             }
+//             index += res.len;
+//         }
+//         currentLine = currentLine.trim();
+//         if (currentLine.length > 0) {
+//             textMetrics = ctx.measureText(currentLine);
+//             measuredSize.lines.push({ width: textMetrics.width, text: currentLine });
+//         }
+//     }
+//     _cache[cacheKey] = measuredSize;
+//     return measuredSize;
+// }
 // class LineBreaker {
 //     private position = 0;
 //     constructor(public text: string, public fontSize: number) {
