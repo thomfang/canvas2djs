@@ -200,7 +200,7 @@ export class TextLabel extends Sprite<ITextLabel> {
         if (!this._textFlow || !this._textFlow.length || this.width <= 0) {
             return;
         }
-        let result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight);
+        let result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap);
         this._textLines = result.lines;
         this.height = result.height;
         // if (!this._text || this.width <= 0) {

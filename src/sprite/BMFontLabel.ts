@@ -162,7 +162,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     }
 
     protected _reMeasureText() {
-        if (!this.textureMap || !this._text) {
+        if (!this.textureMap || !this._text || this.width <= 0) {
             this._lines.length = 0;
             return;
         }

@@ -51,6 +51,7 @@ var demo;
         alignY: canvas2d.AlignType.CENTER,
         percentWidth: 1,
         fontColor: 0xfff,
+        wordWrap: false,
     };
     var santaFrames = [];
     for (var i = 0; i < 11; i++) {
@@ -101,7 +102,7 @@ var demo;
             canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; } })),
             sprites,
             canvas2d.createSprite("sprite", __assign({ ref: function (e) { return demo.btn = e; }, onClick: santaJump }, jumpBtnProps),
-                canvas2d.createSprite("text", __assign({}, jumpBtnLabelProps), "Jump")),
+                canvas2d.createSprite("text", __assign({}, jumpBtnLabelProps), "Jump!")),
             canvas2d.createSprite("text", __assign({}, titleProps, { textFlow: [
                     { text: "canvas2d" },
                     { text: "JS\n", fontColor: 0xf00, strokeColor: 0xfff, fontSize: 40, },

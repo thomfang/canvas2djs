@@ -50,6 +50,7 @@ namespace demo {
         alignY: canvas2d.AlignType.CENTER,
         percentWidth: 1,
         fontColor: 0xfff,
+        wordWrap: false,
     }
 
     var santaFrames = [];
@@ -113,7 +114,7 @@ namespace demo {
                 ref={e => btn = e}
                 onClick={santaJump}
                 {...jumpBtnProps}>
-                <text {...jumpBtnLabelProps}>Jump</text>
+                <text {...jumpBtnLabelProps}>Jump!</text>
             </sprite>
             {/*<sprite radius={50} bgColor={0xfff} alignX={canvas2d.AlignType.CENTER} y={300} ref={e => ball = e} onClick={e => console.log("white circle")} clipOverflow>
                 <sprite width={50} height={50} bgColor={0xf00} onClick={(e) => {

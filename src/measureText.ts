@@ -6,6 +6,7 @@ var ctx = canvas.getContext('2d');
 
 // var _cache: { [key: string]: MeasuredSize } = {};
 var _cache2: { [key: string]: MeasuredSize2 } = {};
+var _cacheCount = 0;
 
 // function getCacheKey(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number) {
 //     return text + width + fontFace.name + fontSize + lineHeight;
@@ -16,9 +17,10 @@ function getCacheKey2(
     width: number,
     fontName: string,
     fontSize: number,
-    lineHeight: number
+    lineHeight: number,
+    wordWrap: boolean
 ) {
-    return JSON.stringify(textFlow) + width + fontName + fontSize + lineHeight;
+    return [JSON.stringify(textFlow), width, fontName, fontSize, lineHeight, wordWrap].join(':');
 }
 
 export type TextFlow = {
@@ -64,9 +66,10 @@ export function measureText2(
     fontStyle: FontStyle,
     fontWeight: FontWeight,
     fontSize: number,
-    lineHeight: number
+    lineHeight: number,
+    wordWrap: boolean
 ): MeasuredSize2 {
-    let cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight);
+    let cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap);
     let cached = _cache2[cacheKey];
     if (cached) {
         return cached;
@@ -108,7 +111,11 @@ export function measureText2(
                 tryLine = currentLine + breaker.words;
                 textMetrics = ctx.measureText(tryLine);
 
-                if (width != null && textMetrics.width + lineWidth > width) {
+                if (!wordWrap) {
+                    currentLine = tryLine;
+                    lastMeasuredWidth = textMetrics.width;
+                }
+                else if (textMetrics.width + lineWidth > width) {
                     lineFragments.push({
                         ...props,
                         text: currentLine.trim(),
@@ -158,12 +165,18 @@ export function measureText2(
                 else {
                     currentLine = tryLine;
                     lastMeasuredWidth = textMetrics.width;
-                    if (width != null) {
-                        remainWidth = width - lastMeasuredWidth;
-                    }
+                    remainWidth = width - lastMeasuredWidth;
                 }
             }
             else if (breaker.required) {
+                currentLine = currentLine.trim();
+                if (currentLine.length) {
+                    lineFragments.push({
+                        ...props,
+                        text: currentLine,
+                        width: lastMeasuredWidth,
+                    });
+                }
                 measuredSize.lines.push({
                     width: lineWidth + lastMeasuredWidth,
                     fragments: lineFragments,
@@ -195,11 +208,13 @@ export function measureText2(
         });
         measuredSize.height += lineHeight;
     }
-    if (width == null) {
-        measuredSize.width = measuredSize.lines[0].width;
-    }
 
+    if (_cacheCount > 200) {
+        _cache2 = {};
+        _cacheCount = 0;
+    }
     _cache2[cacheKey] = measuredSize;
+    _cacheCount += 1;
     return measuredSize;
 }
 
@@ -294,10 +309,10 @@ type Breaker = {
 }
 
 function nextBreak(text: string, currPos: number, width: number, fontSize: number): Breaker {
-    if (width != null && width < fontSize) {
+    if (width < fontSize) {
         return {
             pos: currPos,
-            words: "",
+            words: text.slice(currPos, currPos + 1),
             required: true,
         };
     }
@@ -308,15 +323,8 @@ function nextBreak(text: string, currPos: number, width: number, fontSize: numbe
     let pos: number;
     let num: number;
 
-    if (width == null) {
-        nextWords = text.slice(currPos);
-        num = nextWords.length;
-    }
-    else {
-        num = Math.min(text.length - currPos, Math.floor(width / fontSize));
-        nextWords = text.slice(currPos, currPos + num);
-    }
-
+    num = Math.min(text.length - currPos, Math.floor(width / fontSize));
+    nextWords = text.slice(currPos, currPos + num);
     breakPos = nextWords.indexOf('\n');
     required = breakPos > -1;
 

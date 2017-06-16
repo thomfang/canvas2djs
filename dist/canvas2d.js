@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.0
+ * canvas2djs v2.4.1
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2806,14 +2806,15 @@ var canvas = document.createElement('canvas');
 var ctx = canvas.getContext('2d');
 // var _cache: { [key: string]: MeasuredSize } = {};
 var _cache2 = {};
+var _cacheCount = 0;
 // function getCacheKey(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number) {
 //     return text + width + fontFace.name + fontSize + lineHeight;
 // }
-function getCacheKey2(textFlow, width, fontName, fontSize, lineHeight) {
-    return JSON.stringify(textFlow) + width + fontName + fontSize + lineHeight;
+function getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap) {
+    return [JSON.stringify(textFlow), width, fontName, fontSize, lineHeight, wordWrap].join(':');
 }
-function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize, lineHeight) {
-    var cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight);
+function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize, lineHeight, wordWrap) {
+    var cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap);
     var cached = _cache2[cacheKey];
     if (cached) {
         return cached;
@@ -2845,7 +2846,11 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
             if (breaker.words) {
                 tryLine = currentLine + breaker.words;
                 textMetrics = ctx.measureText(tryLine);
-                if (width != null && textMetrics.width + lineWidth > width) {
+                if (!wordWrap) {
+                    currentLine = tryLine;
+                    lastMeasuredWidth = textMetrics.width;
+                }
+                else if (textMetrics.width + lineWidth > width) {
                     lineFragments.push(__assign({}, props, { text: currentLine.trim(), width: lastMeasuredWidth }));
                     measuredSize.lines.push({ fragments: lineFragments, width: lineWidth + lastMeasuredWidth });
                     measuredSize.height += lineHeight;
@@ -2880,12 +2885,14 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
                 else {
                     currentLine = tryLine;
                     lastMeasuredWidth = textMetrics.width;
-                    if (width != null) {
-                        remainWidth = width - lastMeasuredWidth;
-                    }
+                    remainWidth = width - lastMeasuredWidth;
                 }
             }
             else if (breaker.required) {
+                currentLine = currentLine.trim();
+                if (currentLine.length) {
+                    lineFragments.push(__assign({}, props, { text: currentLine, width: lastMeasuredWidth }));
+                }
                 measuredSize.lines.push({
                     width: lineWidth + lastMeasuredWidth,
                     fragments: lineFragments,
@@ -2911,17 +2918,19 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
         });
         measuredSize.height += lineHeight;
     }
-    if (width == null) {
-        measuredSize.width = measuredSize.lines[0].width;
+    if (_cacheCount > 200) {
+        _cache2 = {};
+        _cacheCount = 0;
     }
     _cache2[cacheKey] = measuredSize;
+    _cacheCount += 1;
     return measuredSize;
 }
 function nextBreak(text, currPos, width, fontSize) {
-    if (width != null && width < fontSize) {
+    if (width < fontSize) {
         return {
             pos: currPos,
-            words: "",
+            words: text.slice(currPos, currPos + 1),
             required: true,
         };
     }
@@ -2930,14 +2939,8 @@ function nextBreak(text, currPos, width, fontSize) {
     var breakPos;
     var pos;
     var num;
-    if (width == null) {
-        nextWords = text.slice(currPos);
-        num = nextWords.length;
-    }
-    else {
-        num = Math.min(text.length - currPos, Math.floor(width / fontSize));
-        nextWords = text.slice(currPos, currPos + num);
-    }
+    num = Math.min(text.length - currPos, Math.floor(width / fontSize));
+    nextWords = text.slice(currPos, currPos + num);
     breakPos = nextWords.indexOf('\n');
     required = breakPos > -1;
     if (required) {
@@ -3146,7 +3149,7 @@ var TextLabel = (function (_super) {
         if (!this._textFlow || !this._textFlow.length || this.width <= 0) {
             return;
         }
-        var result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight);
+        var result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap);
         this._textLines = result.lines;
         this.height = result.height;
         // if (!this._text || this.width <= 0) {
@@ -3391,7 +3394,7 @@ var BMFontLabel = (function (_super) {
     });
     BMFontLabel.prototype._reMeasureText = function () {
         var _this = this;
-        if (!this.textureMap || !this._text) {
+        if (!this.textureMap || !this._text || this.width <= 0) {
             this._lines.length = 0;
             return;
         }
