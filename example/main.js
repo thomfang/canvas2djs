@@ -32,12 +32,31 @@ var demo;
         top: 30,
         alignX: canvas2d.AlignType.CENTER,
         fontName: 'Arial',
-        fontSize: 30,
+        fontSize: 24,
         fontColor: 0xfff,
         strokeWidth: 2,
         strokeColor: 0x00f,
-        percentWidth: 1,
+        // percentWidth: 0.7,
+        width: 450,
         lineHeight: 50,
+        // bgColor: 0xfff,
+        // textFlow: [
+        //     {
+        //         text: "欢迎来到"
+        //     },
+        //     {
+        //         text: "天天坦克大战", fontColor: 0x0f0,
+        //     },
+        //     {
+        //         text: "，现在战火连天，快烧到你的屁股上了，你准备好了吗？加入战斗，给他一炮！"
+        //     }
+        // ],
+        textFlow: [
+            { text: "canvas2d" },
+            { text: "JS\n", fontColor: 0xf00, strokeColor: 0xfff, fontSize: 40, },
+            { text: "--  " },
+            { text: "Todd Fon", fontColor: 0xff0, fontWeight: "bold" }
+        ]
     };
     var jumpBtnProps = {
         bgColor: 0xf00,
@@ -103,12 +122,7 @@ var demo;
             sprites,
             canvas2d.createSprite("sprite", __assign({ ref: function (e) { return demo.btn = e; }, onClick: santaJump }, jumpBtnProps),
                 canvas2d.createSprite("text", __assign({}, jumpBtnLabelProps), "Jump!")),
-            canvas2d.createSprite("text", __assign({}, titleProps, { textFlow: [
-                    { text: "canvas2d" },
-                    { text: "JS\n", fontColor: 0xf00, strokeColor: 0xfff, fontSize: 40, },
-                    { text: "--  " },
-                    { text: "Todd Fon", fontColor: 0xff0, fontWeight: "bold" }
-                ] }))));
+            canvas2d.createSprite("text", __assign({}, titleProps))));
     // stage.on(canvas2d.UIEvent.TOUCH_MOVED, (helpers, event) => {
     //     console.log(helpers[0].target)
     // });
