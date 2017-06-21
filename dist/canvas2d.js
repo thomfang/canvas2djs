@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.2
+ * canvas2djs v2.4.3
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2841,8 +2841,8 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
         text = flow.text;
         ctx.font = props.fontStyle + ' ' + props.fontWeight + ' ' + props.fontSize + 'px ' + props.fontName;
         while (currentPos < text.length) {
+            // console.log("remain width", remainWidth)
             var breaker = nextBreak(text, currentPos, remainWidth, props.fontSize);
-            currentPos = breaker.pos;
             if (breaker.words) {
                 tryLine = currentLine + breaker.words;
                 textMetrics = ctx.measureText(tryLine);
@@ -2851,14 +2851,36 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
                     lastMeasuredWidth = textMetrics.width;
                 }
                 else if (textMetrics.width + lineWidth > width) {
-                    lineFragments.push(__assign({}, props, { text: currentLine.trim(), width: lastMeasuredWidth }));
-                    measuredSize.lines.push({ fragments: lineFragments, width: lineWidth + lastMeasuredWidth });
+                    if (breaker.words.length > 1 && textMetrics.width + lineWidth - props.fontSize <= width) {
+                        // console.log(breaker.words, textMetrics.width, lineWidth, props.fontSize, width, remainWidth);
+                        tryLine = currentLine + breaker.words.slice(0, breaker.words.length - 1);
+                        breaker.words = breaker.words.slice(breaker.words.length - 1);
+                        if (breaker.required) {
+                            breaker.pos -= 2;
+                        }
+                        else {
+                            breaker.pos -= 1;
+                        }
+                        lineFragments.push(__assign({}, props, { text: tryLine.trim(), width: textMetrics.width - fontSize }));
+                        measuredSize.lines.push({
+                            width: lineWidth + textMetrics.width - fontSize,
+                            fragments: lineFragments,
+                        });
+                    }
+                    else {
+                        // console.log(breaker.words, textMetrics.width, lineWidth, props.fontSize, width, remainWidth, currentLine);
+                        lineFragments.push(__assign({}, props, { text: currentLine.trim(), width: lastMeasuredWidth }));
+                        measuredSize.lines.push({
+                            fragments: lineFragments,
+                            width: lineWidth + lastMeasuredWidth
+                        });
+                    }
                     measuredSize.height += lineHeight;
                     lineFragments = [];
                     lineWidth = 0;
-                    remainWidth = width;
                     currentLine = breaker.words;
                     lastMeasuredWidth = ctx.measureText(currentLine.trim()).width;
+                    remainWidth = width - lastMeasuredWidth;
                     if (breaker.required) {
                         measuredSize.lines.push({
                             width: lastMeasuredWidth,
@@ -2904,11 +2926,13 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
                 lastMeasuredWidth = 0;
                 remainWidth = width;
             }
+            currentPos = breaker.pos;
         }
         currentLine = currentLine.trim();
         if (currentLine.length) {
             lineFragments.push(__assign({}, props, { text: currentLine, width: lastMeasuredWidth }));
             lineWidth += lastMeasuredWidth;
+            remainWidth = width - lineWidth;
         }
     });
     if (lineFragments.length) {
@@ -3511,8 +3535,8 @@ var BMFontLabel = (function (_super) {
     BMFontLabel.prototype.draw = function (context) {
         _super.prototype.draw.call(this, context);
         var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace, width = _a.width;
-        var lineSpace = (lineHeight - fontSize) * 0.5;
-        var y = -_originPixelY + lineSpace;
+        // let lineSpace = (lineHeight - fontSize) * 0.5;
+        var y = -_originPixelY;
         this._lines.forEach(function (line, i) {
             var x;
             if (_textAlign === "right") {
@@ -3526,7 +3550,9 @@ var BMFontLabel = (function (_super) {
             }
             line.words.forEach(function (word, j) {
                 if (word) {
-                    context.drawImage(word.source, 0, 0, word.width, word.height, x, y, fontSize, fontSize);
+                    var h = fontSize / word.width * word.height;
+                    var p = (lineHeight - h) * 0.5;
+                    context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
                 }
                 x += fontSize + wordSpace;
             });
