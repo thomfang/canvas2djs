@@ -103,9 +103,8 @@ export function measureText2(
         ctx.font = props.fontStyle + ' ' + props.fontWeight + ' ' + props.fontSize + 'px ' + props.fontName;
 
         while (currentPos < text.length) {
+            // console.log("remain width", remainWidth)
             let breaker = nextBreak(text, currentPos, remainWidth, props.fontSize);
-
-            currentPos = breaker.pos;
 
             if (breaker.words) {
                 tryLine = currentLine + breaker.words;
@@ -116,19 +115,47 @@ export function measureText2(
                     lastMeasuredWidth = textMetrics.width;
                 }
                 else if (textMetrics.width + lineWidth > width) {
-                    lineFragments.push({
-                        ...props,
-                        text: currentLine.trim(),
-                        width: lastMeasuredWidth,
-                    });
-                    measuredSize.lines.push({ fragments: lineFragments, width: lineWidth + lastMeasuredWidth });
+                    if (breaker.words.length > 1 && textMetrics.width + lineWidth - props.fontSize <= width) {
+                        // console.log(breaker.words, textMetrics.width, lineWidth, props.fontSize, width, remainWidth);
+                        tryLine = currentLine + breaker.words.slice(0, breaker.words.length - 1);
+                        breaker.words = breaker.words.slice(breaker.words.length - 1);
+                        if (breaker.required) {
+                            breaker.pos -= 2;
+                        }
+                        else {
+                            breaker.pos -= 1;
+                        }
+
+                        lineFragments.push({
+                            ...props,
+                            text: tryLine.trim(),
+                            width: textMetrics.width - fontSize,
+                        });
+                        measuredSize.lines.push({
+                            width: lineWidth + textMetrics.width - fontSize,
+                            fragments: lineFragments,
+                        });
+                    }
+                    else {
+                        // console.log(breaker.words, textMetrics.width, lineWidth, props.fontSize, width, remainWidth, currentLine);
+                        lineFragments.push({
+                            ...props,
+                            text: currentLine.trim(),
+                            width: lastMeasuredWidth,
+                        });
+                        measuredSize.lines.push({
+                            fragments: lineFragments,
+                            width: lineWidth + lastMeasuredWidth
+                        });
+                    }
+
                     measuredSize.height += lineHeight;
 
                     lineFragments = [];
                     lineWidth = 0;
-                    remainWidth = width;
                     currentLine = breaker.words;
                     lastMeasuredWidth = ctx.measureText(currentLine.trim()).width;
+                    remainWidth = width - lastMeasuredWidth;
 
                     if (breaker.required) {
                         measuredSize.lines.push({
@@ -188,6 +215,8 @@ export function measureText2(
                 lastMeasuredWidth = 0;
                 remainWidth = width;
             }
+
+            currentPos = breaker.pos;
         }
 
         currentLine = currentLine.trim();
@@ -198,6 +227,7 @@ export function measureText2(
                 width: lastMeasuredWidth,
             });
             lineWidth += lastMeasuredWidth;
+            remainWidth = width - lineWidth;
         }
     });
 
