@@ -218,8 +218,8 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
 
         const { _originPixelX, _originPixelY, _textAlign, fontSize, lineHeight, wordSpace, width } = this;
 
-        let lineSpace = (lineHeight - fontSize) * 0.5;
-        let y: number = -_originPixelY + lineSpace;
+        // let lineSpace = (lineHeight - fontSize) * 0.5;
+        let y: number = -_originPixelY;
 
         this._lines.forEach((line, i) => {
             let x: number;
@@ -236,7 +236,9 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
 
             line.words.forEach((word, j) => {
                 if (word) {
-                    context.drawImage(word.source, 0, 0, word.width, word.height, x, y, fontSize, fontSize);
+                    let h = fontSize / word.width * word.height;
+                    let p = (lineHeight - h) * 0.5;
+                    context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
                 }
                 x += fontSize + wordSpace;
             });
