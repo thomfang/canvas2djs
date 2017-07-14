@@ -3,12 +3,12 @@ import { TextLabel, ITextLabel } from './sprite/TextLabel';
 import { BMFontLabel, IBMFontLabel } from './sprite/BMFontLabel';
 import { Stage, ScaleMode, Orientation } from './Stage';
 import { Texture } from './Texture';
-import { Action, ActionQueue } from './action/Action';
+import { Action, ActionQueue, ActionRepeatMode } from './action/Action';
 
 export interface Ref<T> {
     ref?(instance: T): any;
 }
-export type ActionProps = { actions?: ActionQueue[] };
+export type ActionProps = { actions?: { queue: ActionQueue; repeatMode?: ActionRepeatMode; }[] };
 
 export type SpriteProps = ISprite & Ref<Sprite<{}>> & ActionProps;
 export type TextProps = ITextLabel & Ref<TextLabel> & ActionProps;
@@ -38,7 +38,7 @@ export function createSprite<T, U>(type: any, props: any, ...children: any[]): a
     let { ref, actions, ...options } = props;
 
     if (typeof type === 'function') {
-        sprite = new type(options) as Sprite<any>;
+        sprite = new type(options) as Sprite<{}>;
         addChildren(sprite, children);
     }
     else {
@@ -63,8 +63,12 @@ export function createSprite<T, U>(type: any, props: any, ...children: any[]): a
         console.error(`canvas2d.createSprite(): Unknown sprite type`, type);
     }
     else if (actions && actions.length) {
-        (<ActionQueue[]>actions).forEach(queue => {
-            new Action(sprite).queue(queue).start();
+        (<ActionProps['actions']>actions).forEach(detail => {
+            let instance = new Action(sprite).queue(detail.queue);
+            if (detail.repeatMode != null) {
+                instance.setRepeatMode(detail.repeatMode);
+            }
+            instance.start();
         });
     }
 
@@ -76,14 +80,14 @@ export function createSprite<T, U>(type: any, props: any, ...children: any[]): a
 }
 
 function createLabel<T>(tag: string, ctor: any, props: any, children: any[]): T {
-    let sprite = new ctor(props);
+    let label = new ctor(props);
     if (children.length) {
-        sprite.text = children.join('');
+        label.text = children.join('');
     }
-    return sprite
+    return label;
 }
 
-function createStage(props: StageProps, children: Sprite<any>[]) {
+function createStage(props: StageProps, children: Sprite<{}>[]) {
     let { canvas, width, height, scaleMode, autoAdjustCanvasSize, useExternalTimer, touchEnabled, mouseEnabled, orientation } = props;
     let stage = new Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation);
 
@@ -98,7 +102,7 @@ function createStage(props: StageProps, children: Sprite<any>[]) {
     return stage;
 }
 
-function addChildren(sprite: Sprite<any>, children: any[]) {
+function addChildren(sprite: Sprite<{}>, children: any[]) {
     if (!children.length) {
         return;
     }

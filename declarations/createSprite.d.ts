@@ -2,12 +2,15 @@ import { Sprite, ISprite } from './sprite/Sprite';
 import { TextLabel, ITextLabel } from './sprite/TextLabel';
 import { BMFontLabel, IBMFontLabel } from './sprite/BMFontLabel';
 import { Stage, ScaleMode, Orientation } from './Stage';
-import { ActionQueue } from './action/Action';
+import { ActionQueue, ActionRepeatMode } from './action/Action';
 export interface Ref<T> {
     ref?(instance: T): any;
 }
 export declare type ActionProps = {
-    actions?: ActionQueue[];
+    actions?: {
+        queue: ActionQueue;
+        repeatMode?: ActionRepeatMode;
+    }[];
 };
 export declare type SpriteProps = ISprite & Ref<Sprite<{}>> & ActionProps;
 export declare type TextProps = ITextLabel & Ref<TextLabel> & ActionProps;
