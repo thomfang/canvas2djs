@@ -17,7 +17,7 @@ import { Sprite } from './sprite/Sprite';
 import { Ref, SpriteProps, TextProps, BMFontProps, StageProps } from './createSprite';
 declare global  {
     namespace JSX {
-        interface Element extends Sprite<any> {
+        interface Element extends Sprite<{}> {
         }
         interface ElementAttributesProperty {
             _props: {};

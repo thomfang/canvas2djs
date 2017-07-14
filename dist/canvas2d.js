@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.3
+ * canvas2djs v2.4.4
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -968,6 +968,13 @@ var Action = (function () {
         this.isRunning = false;
         this.target = target;
     }
+    Object.defineProperty(Action, "scheduleCostTime", {
+        get: function () {
+            return this._scheduleCostTime;
+        },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * Stop action by target
      */
@@ -990,6 +997,7 @@ var Action = (function () {
         removeArrayItem(this._listenerList, this);
     };
     Action.schedule = function (deltaTime) {
+        var startTime = Date.now();
         Action._actionList.slice().forEach(function (action) {
             action._step(deltaTime);
             if (action._done) {
@@ -999,6 +1007,7 @@ var Action = (function () {
         Action._listenerList.slice().forEach(function (listener) {
             listener._step();
         });
+        Action._scheduleCostTime = Date.now() - startTime;
     };
     Action.prototype.isDone = function () {
         return this._done;
@@ -1145,6 +1154,7 @@ var Action = (function () {
 }());
 Action._actionList = [];
 Action._listenerList = [];
+Action._scheduleCostTime = 0;
 
 var EventEmitter = (function () {
     function EventEmitter() {
@@ -2461,6 +2471,11 @@ var Stage = (function (_super) {
     function Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation) {
         if (orientation === void 0) { orientation = exports.Orientation.PORTRAIT; }
         var _this = _super.call(this) || this;
+        _this._elapsedTime = 0;
+        _this._frameCount = 0;
+        _this._computeCostTime = 0;
+        _this._renderCostTime = 0;
+        _this._currFPS = 30;
         _this._fps = 30;
         _this._frameRate = 1000 / _this._fps;
         _this._width = 0;
@@ -2583,6 +2598,27 @@ var Stage = (function (_super) {
         _this._uiEvent = new UIEvent(_this);
         return _this;
     }
+    Object.defineProperty(Stage.prototype, "currFPS", {
+        get: function () {
+            return this._currFPS;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Stage.prototype, "computeCostTime", {
+        get: function () {
+            return this._computeCostTime;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Stage.prototype, "renderCostTime", {
+        get: function () {
+            return this._renderCostTime;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Stage.prototype, "fps", {
         get: function () {
             return this._fps;
@@ -2733,7 +2769,16 @@ var Stage = (function (_super) {
         this._isRunning = true;
     };
     Stage.prototype.step = function (deltaTime) {
+        var startComputeTime = Date.now();
+        this._frameCount += 1;
+        this._elapsedTime += deltaTime;
+        if (this._elapsedTime > 1) {
+            this._elapsedTime -= 1;
+            this._currFPS = this._frameCount;
+            this._frameCount = 0;
+        }
         this._sprite._update(deltaTime);
+        this._computeCostTime = Date.now() - startComputeTime;
     };
     Stage.prototype.stop = function (unregisterUIEvent) {
         if (!this._isRunning) {
@@ -2749,11 +2794,13 @@ var Stage = (function (_super) {
         if (!this._isRunning) {
             return;
         }
+        var startRenderTime = Date.now();
         var _a = this._canvas, width = _a.width, height = _a.height;
         this._bufferContext.clearRect(0, 0, width, height);
         this._sprite._visit(this._bufferContext);
         this._renderContext.clearRect(0, 0, width, height);
         this._renderContext.drawImage(this._bufferCanvas, 0, 0, width, height);
+        this._renderCostTime = Date.now() - startRenderTime;
     };
     /**
      * Add sprite to the stage
@@ -2788,7 +2835,7 @@ var Stage = (function (_super) {
             }
             var deltaTime = _this._getDeltaTime();
             Action.schedule(deltaTime);
-            _this._sprite._update(deltaTime);
+            _this.step(deltaTime);
             _this.render();
             _this._startTimer();
         }, this._frameRate);
@@ -2810,11 +2857,11 @@ var _cacheCount = 0;
 // function getCacheKey(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number) {
 //     return text + width + fontFace.name + fontSize + lineHeight;
 // }
-function getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap) {
-    return [JSON.stringify(textFlow), width, fontName, fontSize, lineHeight, wordWrap].join(':');
+function getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth) {
+    return [JSON.stringify(textFlow), width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth].join(':');
 }
-function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize, lineHeight, wordWrap) {
-    var cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap);
+function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize, lineHeight, wordWrap, autoResizeWidth) {
+    var cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth);
     var cached = _cache2[cacheKey];
     if (cached) {
         return cached;
@@ -2829,28 +2876,33 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
     var lineWidth = 0;
     var textMetrics;
     textFlow.forEach(function (flow) {
-        var text;
-        var currentPos = 0;
-        var lastMeasuredWidth = 0;
-        var currentLine = "";
-        var tryLine;
+        var text = flow.text;
         var props = __assign({ fontSize: fontSize,
             fontStyle: fontStyle,
             fontName: fontName,
             fontWeight: fontWeight }, flow);
-        text = flow.text;
         ctx.font = props.fontStyle + ' ' + props.fontWeight + ' ' + props.fontSize + 'px ' + props.fontName;
+        if (!wordWrap) {
+            textMetrics = ctx.measureText(text);
+            lineFragments.push(__assign({}, props, { text: text, width: textMetrics.width }));
+            lineWidth += textMetrics.width;
+            return;
+        }
+        var currentPos = 0;
+        var lastMeasuredWidth = 0;
+        var currentLine = "";
+        var tryLine;
         while (currentPos < text.length) {
             // console.log("remain width", remainWidth)
-            var breaker = nextBreak(text, currentPos, remainWidth, props.fontSize);
+            var breaker = nextBreak(text, currentPos, remainWidth, props.fontSize, autoResizeWidth);
             if (breaker.words) {
                 tryLine = currentLine + breaker.words;
                 textMetrics = ctx.measureText(tryLine);
-                if (!wordWrap) {
+                if (autoResizeWidth && !breaker.required) {
                     currentLine = tryLine;
                     lastMeasuredWidth = textMetrics.width;
                 }
-                else if (textMetrics.width + lineWidth > width) {
+                else if (!autoResizeWidth && textMetrics.width + lineWidth > width) {
                     if (breaker.words.length > 1 && textMetrics.width + lineWidth - props.fontSize <= width) {
                         // console.log(breaker.words, textMetrics.width, lineWidth, props.fontSize, width, remainWidth);
                         tryLine = currentLine + breaker.words.slice(0, breaker.words.length - 1);
@@ -2942,6 +2994,15 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
         });
         measuredSize.height += lineHeight;
     }
+    if (autoResizeWidth) {
+        var max_1 = 0;
+        measuredSize.lines.forEach(function (l) {
+            if (l.width > max_1) {
+                max_1 = l.width;
+            }
+        });
+        measuredSize.width = max_1;
+    }
     if (_cacheCount > 200) {
         _cache2 = {};
         _cacheCount = 0;
@@ -2950,8 +3011,8 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
     _cacheCount += 1;
     return measuredSize;
 }
-function nextBreak(text, currPos, width, fontSize) {
-    if (width < fontSize) {
+function nextBreak(text, currPos, width, fontSize, autoResizeWidth) {
+    if (!autoResizeWidth && width < fontSize) {
         return {
             pos: currPos,
             words: "",
@@ -2963,7 +3024,7 @@ function nextBreak(text, currPos, width, fontSize) {
     var breakPos;
     var pos;
     var num;
-    num = Math.min(text.length - currPos, Math.floor(width / fontSize));
+    num = autoResizeWidth ? text.length - currPos : Math.min(text.length - currPos, Math.floor(width / fontSize));
     nextWords = text.slice(currPos, currPos + num);
     breakPos = nextWords.indexOf('\n');
     required = breakPos > -1;
@@ -3077,9 +3138,23 @@ var TextLabel = (function (_super) {
         _this._fontSize = DefaultFontSize;
         _this._fontWeight = 'normal';
         _this._fontStyle = 'normal';
+        _this._autoResizeWidth = false;
         props && _this.setProps(props);
         return _this;
     }
+    Object.defineProperty(TextLabel.prototype, "autoResizeWidth", {
+        get: function () {
+            return this._autoResizeWidth;
+        },
+        set: function (value) {
+            if (this._autoResizeWidth != value) {
+                this._autoResizeWidth = value;
+                this._reMeasureText();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(TextLabel.prototype, "width", {
         get: function () {
             return this._width;
@@ -3241,30 +3316,15 @@ var TextLabel = (function (_super) {
         configurable: true
     });
     TextLabel.prototype._reMeasureText = function () {
-        if (!this._textFlow || !this._textFlow.length || this.width <= 0) {
+        if (!this._textFlow || !this._textFlow.length || (this.width <= 0 && !this._autoResizeWidth)) {
             return;
         }
-        var result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap);
+        var result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap, this._autoResizeWidth);
         this._textLines = result.lines;
+        if (this._autoResizeWidth) {
+            this.width = result.width;
+        }
         this.height = result.height;
-        // if (!this._text || this.width <= 0) {
-        //     return;
-        // }
-        // if (!this.wordWrap) {
-        //     this.height = this.lineHeight;
-        //     this._lines = [{
-        //         text: this._text || "",
-        //         width: this._width,
-        //     }];
-        //     return;
-        // }
-        // let res = measureText(this._text, this.width, {
-        //     style: this.fontStyle,
-        //     name: this.fontName,
-        //     weight: this.fontWeight,
-        // }, this.fontSize, this.lineHeight);
-        // this._lines = res.lines;
-        // this.height = res.height;
     };
     TextLabel.prototype.addChild = function (target) {
         if (Array.isArray(target)) {
@@ -3535,7 +3595,6 @@ var BMFontLabel = (function (_super) {
     BMFontLabel.prototype.draw = function (context) {
         _super.prototype.draw.call(this, context);
         var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace, width = _a.width;
-        // let lineSpace = (lineHeight - fontSize) * 0.5;
         var y = -_originPixelY;
         this._lines.forEach(function (line, i) {
             var x;
@@ -3605,8 +3664,12 @@ function createSprite(type, props) {
         console.error("canvas2d.createSprite(): Unknown sprite type", type);
     }
     else if (actions && actions.length) {
-        actions.forEach(function (queue) {
-            new Action(sprite).queue(queue).start();
+        actions.forEach(function (detail) {
+            var instance = new Action(sprite).queue(detail.queue);
+            if (detail.repeatMode != null) {
+                instance.setRepeatMode(detail.repeatMode);
+            }
+            instance.start();
         });
     }
     if (ref) {
@@ -3615,11 +3678,11 @@ function createSprite(type, props) {
     return sprite;
 }
 function createLabel(tag, ctor, props, children) {
-    var sprite = new ctor(props);
+    var label = new ctor(props);
     if (children.length) {
-        sprite.text = children.join('');
+        label.text = children.join('');
     }
-    return sprite;
+    return label;
 }
 function createStage(props, children) {
     var canvas = props.canvas, width = props.width, height = props.height, scaleMode = props.scaleMode, autoAdjustCanvasSize = props.autoAdjustCanvasSize, useExternalTimer = props.useExternalTimer, touchEnabled = props.touchEnabled, mouseEnabled = props.mouseEnabled, orientation = props.orientation;

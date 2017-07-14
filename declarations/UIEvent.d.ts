@@ -9,8 +9,8 @@ export declare type EventHelper = {
     stageX?: number;
     stageY?: number;
     _moved?: boolean;
-    beginTarget?: Sprite<any>;
-    target?: Sprite<any>;
+    beginTarget?: Sprite<{}>;
+    target?: Sprite<{}>;
     cancelBubble: boolean;
     stopPropagation();
 };

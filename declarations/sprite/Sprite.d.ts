@@ -36,7 +36,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     protected _texture: Texture;
     protected _alignX: AlignType;
     protected _alignY: AlignType;
-    protected _parent: Sprite<T>;
+    protected _parent: Sprite<{}>;
     protected _stage: Stage;
     protected _top: number;
     protected _right: number;
@@ -66,7 +66,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     bgColor: Color;
     borderColor: Color;
     borderWidth: number;
-    children: Sprite<any>[];
+    children: Sprite<{}>[];
     blendMode: BlendMode;
     touchEnabled: boolean;
     mouseEnabled: boolean;
@@ -93,7 +93,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     grid: number[];
     rotation: number;
     texture: Texture | string;
-    parent: Sprite<any>;
+    parent: Sprite<{}>;
     stage: Stage;
     alignX: AlignType;
     alignY: AlignType;
@@ -112,12 +112,12 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     protected _drawBgColor(context: CanvasRenderingContext2D): void;
     protected _drawBorder(context: CanvasRenderingContext2D): void;
     protected draw(context: CanvasRenderingContext2D): void;
-    addChild(target: Sprite<any>, position?: number): void;
-    addChildren(...children: Sprite<any>[]): void;
-    removeChild(target: Sprite<any>): void;
-    removeChildren(...children: Sprite<any>[]): void;
+    addChild(target: Sprite<{}>, position?: number): void;
+    addChildren(...children: Sprite<{}>[]): void;
+    removeChild(target: Sprite<{}>): void;
+    removeChildren(...children: Sprite<{}>[]): void;
     removeAllChildren(recusive?: boolean): void;
-    contains(target: Sprite<any>): any;
+    contains(target: Sprite<{}>): any;
     release(recusive?: boolean): void;
     update(deltaTime: number): any;
 }

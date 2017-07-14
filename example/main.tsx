@@ -9,6 +9,7 @@ namespace demo {
     export var btn: canvas2d.Sprite<any>;
 
     var ball: canvas2d.Sprite<any>;
+    var stateLabel: canvas2d.TextLabel;
 
     var stageProps: canvas2d.StageProps = {
         width: 960,
@@ -18,7 +19,8 @@ namespace demo {
         touchEnabled: true,
         mouseEnabled: true,
         canvas,
-        orientation: canvas2d.Orientation.LANDSCAPE2
+        orientation: canvas2d.Orientation.LANDSCAPE2,
+        useExternalTimer: true,
     };
     var sceneProps: canvas2d.SpriteProps = {
         left: 0,
@@ -57,6 +59,14 @@ namespace demo {
             { text: "Todd Fon", fontColor: 0xff0, fontWeight: "bold" }
         ]
     };
+    var tipProps: canvas2d.TextProps = {
+        autoResizeWidth: true,
+        fontSize: 26,
+        bgColor: 0xf00,
+        fontColor: 0xfff,
+        alignX: canvas2d.AlignType.CENTER,
+        top: 10,
+    }
     var jumpBtnProps: canvas2d.SpriteProps = {
         bgColor: 0xf00,
         alignX: canvas2d.AlignType.CENTER,
@@ -70,6 +80,15 @@ namespace demo {
         percentWidth: 1,
         fontColor: 0xfff,
         wordWrap: false,
+    };
+    var stateProps: canvas2d.TextProps = {
+        fontColor: 0xf00,
+        fontSize: 20,
+        left: 20,
+        top: 20,
+        width: 200,
+        textAlign: "left",
+        ref: e => stateLabel = e,
     }
 
     var santaFrames = [];
@@ -82,11 +101,15 @@ namespace demo {
         alignX: canvas2d.AlignType.CENTER,
         alignY: canvas2d.AlignType.CENTER,
         actions: [
-            [{
-                type: canvas2d.ActionType.ANIM,
-                frameList: santaFrames,
-                frameRate: 20
-            }]
+            {
+                queue: [{
+                    type: canvas2d.ActionType.ANIM,
+                    frameList: santaFrames,
+                    frameRate: 20,
+                    repetitions: 1,
+                }],
+                repeatMode: canvas2d.ActionRepeatMode.REVERSE_REPEAT,
+            }
         ],
     };
 
@@ -142,6 +165,10 @@ namespace demo {
             </sprite>*/}
             {/*<sprite touchEnabled={false} left={10} right={10} top={10} bottom={10} grid={[20,20,20,20]} texture="img/roundrect-bg.png" />*/}
             <text {...titleProps} />
+            {/* <text {...tipProps} text="This is a text with\n autoResizeWidth=true."></text> */}
+            <text {...stateProps} update={() => {
+                stateLabel.textFlow = [{ text: `FPS:${stage.currFPS}\nRender:${stage.renderCostTime}\nCompute:${stage.computeCostTime}\nAction:${canvas2d.Action.scheduleCostTime}` }]
+            }} />
         </sprite>
     </stage>;
 
@@ -191,5 +218,23 @@ namespace demo {
                 );
             }
         });
-    })
+    });
+
+    let lastUpdateTime = Date.now();
+
+    function loop() {
+        requestAnimationFrame(() => {
+            loop();
+
+            let now = Date.now();
+            let dt = (now - lastUpdateTime) / 1000;
+            lastUpdateTime = now;
+
+            canvas2d.Action.schedule(dt);
+            stage.step(dt);
+            stage.render();
+        });
+    }
+    
+    loop();
 }

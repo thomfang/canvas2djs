@@ -218,7 +218,6 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
 
         const { _originPixelX, _originPixelY, _textAlign, fontSize, lineHeight, wordSpace, width } = this;
 
-        // let lineSpace = (lineHeight - fontSize) * 0.5;
         let y: number = -_originPixelY;
 
         this._lines.forEach((line, i) => {

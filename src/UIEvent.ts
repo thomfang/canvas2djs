@@ -12,8 +12,8 @@ export type EventHelper = {
     stageX?: number;
     stageY?: number;
     _moved?: boolean;
-    beginTarget?: Sprite<any>;
-    target?: Sprite<any>;
+    beginTarget?: Sprite<{}>;
+    target?: Sprite<{}>;
     cancelBubble: boolean;
     stopPropagation();
 }
@@ -330,7 +330,7 @@ export class UIEvent {
     }
 
     private _dispatchTouch(
-        sprite: Sprite<any>,
+        sprite: Sprite<{}>,
         offsetX: number,
         offsetY: number,
         helpers: EventHelper[],
@@ -424,7 +424,7 @@ export class UIEvent {
     }
 
     private _detectTouchOnClipArea(
-        sprite: Sprite<any>,
+        sprite: Sprite<{}>,
         offsetX: number,
         offsetY: number,
         helpers: EventHelper[],
@@ -505,7 +505,7 @@ export class UIEvent {
     }
 
     private _dispatchMouse(
-        sprite: Sprite<any>,
+        sprite: Sprite<{}>,
         offsetX: number,
         offsetY: number,
         helper: EventHelper,
@@ -574,7 +574,7 @@ export class UIEvent {
     }
 
     private _detectMouseOnClipArea(
-        sprite: Sprite<any>,
+        sprite: Sprite<{}>,
         offsetX: number,
         offsetY: number,
         helper: EventHelper,
@@ -653,6 +653,6 @@ function isMovedSmallRange(e: EventHelper) {
     return x <= 5 && y <= 5;
 }
 
-function hasImplements(sprite: Sprite<any>, methodName: string) {
+function hasImplements(sprite: Sprite<{}>, methodName: string) {
     return sprite[methodName] !== Sprite.prototype[methodName] && typeof sprite[methodName] === 'function';
 }

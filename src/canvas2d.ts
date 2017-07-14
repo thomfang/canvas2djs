@@ -19,7 +19,7 @@ import { Ref, SpriteProps, TextProps, BMFontProps, StageProps } from './createSp
 
 declare global {
     namespace JSX {
-        interface Element extends Sprite<any> { }
+        interface Element extends Sprite<{}> { }
         interface ElementAttributesProperty { _props: {}; }
         interface IntrinsicClassAttributes<T> extends Ref<T> { }
         interface IntrinsicElements {

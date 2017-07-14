@@ -58,7 +58,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     protected _texture: Texture;
     protected _alignX: AlignType;
     protected _alignY: AlignType;
-    protected _parent: Sprite<T>;
+    protected _parent: Sprite<{}>;
     protected _stage: Stage;
 
     protected _top: number;
@@ -94,7 +94,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     bgColor: Color;
     borderColor: Color;
     borderWidth: number;
-    children: Sprite<any>[];
+    children: Sprite<{}>[];
     blendMode: BlendMode;
 
     touchEnabled: boolean = true;
@@ -331,7 +331,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         return this._texture;
     }
 
-    set parent(sprite: Sprite<any>) {
+    set parent(sprite: Sprite<{}>) {
         if (sprite === this._parent) {
             return;
         }
@@ -655,7 +655,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
     }
 
-    addChild(target: Sprite<any>, position?: number): void {
+    addChild(target: Sprite<{}>, position?: number): void {
         if (target.parent) {
             throw new Error("canvas2d.Sprite.addChild(): Child has been added.");
         }
@@ -664,7 +664,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             this.children = [];
         }
 
-        var children: Sprite<any>[] = this.children;
+        var children: Sprite<{}>[] = this.children;
 
         if (children.indexOf(target) < 0) {
             if (position > -1 && position < children.length) {
@@ -684,13 +684,13 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
     }
 
-    addChildren(...children: Sprite<any>[]) {
+    addChildren(...children: Sprite<{}>[]) {
         children.forEach(child => {
             this.addChild(child);
         });
     }
 
-    removeChild(target: Sprite<any>): void {
+    removeChild(target: Sprite<{}>): void {
         if (!this.children || !this.children.length) {
             return;
         }
@@ -702,7 +702,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
     }
 
-    removeChildren(...children: Sprite<any>[]) {
+    removeChildren(...children: Sprite<{}>[]) {
         children.forEach(child => {
             this.removeChild(child);
         });
@@ -714,7 +714,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
 
         while (this.children.length) {
-            var sprite: Sprite<any> = this.children[0];
+            var sprite: Sprite<{}> = this.children[0];
 
             if (recusive) {
                 sprite.removeAllChildren(true);
@@ -726,7 +726,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         this.children = null;
     }
 
-    contains(target: Sprite<any>) {
+    contains(target: Sprite<{}>) {
         if (!this.children || !this.children.length) {
             return false;
         }
@@ -807,7 +807,7 @@ export interface ISprite {
      * Height of the clipping rect on texture
      */
     sourceHeight?: number;
-    
+
     blendMode?: BlendMode;
 
     /**
