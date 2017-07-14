@@ -42,6 +42,8 @@ export declare enum ActionRepeatMode {
 export declare class Action {
     private static _actionList;
     private static _listenerList;
+    private static _scheduleCostTime;
+    static readonly scheduleCostTime: number;
     /**
      * Stop action by target
      */

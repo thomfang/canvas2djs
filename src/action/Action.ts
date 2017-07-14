@@ -57,6 +57,10 @@ export class Action {
 
     private static _actionList: Array<Action> = [];
     private static _listenerList: Array<IActionListener> = [];
+    private static _scheduleCostTime: number = 0;
+    public static get scheduleCostTime() {
+        return this._scheduleCostTime;
+    }
 
     /**
      * Stop action by target
@@ -83,6 +87,8 @@ export class Action {
     }
 
     public static schedule(deltaTime: number): void {
+        var startTime = Date.now();
+
         Action._actionList.slice().forEach(action => {
             action._step(deltaTime);
 
@@ -94,6 +100,8 @@ export class Action {
         Action._listenerList.slice().forEach((listener: ActionListener) => {
             listener._step();
         });
+
+        Action._scheduleCostTime = Date.now() - startTime;
     }
 
     protected _queue: Array<BaseAction> = [];

@@ -19,6 +19,11 @@ export declare type VisibleRect = {
     bottom: number;
 };
 export declare class Stage extends EventEmitter {
+    private _elapsedTime;
+    private _frameCount;
+    private _computeCostTime;
+    private _renderCostTime;
+    private _currFPS;
     private _fps;
     private _frameRate;
     private _isRunning;
@@ -42,6 +47,9 @@ export declare class Stage extends EventEmitter {
     private _uiEvent;
     touchEnabled: boolean;
     mouseEnabled: boolean;
+    readonly currFPS: number;
+    readonly computeCostTime: number;
+    readonly renderCostTime: number;
     fps: number;
     readonly isRunning: boolean;
     readonly width: number;
@@ -72,11 +80,11 @@ export declare class Stage extends EventEmitter {
     /**
      * Add sprite to the stage
      */
-    addChild(child: Sprite<any>, position?: number): void;
+    addChild(child: Sprite<{}>, position?: number): void;
     /**
      * Remove sprite from the stage
      */
-    removeChild(child: Sprite<any>): void;
+    removeChild(child: Sprite<{}>): void;
     /**
      * Remove all sprites from the stage
      * @param  recusive  Recusize remove all the children

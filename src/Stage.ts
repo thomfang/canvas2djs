@@ -26,6 +26,11 @@ export type VisibleRect = {
 
 export class Stage extends EventEmitter {
 
+    private _elapsedTime: number = 0;
+    private _frameCount: number = 0;
+    private _computeCostTime: number = 0;
+    private _renderCostTime: number = 0;
+    private _currFPS: number = 30;
     private _fps: number = 30;
     private _frameRate: number = 1000 / this._fps;
     private _isRunning: boolean;
@@ -50,6 +55,18 @@ export class Stage extends EventEmitter {
     
     touchEnabled: boolean;
     mouseEnabled: boolean;
+
+    get currFPS() {
+        return this._currFPS;
+    }
+
+    get computeCostTime() {
+        return this._computeCostTime;
+    }
+
+    get renderCostTime() {
+        return this._renderCostTime;
+    }
 
     get fps(): number {
         return this._fps;
@@ -320,7 +337,18 @@ export class Stage extends EventEmitter {
     }
 
     step(deltaTime: number): void {
+        var startComputeTime = Date.now();
+
+        this._frameCount += 1;
+        this._elapsedTime += deltaTime;
+        if (this._elapsedTime > 1) {
+            this._elapsedTime -= 1;
+            this._currFPS = this._frameCount;
+            this._frameCount = 0;
+        }
+
         (this._sprite as any)._update(deltaTime);
+        this._computeCostTime = Date.now() - startComputeTime;
     }
 
     stop(unregisterUIEvent?: boolean): void {
@@ -341,6 +369,7 @@ export class Stage extends EventEmitter {
             return;
         }
 
+        var startRenderTime = Date.now();
         var { width, height } = this._canvas;
 
         this._bufferContext.clearRect(0, 0, width, height);
@@ -348,19 +377,21 @@ export class Stage extends EventEmitter {
 
         this._renderContext.clearRect(0, 0, width, height);
         this._renderContext.drawImage(this._bufferCanvas, 0, 0, width, height);
+
+        this._renderCostTime = Date.now() - startRenderTime;
     }
 
     /**
      * Add sprite to the stage
      */
-    addChild(child: Sprite<any>, position?: number): void {
+    addChild(child: Sprite<{}>, position?: number): void {
         this._sprite.addChild(child, position);
     }
 
     /**
      * Remove sprite from the stage
      */
-    removeChild(child: Sprite<any>): void {
+    removeChild(child: Sprite<{}>): void {
         this._sprite.removeChild(child);
     }
 
@@ -387,7 +418,7 @@ export class Stage extends EventEmitter {
 
             var deltaTime: number = this._getDeltaTime();
             Action.schedule(deltaTime);
-            (this._sprite as any)._update(deltaTime);
+            this.step(deltaTime);
             this.render();
             this._startTimer();
         }, this._frameRate);
