@@ -24,6 +24,7 @@ export type ITextLabel = ISprite & {
     strokeWidth?: number;
     wordWrap?: boolean;
     textFlow?: TextFlow[];
+    autoResizeWidth?: boolean;
 }
 
 export class TextLabel extends Sprite<ITextLabel> {
@@ -40,15 +41,26 @@ export class TextLabel extends Sprite<ITextLabel> {
     protected _fontWeight: FontWeight = 'normal';
     protected _fontStyle: FontStyle = 'normal';
     protected _textFlow: Array<TextFlow>;
+    protected _autoResizeWidth: boolean = false;
 
     protected _textLines: { fragments: TextFragment[]; width: number }[];
-    // protected _lines: { width: number; text: string; }[] = [];
     protected _text: string;
 
     constructor(props?: ITextLabel) {
         super();
 
         props && this.setProps(props);
+    }
+
+    set autoResizeWidth(value: boolean) {
+        if (this._autoResizeWidth != value) {
+            this._autoResizeWidth = value;
+            this._reMeasureText();
+        }
+    }
+
+    get autoResizeWidth() {
+        return this._autoResizeWidth;
     }
 
     set width(value: number) {
@@ -197,31 +209,15 @@ export class TextLabel extends Sprite<ITextLabel> {
     }
 
     private _reMeasureText(): void {
-        if (!this._textFlow || !this._textFlow.length || this.width <= 0) {
+        if (!this._textFlow || !this._textFlow.length || (this.width <= 0 && !this._autoResizeWidth)) {
             return;
         }
-        let result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap);
+        let result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap, this._autoResizeWidth);
         this._textLines = result.lines;
+        if (this._autoResizeWidth) {
+            this.width = result.width;
+        }
         this.height = result.height;
-        // if (!this._text || this.width <= 0) {
-        //     return;
-        // }
-        // if (!this.wordWrap) {
-        //     this.height = this.lineHeight;
-        //     this._lines = [{
-        //         text: this._text || "",
-        //         width: this._width,
-        //     }];
-        //     return;
-        // }
-        // let res = measureText(this._text, this.width, {
-        //     style: this.fontStyle,
-        //     name: this.fontName,
-        //     weight: this.fontWeight,
-        // }, this.fontSize, this.lineHeight);
-
-        // this._lines = res.lines;
-        // this.height = res.height;
     }
 
     addChild(target: any): void {
@@ -286,38 +282,4 @@ export class TextLabel extends Sprite<ITextLabel> {
             y += lineHeight;
         });
     }
-
-    // protected draw_(context: CanvasRenderingContext2D): void {
-    //     super.draw(context);
-
-    //     if (!this._lines || this._lines.length === 0) {
-    //         return;
-    //     }
-
-    //     const { strokeWidth, strokeColor, textAlign, lineHeight, _originPixelX, _originPixelY, fontSize, fontWeight, fontStyle, fontName, fontColor, width } = this;
-
-    //     context.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
-    //     context.fillStyle = convertColor(fontColor);
-    //     context.textAlign = textAlign;
-    //     context.textBaseline = 'middle';
-    //     context.lineJoin = 'round';
-
-    //     if (strokeColor != null) {
-    //         context.strokeStyle = convertColor(strokeColor || 0x000);
-    //         context.lineWidth = (strokeWidth || 1) * 2;
-    //     }
-
-    //     var x = textAlign === 'left' ? -_originPixelX : textAlign === 'center' ? 0 : width - _originPixelX;
-    //     var y = -_originPixelY + lineHeight * 0.5;
-
-    //     this._lines.forEach((line) => {
-    //         if (line.text.length > 0) {
-    //             if (strokeColor != null) {
-    //                 context.strokeText(line.text, x, y);
-    //             }
-    //             context.fillText(line.text, x, y);
-    //         }
-    //         y += lineHeight;
-    //     });
-    // }
 }

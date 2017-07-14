@@ -18,9 +18,10 @@ function getCacheKey2(
     fontName: string,
     fontSize: number,
     lineHeight: number,
-    wordWrap: boolean
+    wordWrap: boolean,
+    autoResizeWidth: boolean,
 ) {
-    return [JSON.stringify(textFlow), width, fontName, fontSize, lineHeight, wordWrap].join(':');
+    return [JSON.stringify(textFlow), width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth].join(':');
 }
 
 export type TextFlow = {
@@ -67,9 +68,10 @@ export function measureText2(
     fontWeight: FontWeight,
     fontSize: number,
     lineHeight: number,
-    wordWrap: boolean
+    wordWrap: boolean,
+    autoResizeWidth: boolean,
 ): MeasuredSize2 {
-    let cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap);
+    let cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth);
     let cached = _cache2[cacheKey];
     if (cached) {
         return cached;
@@ -86,11 +88,7 @@ export function measureText2(
     let textMetrics: TextMetrics;
 
     textFlow.forEach(flow => {
-        let text: string;
-        let currentPos = 0;
-        let lastMeasuredWidth = 0;
-        let currentLine = "";
-        let tryLine: string;
+        let text: string = flow.text;
         let props: TextFlow = {
             fontSize,
             fontStyle,
@@ -98,23 +96,38 @@ export function measureText2(
             fontWeight,
             ...flow,
         }
-        text = flow.text;
 
         ctx.font = props.fontStyle + ' ' + props.fontWeight + ' ' + props.fontSize + 'px ' + props.fontName;
 
+        if (!wordWrap) {
+            textMetrics = ctx.measureText(text);
+            lineFragments.push({
+                ...props,
+                text: text,
+                width: textMetrics.width,
+            });
+            lineWidth += textMetrics.width;
+            return;
+        }
+
+        let currentPos = 0;
+        let lastMeasuredWidth = 0;
+        let currentLine = "";
+        let tryLine: string;
+
         while (currentPos < text.length) {
             // console.log("remain width", remainWidth)
-            let breaker = nextBreak(text, currentPos, remainWidth, props.fontSize);
+            let breaker = nextBreak(text, currentPos, remainWidth, props.fontSize, autoResizeWidth);
 
             if (breaker.words) {
                 tryLine = currentLine + breaker.words;
                 textMetrics = ctx.measureText(tryLine);
 
-                if (!wordWrap) {
+                if (autoResizeWidth && !breaker.required) {
                     currentLine = tryLine;
                     lastMeasuredWidth = textMetrics.width;
                 }
-                else if (textMetrics.width + lineWidth > width) {
+                else if (!autoResizeWidth && textMetrics.width + lineWidth > width) {
                     if (breaker.words.length > 1 && textMetrics.width + lineWidth - props.fontSize <= width) {
                         // console.log(breaker.words, textMetrics.width, lineWidth, props.fontSize, width, remainWidth);
                         tryLine = currentLine + breaker.words.slice(0, breaker.words.length - 1);
@@ -239,6 +252,16 @@ export function measureText2(
         measuredSize.height += lineHeight;
     }
 
+    if (autoResizeWidth) {
+        let max = 0;
+        measuredSize.lines.forEach(l => {
+            if (l.width > max) {
+                max = l.width;
+            }
+        });
+        measuredSize.width = max;
+    }
+
     if (_cacheCount > 200) {
         _cache2 = {};
         _cacheCount = 0;
@@ -254,8 +277,8 @@ type Breaker = {
     required: boolean;
 }
 
-function nextBreak(text: string, currPos: number, width: number, fontSize: number): Breaker {
-    if (width < fontSize) {
+function nextBreak(text: string, currPos: number, width: number, fontSize: number, autoResizeWidth: boolean): Breaker {
+    if (!autoResizeWidth && width < fontSize) {
         return {
             pos: currPos,
             words: "",
@@ -269,7 +292,7 @@ function nextBreak(text: string, currPos: number, width: number, fontSize: numbe
     let pos: number;
     let num: number;
 
-    num = Math.min(text.length - currPos, Math.floor(width / fontSize));
+    num = autoResizeWidth ? text.length - currPos : Math.min(text.length - currPos, Math.floor(width / fontSize));
     nextWords = text.slice(currPos, currPos + num);
     breakPos = nextWords.indexOf('\n');
     required = breakPos > -1;

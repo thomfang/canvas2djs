@@ -29,4 +29,4 @@ export declare type MeasuredSize2 = {
         fragments: TextFragment[];
     }[];
 };
-export declare function measureText2(textFlow: TextFlow[], width: number, fontName: string, fontStyle: FontStyle, fontWeight: FontWeight, fontSize: number, lineHeight: number): MeasuredSize2;
+export declare function measureText2(textFlow: TextFlow[], width: number, fontName: string, fontStyle: FontStyle, fontWeight: FontWeight, fontSize: number, lineHeight: number, wordWrap: boolean, autoResizeWidth: boolean): MeasuredSize2;

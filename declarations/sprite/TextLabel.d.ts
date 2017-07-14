@@ -17,6 +17,7 @@ export declare type ITextLabel = ISprite & {
     strokeWidth?: number;
     wordWrap?: boolean;
     textFlow?: TextFlow[];
+    autoResizeWidth?: boolean;
 };
 export declare class TextLabel extends Sprite<ITextLabel> {
     textAlign: TextAlign;
@@ -30,12 +31,14 @@ export declare class TextLabel extends Sprite<ITextLabel> {
     protected _fontWeight: FontWeight;
     protected _fontStyle: FontStyle;
     protected _textFlow: Array<TextFlow>;
+    protected _autoResizeWidth: boolean;
     protected _textLines: {
         fragments: TextFragment[];
         width: number;
     }[];
     protected _text: string;
     constructor(props?: ITextLabel);
+    autoResizeWidth: boolean;
     width: number;
     height: number;
     fontSize: number;
