@@ -3,7 +3,7 @@ import { Sprite, ISprite } from './Sprite';
 import { TextAlign } from './TextLabel';
 
 export type IBMFontLabel = ISprite & {
-    textureMap: { [word: string]: Texture };
+    textureMap: { [word: string]: Texture | string };
     text?: string;
     textAlign?: TextAlign;
     wordWrap?: boolean;
@@ -25,6 +25,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
 
     protected _lines: { width: number; words: Texture[] }[] = [];
     protected _autoResizeHeight: boolean = true;
+    protected _isAllTexturesReady: boolean;
 
     constructor(props?: IBMFontLabel) {
         super();
@@ -59,9 +60,32 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
         return this._textureMap;
     }
 
-    set textureMap(textureMap: { [word: string]: Texture }) {
-        this._textureMap = textureMap;
-        this._reMeasureText();
+    set textureMap(textureMap: { [word: string]: Texture | string }) {
+        if (textureMap != null) {
+            let _textureMap: { [word: string]: Texture } = {};
+            let unReadyCount = 0;
+            let onReady = () => {
+                if (this._isAllTexturesReady = --unReadyCount === 0) {
+                    this._reMeasureText();
+                }
+            };
+            Object.keys(textureMap).forEach(word => {
+                let wordTexture = textureMap[word];
+                if (typeof wordTexture === 'string') {
+                    unReadyCount += 1;
+                    wordTexture = _textureMap[word] = Texture.create(wordTexture);
+                    wordTexture.onReady(onReady);
+                }
+                else {
+                    _textureMap[word] = wordTexture;
+                }
+            });
+
+            this._textureMap = _textureMap;
+            if (this._isAllTexturesReady = unReadyCount === 0) {
+                this._reMeasureText();
+            }
+        }
     }
 
     get textAlign() {
@@ -162,12 +186,12 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     }
 
     protected _reMeasureText() {
-        if (!this.textureMap || !this._text || this.width <= 0) {
+        if (!this.textureMap || !this._text || !this._isAllTexturesReady || this.width <= 0) {
             this._lines.length = 0;
             return;
         }
 
-        const { textureMap, text, width, lineHeight, fontSize, wordWrap, wordSpace, _lines } = this;
+        const { _textureMap, text, width, lineHeight, fontSize, wordWrap, wordSpace, _lines } = this;
 
         _lines.length = 0;
 
@@ -180,7 +204,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
                 texture = null;
             }
             else {
-                texture = textureMap[word];
+                texture = _textureMap[word];
                 if (!texture) {
                     console.error(`canvas2d.BMFontLabel: Texture of the word "${word}" not found.`, this);
                     texture = null;

@@ -89,6 +89,18 @@ namespace demo {
         width: 200,
         textAlign: "left",
         ref: e => stateLabel = e,
+    };
+    var textureMap = {
+        0: "img/0.png",
+        1: "img/1.png",
+        2: "img/2.png",
+        3: "img/3.png",
+        4: "img/4.png",
+        5: "img/5.png",
+        6: "img/6.png",
+        7: "img/7.png",
+        8: "img/8.png",
+        9: "img/9.png",
     }
 
     var santaFrames = [];
@@ -169,6 +181,14 @@ namespace demo {
             <text {...stateProps} update={() => {
                 stateLabel.textFlow = [{ text: `FPS:${stage.currFPS}\nRender:${stage.renderCostTime}\nCompute:${stage.computeCostTime}\nAction:${canvas2d.Action.scheduleCostTime}` }]
             }} />
+            <bmfont
+                textureMap={textureMap}
+                text="10086"
+                percentWidth={1}
+                lineHeight={80}
+                fontSize={46}
+                alignX={canvas2d.AlignType.CENTER}
+                bottom={30} />
         </sprite>
     </stage>;
 
@@ -180,45 +200,6 @@ namespace demo {
     // });
 
     // new canvas2d.Action(ball).by({y: 100}, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
-
-    function loadImage(src, onCompleted) {
-        let img = new Image();
-        img.onload = () => {
-            onCompleted(img);
-        };
-        img.src = src;
-    }
-
-    let numSources = [
-        "img/0.png",
-        "img/1.png",
-        "img/2.png",
-        "img/3.png",
-        "img/4.png",
-        "img/5.png",
-        "img/6.png",
-        "img/7.png",
-        "img/8.png",
-        "img/9.png",
-    ];
-    let loaded = 0;
-    let textureMap = {};
-
-    numSources.forEach((src, i) => {
-        loadImage(src, (img) => {
-            textureMap[i] = canvas2d.Texture.create(img);
-            if (++loaded === numSources.length) {
-                stage.addChild(
-                    <bmfont textureMap={textureMap} text="10086"
-                        percentWidth={1}
-                        lineHeight={80}
-                        fontSize={46}
-                        alignX={canvas2d.AlignType.CENTER}
-                        bottom={30} />
-                );
-            }
-        });
-    });
 
     let lastUpdateTime = Date.now();
 
@@ -235,6 +216,6 @@ namespace demo {
             stage.render();
         });
     }
-    
+
     loop();
 }

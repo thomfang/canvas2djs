@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.4
+ * canvas2djs v2.4.5
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -3434,8 +3434,31 @@ var BMFontLabel = (function (_super) {
             return this._textureMap;
         },
         set: function (textureMap) {
-            this._textureMap = textureMap;
-            this._reMeasureText();
+            var _this = this;
+            if (textureMap != null) {
+                var _textureMap_1 = {};
+                var unReadyCount_1 = 0;
+                var onReady_1 = function () {
+                    if (_this._isAllTexturesReady = --unReadyCount_1 === 0) {
+                        _this._reMeasureText();
+                    }
+                };
+                Object.keys(textureMap).forEach(function (word) {
+                    var wordTexture = textureMap[word];
+                    if (typeof wordTexture === 'string') {
+                        unReadyCount_1 += 1;
+                        wordTexture = _textureMap_1[word] = Texture.create(wordTexture);
+                        wordTexture.onReady(onReady_1);
+                    }
+                    else {
+                        _textureMap_1[word] = wordTexture;
+                    }
+                });
+                this._textureMap = _textureMap_1;
+                if (this._isAllTexturesReady = unReadyCount_1 === 0) {
+                    this._reMeasureText();
+                }
+            }
         },
         enumerable: true,
         configurable: true
@@ -3549,11 +3572,11 @@ var BMFontLabel = (function (_super) {
     });
     BMFontLabel.prototype._reMeasureText = function () {
         var _this = this;
-        if (!this.textureMap || !this._text || this.width <= 0) {
+        if (!this.textureMap || !this._text || !this._isAllTexturesReady || this.width <= 0) {
             this._lines.length = 0;
             return;
         }
-        var _a = this, textureMap = _a.textureMap, text = _a.text, width = _a.width, lineHeight = _a.lineHeight, fontSize = _a.fontSize, wordWrap = _a.wordWrap, wordSpace = _a.wordSpace, _lines = _a._lines;
+        var _a = this, _textureMap = _a._textureMap, text = _a.text, width = _a.width, lineHeight = _a.lineHeight, fontSize = _a.fontSize, wordWrap = _a.wordWrap, wordSpace = _a.wordSpace, _lines = _a._lines;
         _lines.length = 0;
         var words = this._text.split('');
         var currLine = _lines[0] = { width: 0, words: [] };
@@ -3563,7 +3586,7 @@ var BMFontLabel = (function (_super) {
                 texture = null;
             }
             else {
-                texture = textureMap[word];
+                texture = _textureMap[word];
                 if (!texture) {
                     console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" not found.", _this);
                     texture = null;
