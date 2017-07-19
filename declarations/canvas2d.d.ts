@@ -33,4 +33,4 @@ declare global  {
     }
 }
 
-export as namespace canvas2d;
+export as namespace canvas2djs;

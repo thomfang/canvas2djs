@@ -15,7 +15,7 @@ Usage
 Include by script:
 
 ```html
-<script src="path/to/canvas2d.js"></script>
+<script src="path/to/canvas2djs.js"></script>
 ```
 
 Or use `import`:
@@ -29,11 +29,11 @@ Quick start
 * **Stage**
     
     ```typescript
-    var stage = new canvas2d.Stage(
+    var stage = new canvas2djs.Stage(
         document.querySelector('canvas'), // HTMLCanvasElement
         window.innerWidth, // canvas width
         window.innerHeight, // canvas height
-        canvas2d.ScaleMode.SHOW_ALL, // design resolution scale mode
+        canvas2djs.ScaleMode.SHOW_ALL, // design resolution scale mode
         true // auto adjust canvas size when window resize
     );
 
@@ -46,7 +46,7 @@ Quick start
 * **Sprite**
 
     ```typescript
-    var scene = new canvas2d.Sprite({
+    var scene = new canvas2djs.Sprite({
         // draw origin will be left-top
         originX: 0, // default to be 0.5
         originY: 0, // default to be 0.5
@@ -54,12 +54,12 @@ Quick start
         width: stage.width,
         height: stage.height
     });
-    var ball = new canvas2d.Sprite({
-        texture: new canvas2d.Texture('res/img/ball.png'),
+    var ball = new canvas2djs.Sprite({
+        texture: new canvas2djs.Texture('res/img/ball.png'),
         x: stage.width * 0.5,
         y: 100
     });
-    var box = new canvas2d.Sprite({
+    var box = new canvas2djs.Sprite({
         bgColor: 'black',
         border: {
             width: 1,
@@ -67,8 +67,8 @@ Quick start
         },
         width: 100,
         height: 100,
-        alignX: canvas2d.AlignType.CENTER,
-        alignY: canvas2d.AlignType.CENTER
+        alignX: canvas2djs.AlignType.CENTER,
+        alignY: canvas2djs.AlignType.CENTER
     });
 
     scene.addChild(ball);
@@ -79,19 +79,19 @@ Quick start
 * **Texture**
 
     ```typescript
-    var texture1 = new canvas2d.Texture('path/to/img/sprite.png');
+    var texture1 = new canvas2djs.Texture('path/to/img/sprite.png');
     // as same as:
-    var texture1 = canvas2d.Texture.create('path/to/img/sprite.png');
+    var texture1 = canvas2djs.Texture.create('path/to/img/sprite.png');
 
     // clip a texture from sprite sheet
     var clipRect = {x: 0, y: 0, width: 100, height: 100};
-    var texture2 = new canvas2d.Texture('path/to/img/spritesheet.png', clipRect);
+    var texture2 = new canvas2djs.Texture('path/to/img/spritesheet.png', clipRect);
     ```
 
 * **TextLabel**
 
     ```typescript
-    var title = new canvas2d.TextLabel({
+    var title = new canvas2djs.TextLabel({
         text: 'canvas2d',
         fontSize: 32,
         fontFamily: 'Arial',
@@ -106,18 +106,18 @@ Quick start
 * **Sound**
 
     ```typescript
-    canvas2d.Sound.enabled = true;
-    canvas2d.Sound.extension = '.mp3';
+    canvas2djs.Sound.enabled = true;
+    canvas2djs.Sound.extension = '.mp3';
 
-    canvas2d.Sound.load('path/to/', 'bgMusic', () => {
-        canvas2d.Sound.play('bgMusic');
+    canvas2djs.Sound.load('path/to/', 'bgMusic', () => {
+        canvas2djs.Sound.play('bgMusic');
     });
     ```
 
 * **Action**
 
     ```typescript
-    var redBall = new canvas2d.Sprite({
+    var redBall = new canvas2djs.Sprite({
         x: stage.width * 0.5,
         y: stage.height * 0.5,
         scaleX: 1,
@@ -128,12 +128,12 @@ Quick start
     stage.addChild(redBall);
 
     function scale() {
-        let action = new canvas2d.Action(redBall);
+        let action = new canvas2djs.Action(redBall);
         let propOptions = {
             scaleX: 2, // will use default easing function
             scaleY: {
                 dest: 2,
-                easing: canvas2d.Tween.easeInOutQuad
+                easing: canvas2djs.Tween.easeInOutQuad
             }
         };
         let duration = 0.5; // second
@@ -149,7 +149,7 @@ Quick start
     }
 
     function restore() {
-        new canvas2d.Action(redBall)
+        new canvas2djs.Action(redBall)
             .by({scaleX: -1, scaleY: -1})
             .then(scale)
             .start();
@@ -168,7 +168,7 @@ canvas2djs with TypeScript and tsx
     "compilerOptions": {
         // ...
         "jsx": "react",
-        "jsxFactory": "canvas2d.createSprite"
+        "jsxFactory": "canvas2djs.createSprite"
     }
 }
 ```
@@ -183,10 +183,10 @@ Import canvas2djs declaration in .tsx files:
 
 
 // or import as a module
-import * as canvas2d from 'canvas2djs';
+import * as canvas2djs from 'canvas2djs';
 ```
 
-canvas2djs supports these 4 tags: `<stage />`, `<sprite />`, `<text />`, `<bmfont />`, 
+canvas2djs supports : `<stage />`, `<sprite />`, `<text />`, `<bmfont />`, 
 
 ```tsx
 // example:
@@ -196,27 +196,27 @@ namespace demo {
 
     var canvas = document.querySelector('canvas');
 
-    export var stage: canvas2d.Stage;
-    export var santa: canvas2d.Sprite<any>;
+    export var stage: canvas2djs.Stage;
+    export var santa: canvas2djs.Sprite<any>;
 
-    var stageProps: canvas2d.StageProps = {
+    var stageProps: canvas2djs.StageProps = {
         width: window.innerWidth,
         height: window.innerHeight,
-        scaleMode: canvas2d.ScaleMode.SHOW_ALL,
+        scaleMode: canvas2djs.ScaleMode.SHOW_ALL,
         autoAdjustCanvasSize: true,
         touchEnabled: true,
         mouseEnabled: true,
         canvas,
     };
-    var sceneProps: canvas2d.SpriteProps = {
+    var sceneProps: canvas2djs.SpriteProps = {
         originX: 0,
         originY: 0,
         width: stageProps.width,
         height: stageProps.height
     };
-    var titleProps: canvas2d.TextProps = {
+    var titleProps: canvas2djs.TextProps = {
         y: 30,
-        alignX: canvas2d.AlignType.CENTER,
+        alignX: canvas2djs.AlignType.CENTER,
         fontName: 'Arial',
         fontSize: 30,
         fontColor: 0xfff,
@@ -230,30 +230,31 @@ namespace demo {
         santaFrames.push(`img/Run_${i}.png`);
     }
 
-    export var santaProps: canvas2d.SpriteProps = {
-        alignX: canvas2d.AlignType.CENTER,
-        alignY: canvas2d.AlignType.CENTER,
-        actions: [
-            [{
-                type: canvas2d.ActionType.ANIM,
+    export var santaProps: canvas2djs.SpriteProps = {
+        alignX: canvas2djs.AlignType.CENTER,
+        alignY: canvas2djs.AlignType.CENTER,
+        actions: [{
+            queue: [{
+                type: canvas2djs.ActionType.ANIM,
                 frameList: santaFrames,
                 frameRate: 20
-            }]
-        ]
+            }],
+            repeatMode: canvas2djs.ActionRepeatMode.REVERSE_REPEAT,
+        }]
     };
 
-    var action: canvas2d.Action;
+    var action: canvas2djs.Action;
 
     function santaJump() {
         if (action) {
             return;
         }
 
-        action = new canvas2d.Action(santa)
+        action = new canvas2djs.Action(santa)
             .by({
                 y: {
                     value: -200,
-                    easing: canvas2d.Tween.easeOutQuad
+                    easing: canvas2djs.Tween.easeOutQuad
                 }
             }, 0.3)
             .to({

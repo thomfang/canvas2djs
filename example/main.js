@@ -15,12 +15,12 @@ var demo;
     var stageProps = {
         width: 960,
         height: 640,
-        scaleMode: canvas2d.ScaleMode.SHOW_ALL,
+        scaleMode: canvas2djs.ScaleMode.SHOW_ALL,
         autoAdjustCanvasSize: true,
         touchEnabled: true,
         mouseEnabled: true,
         canvas: canvas,
-        orientation: canvas2d.Orientation.LANDSCAPE2,
+        orientation: canvas2djs.Orientation.LANDSCAPE2,
         useExternalTimer: true,
     };
     var sceneProps = {
@@ -32,7 +32,7 @@ var demo;
     };
     var titleProps = {
         top: 30,
-        alignX: canvas2d.AlignType.CENTER,
+        alignX: canvas2djs.AlignType.CENTER,
         fontName: 'Arial',
         fontSize: 24,
         fontColor: 0xfff,
@@ -65,19 +65,19 @@ var demo;
         fontSize: 26,
         bgColor: 0xf00,
         fontColor: 0xfff,
-        alignX: canvas2d.AlignType.CENTER,
+        alignX: canvas2djs.AlignType.CENTER,
         top: 10,
     };
     var jumpBtnProps = {
         bgColor: 0xf00,
-        alignX: canvas2d.AlignType.CENTER,
-        alignY: canvas2d.AlignType.CENTER,
+        alignX: canvas2djs.AlignType.CENTER,
+        alignY: canvas2djs.AlignType.CENTER,
         percentHeight: 0.1,
         percentWidth: 0.1,
     };
     var jumpBtnLabelProps = {
-        alignX: canvas2d.AlignType.CENTER,
-        alignY: canvas2d.AlignType.CENTER,
+        alignX: canvas2djs.AlignType.CENTER,
+        alignY: canvas2djs.AlignType.CENTER,
         percentWidth: 1,
         fontColor: 0xfff,
         wordWrap: false,
@@ -108,24 +108,24 @@ var demo;
         santaFrames.push("img/Run_" + i + ".png");
     }
     demo.santaProps = {
-        alignX: canvas2d.AlignType.CENTER,
-        alignY: canvas2d.AlignType.CENTER,
+        alignX: canvas2djs.AlignType.CENTER,
+        alignY: canvas2djs.AlignType.CENTER,
         actions: [
             {
                 queue: [{
-                        type: canvas2d.ActionType.ANIM,
+                        type: canvas2djs.ActionType.ANIM,
                         frameList: santaFrames,
                         frameRate: 20,
                         repetitions: 1,
                     }],
-                repeatMode: canvas2d.ActionRepeatMode.REVERSE_REPEAT,
+                repeatMode: canvas2djs.ActionRepeatMode.REVERSE_REPEAT,
             }
         ],
     };
     var action;
     function santaJump() {
         if (!action) {
-            action = new canvas2d.Action(demo.santa);
+            action = new canvas2djs.Action(demo.santa);
         }
         else {
             action.clear();
@@ -133,42 +133,42 @@ var demo;
         action.by({
             y: {
                 value: -200,
-                easing: canvas2d.Tween.easeOutQuad
+                easing: canvas2djs.Tween.easeOutQuad
             }
         }, 0.3)
             .to({
             y: demo.santa.y
         }, 0.2)
-            .setRepeatMode(canvas2d.ActionRepeatMode.REPEAT)
+            .setRepeatMode(canvas2djs.ActionRepeatMode.REPEAT)
             .start();
     }
     var sprites = [
-        canvas2d.createSprite("sprite", { width: 100, height: 100, bgColor: 0xfff, alignY: canvas2d.AlignType.CENTER, left: 50, onClick: function () { console.log("Click white box"); } }),
-        canvas2d.createSprite("sprite", { width: 100, height: 100, bgColor: 0x0f0, alignY: canvas2d.AlignType.CENTER, right: 50, onClick: function () {
+        canvas2djs.createSprite("sprite", { width: 100, height: 100, bgColor: 0xfff, alignY: canvas2djs.AlignType.CENTER, left: 50, onClick: function () { console.log("Click white box"); } }),
+        canvas2djs.createSprite("sprite", { width: 100, height: 100, bgColor: 0x0f0, alignY: canvas2djs.AlignType.CENTER, right: 50, onClick: function () {
                 setTimeout(function () {
-                    demo.stage.orientation = demo.stage.orientation === canvas2d.Orientation.LANDSCAPE ?
-                        canvas2d.Orientation.LANDSCAPE2 : canvas2d.Orientation.LANDSCAPE;
+                    demo.stage.orientation = demo.stage.orientation === canvas2djs.Orientation.LANDSCAPE ?
+                        canvas2djs.Orientation.LANDSCAPE2 : canvas2djs.Orientation.LANDSCAPE;
                 }, 100);
             } }),
     ];
-    canvas2d.createSprite("stage", __assign({}, stageProps, { ref: function (e) { return demo.stage = e; } }),
-        canvas2d.createSprite("sprite", __assign({}, sceneProps),
-            canvas2d.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; } })),
+    canvas2djs.createSprite("stage", __assign({}, stageProps, { ref: function (e) { return demo.stage = e; } }),
+        canvas2djs.createSprite("sprite", __assign({}, sceneProps),
+            canvas2djs.createSprite("sprite", __assign({}, demo.santaProps, { ref: function (e) { return demo.santa = e; } })),
             sprites,
-            canvas2d.createSprite("sprite", __assign({ ref: function (e) { return demo.btn = e; }, onClick: santaJump }, jumpBtnProps),
-                canvas2d.createSprite("text", __assign({}, jumpBtnLabelProps), "Jump!")),
-            canvas2d.createSprite("text", __assign({}, titleProps)),
-            canvas2d.createSprite("text", __assign({}, stateProps, { update: function () {
-                    stateLabel.textFlow = [{ text: "FPS:" + demo.stage.currFPS + "\nRender:" + demo.stage.renderCostTime + "\nCompute:" + demo.stage.computeCostTime + "\nAction:" + canvas2d.Action.scheduleCostTime }];
+            canvas2djs.createSprite("sprite", __assign({ ref: function (e) { return demo.btn = e; }, onClick: santaJump }, jumpBtnProps),
+                canvas2djs.createSprite("text", __assign({}, jumpBtnLabelProps), "Jump!")),
+            canvas2djs.createSprite("text", __assign({}, titleProps)),
+            canvas2djs.createSprite("text", __assign({}, stateProps, { update: function () {
+                    stateLabel.textFlow = [{ text: "FPS:" + demo.stage.currFPS + "\nRender:" + demo.stage.renderCostTime + "\nCompute:" + demo.stage.computeCostTime + "\nAction:" + canvas2djs.Action.scheduleCostTime }];
                 } })),
-            canvas2d.createSprite("bmfont", { textureMap: textureMap, text: "10086", percentWidth: 1, lineHeight: 80, fontSize: 46, alignX: canvas2d.AlignType.CENTER, bottom: 30 })));
-    // stage.on(canvas2d.UIEvent.TOUCH_MOVED, (helpers, event) => {
+            canvas2djs.createSprite("bmfont", { textureMap: textureMap, text: "10086", percentWidth: 1, lineHeight: 80, fontSize: 46, alignX: canvas2djs.AlignType.CENTER, bottom: 30 })));
+    // stage.on(canvas2djs.UIEvent.TOUCH_MOVED, (helpers, event) => {
     //     console.log(helpers[0].target)
     // });
-    // stage.on(canvas2d.UIEvent.CLICK, (helper) => {
+    // stage.on(canvas2djs.UIEvent.CLICK, (helper) => {
     //     console.log(helper.target);
     // });
-    // new canvas2d.Action(ball).by({y: 100}, 0.5).start().setRepeatMode(canvas2d.ActionRepeatMode.REVERSE_REPEAT);
+    // new canvas2djs.Action(ball).by({y: 100}, 0.5).start().setRepeatMode(canvas2djs.ActionRepeatMode.REVERSE_REPEAT);
     var lastUpdateTime = Date.now();
     function loop() {
         requestAnimationFrame(function () {
@@ -176,7 +176,7 @@ var demo;
             var now = Date.now();
             var dt = (now - lastUpdateTime) / 1000;
             lastUpdateTime = now;
-            canvas2d.Action.schedule(dt);
+            canvas2djs.Action.schedule(dt);
             demo.stage.step(dt);
             demo.stage.render();
         });

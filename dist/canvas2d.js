@@ -1,13 +1,13 @@
 /**
- * canvas2djs v2.4.5
+ * canvas2djs v2.4.6
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
 
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define('canvas2d', ['exports'], factory) :
-    (factory((global.canvas2d = global.canvas2d || {})));
+    typeof define === 'function' && define.amd ? define('canvas2djs', ['exports'], factory) :
+    (factory((global.canvas2djs = global.canvas2djs || {})));
 }(this, (function (exports) { 'use strict';
 
 var Keys = {

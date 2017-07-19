@@ -4,6 +4,6 @@
         "target": "es5",
         "outFile": "main.js",
         "jsx": "react",
-        "jsxFactory": "canvas2d.createSprite"
+        "jsxFactory": "canvas2djs.createSprite"
     }
 }
