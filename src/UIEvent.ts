@@ -32,13 +32,13 @@ export class UIEvent {
 
     public static supportTouch: boolean = "ontouchend" in window;
 
-    public static TOUCH_BEGIN = "touchstart";
-    public static TOUCH_MOVED = "touchmove";
-    public static TOUCH_ENDED = "touchend";
+    public static TOUCH_BEGIN = "touchbegin";
+    public static TOUCH_MOVED = "touchmoved";
+    public static TOUCH_ENDED = "touchended";
 
-    public static MOUSE_BEGIN = "mousedown";
-    public static MOUSE_MOVED = "mousemove";
-    public static MOUSE_ENDED = "mouseup";
+    public static MOUSE_BEGIN = "mousebegin";
+    public static MOUSE_MOVED = "mousemoved";
+    public static MOUSE_ENDED = "mouseended";
 
     public static CLICK = "click";
 
@@ -67,14 +67,14 @@ export class UIEvent {
         var { stage, element } = this;
 
         if (UIEvent.supportTouch) {
-            element.addEventListener(UIEvent.TOUCH_BEGIN, this._touchBeginHandler, false);
-            element.addEventListener(UIEvent.TOUCH_MOVED, this._touchMovedHandler, false);
-            element.addEventListener(UIEvent.TOUCH_ENDED, this._touchEndedHandler, false);
+            element.addEventListener("touchstart", this._touchBeginHandler, false);
+            element.addEventListener("touchmove", this._touchMovedHandler, false);
+            element.addEventListener("touchend", this._touchEndedHandler, false);
         }
 
-        element.addEventListener(UIEvent.MOUSE_BEGIN, this._mouseBeginHandler, false);
-        element.addEventListener(UIEvent.MOUSE_MOVED, this._mouseMovedHandler, false);
-        element.addEventListener(UIEvent.MOUSE_ENDED, this._mouseEndedHandler, false);
+        element.addEventListener("mousedown", this._mouseBeginHandler, false);
+        element.addEventListener("mousemove", this._mouseMovedHandler, false);
+        element.addEventListener("mouseup", this._mouseEndedHandler, false);
 
         this._touchHelperMap = {};
         this._registered = true;
@@ -86,14 +86,14 @@ export class UIEvent {
         }
         var element = this.element;
 
-        element.removeEventListener(UIEvent.TOUCH_BEGIN, this._touchBeginHandler, false);
-        element.removeEventListener(UIEvent.TOUCH_MOVED, this._touchMovedHandler, false);
-        element.removeEventListener(UIEvent.TOUCH_ENDED, this._touchEndedHandler, false);
+        element.removeEventListener("touchstart", this._touchBeginHandler, false);
+        element.removeEventListener("touchmove", this._touchMovedHandler, false);
+        element.removeEventListener("touchend", this._touchEndedHandler, false);
 
 
-        element.removeEventListener(UIEvent.MOUSE_BEGIN, this._mouseBeginHandler, false);
-        element.removeEventListener(UIEvent.MOUSE_MOVED, this._mouseMovedHandler, false);
-        element.removeEventListener(UIEvent.MOUSE_ENDED, this._mouseEndedHandler, false);
+        element.removeEventListener("mousedown", this._mouseBeginHandler, false);
+        element.removeEventListener("mousemove", this._mouseMovedHandler, false);
+        element.removeEventListener("mouseup", this._mouseEndedHandler, false);
 
         this._mouseBeginHelper = this._mouseMovedHelper = null;
         this._registered = false;

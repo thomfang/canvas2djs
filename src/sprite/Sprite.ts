@@ -726,6 +726,21 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         this.children = null;
     }
 
+    replaceChild(oldChild: Sprite<{}>, ...newChildren: Sprite<{}>[]) {
+        if (!this.children || !this.children.length) {
+            return;
+        }
+        let index = this.children.indexOf(oldChild);
+        if (index < 0) {
+            return;
+        }
+        this.removeChild(oldChild);
+        // this.addChild(newChild, index);
+        newChildren.forEach(child => {
+            this.addChild(child, index++);
+        });
+    }
+
     contains(target: Sprite<{}>) {
         if (!this.children || !this.children.length) {
             return false;

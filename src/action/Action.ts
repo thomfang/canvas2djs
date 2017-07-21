@@ -65,10 +65,12 @@ export class Action {
     /**
      * Stop action by target
      */
-    public static stop(target: any) {
+    public static stop(target: any, tag?: string) {
         Action._actionList.slice().forEach((action) => {
             if (action.target === target) {
-                action.stop();
+                if (tag == null || action.tag == tag) {
+                    action.stop();
+                }
             }
         });
     }
@@ -114,9 +116,11 @@ export class Action {
      */
     public isRunning: boolean = false;
     public target: any;
+    public tag: string;
 
-    constructor(target: any) {
+    constructor(target: any, tag?: string) {
         this.target = target;
+        this.tag = tag;
     }
 
     isDone() {

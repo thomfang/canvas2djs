@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.6
+ * canvas2djs v2.4.7
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -7,7 +7,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define('canvas2djs', ['exports'], factory) :
-    (factory((global.canvas2djs = global.canvas2djs || {})));
+    (factory((global.canvas2d = global.canvas2d || {})));
 }(this, (function (exports) { 'use strict';
 
 var Keys = {
@@ -957,7 +957,7 @@ Transition.defaultEasingFunc = Tween.easeInOutQuad;
     ActionRepeatMode[ActionRepeatMode["REVERSE_REPEAT"] = 2] = "REVERSE_REPEAT";
 })(exports.ActionRepeatMode || (exports.ActionRepeatMode = {}));
 var Action = (function () {
-    function Action(target) {
+    function Action(target, tag) {
         this._queue = [];
         this._currentIndex = 0;
         this._done = false;
@@ -967,6 +967,7 @@ var Action = (function () {
          */
         this.isRunning = false;
         this.target = target;
+        this.tag = tag;
     }
     Object.defineProperty(Action, "scheduleCostTime", {
         get: function () {
@@ -978,10 +979,12 @@ var Action = (function () {
     /**
      * Stop action by target
      */
-    Action.stop = function (target) {
+    Action.stop = function (target, tag) {
         Action._actionList.slice().forEach(function (action) {
             if (action.target === target) {
-                action.stop();
+                if (tag == null || action.tag == tag) {
+                    action.stop();
+                }
             }
         });
     };
@@ -1934,6 +1937,25 @@ var Sprite = (function (_super) {
         }
         this.children = null;
     };
+    Sprite.prototype.replaceChild = function (oldChild) {
+        var _this = this;
+        var newChildren = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            newChildren[_i - 1] = arguments[_i];
+        }
+        if (!this.children || !this.children.length) {
+            return;
+        }
+        var index = this.children.indexOf(oldChild);
+        if (index < 0) {
+            return;
+        }
+        this.removeChild(oldChild);
+        // this.addChild(newChild, index);
+        newChildren.forEach(function (child) {
+            _this.addChild(child, index++);
+        });
+    };
     Sprite.prototype.contains = function (target) {
         if (!this.children || !this.children.length) {
             return false;
@@ -2096,13 +2118,13 @@ var UIEvent = (function () {
         }
         var _a = this, stage = _a.stage, element = _a.element;
         if (UIEvent.supportTouch) {
-            element.addEventListener(UIEvent.TOUCH_BEGIN, this._touchBeginHandler, false);
-            element.addEventListener(UIEvent.TOUCH_MOVED, this._touchMovedHandler, false);
-            element.addEventListener(UIEvent.TOUCH_ENDED, this._touchEndedHandler, false);
+            element.addEventListener("touchstart", this._touchBeginHandler, false);
+            element.addEventListener("touchmove", this._touchMovedHandler, false);
+            element.addEventListener("touchend", this._touchEndedHandler, false);
         }
-        element.addEventListener(UIEvent.MOUSE_BEGIN, this._mouseBeginHandler, false);
-        element.addEventListener(UIEvent.MOUSE_MOVED, this._mouseMovedHandler, false);
-        element.addEventListener(UIEvent.MOUSE_ENDED, this._mouseEndedHandler, false);
+        element.addEventListener("mousedown", this._mouseBeginHandler, false);
+        element.addEventListener("mousemove", this._mouseMovedHandler, false);
+        element.addEventListener("mouseup", this._mouseEndedHandler, false);
         this._touchHelperMap = {};
         this._registered = true;
     };
@@ -2111,12 +2133,12 @@ var UIEvent = (function () {
             return;
         }
         var element = this.element;
-        element.removeEventListener(UIEvent.TOUCH_BEGIN, this._touchBeginHandler, false);
-        element.removeEventListener(UIEvent.TOUCH_MOVED, this._touchMovedHandler, false);
-        element.removeEventListener(UIEvent.TOUCH_ENDED, this._touchEndedHandler, false);
-        element.removeEventListener(UIEvent.MOUSE_BEGIN, this._mouseBeginHandler, false);
-        element.removeEventListener(UIEvent.MOUSE_MOVED, this._mouseMovedHandler, false);
-        element.removeEventListener(UIEvent.MOUSE_ENDED, this._mouseEndedHandler, false);
+        element.removeEventListener("touchstart", this._touchBeginHandler, false);
+        element.removeEventListener("touchmove", this._touchMovedHandler, false);
+        element.removeEventListener("touchend", this._touchEndedHandler, false);
+        element.removeEventListener("mousedown", this._mouseBeginHandler, false);
+        element.removeEventListener("mousemove", this._mouseMovedHandler, false);
+        element.removeEventListener("mouseup", this._mouseEndedHandler, false);
         this._mouseBeginHelper = this._mouseMovedHelper = null;
         this._registered = false;
     };
@@ -2419,12 +2441,12 @@ var UIEvent = (function () {
     return UIEvent;
 }());
 UIEvent.supportTouch = "ontouchend" in window;
-UIEvent.TOUCH_BEGIN = "touchstart";
-UIEvent.TOUCH_MOVED = "touchmove";
-UIEvent.TOUCH_ENDED = "touchend";
-UIEvent.MOUSE_BEGIN = "mousedown";
-UIEvent.MOUSE_MOVED = "mousemove";
-UIEvent.MOUSE_ENDED = "mouseup";
+UIEvent.TOUCH_BEGIN = "touchbegin";
+UIEvent.TOUCH_MOVED = "touchmoved";
+UIEvent.TOUCH_ENDED = "touchended";
+UIEvent.MOUSE_BEGIN = "mousebegin";
+UIEvent.MOUSE_MOVED = "mousemoved";
+UIEvent.MOUSE_ENDED = "mouseended";
 UIEvent.CLICK = "click";
 UIEvent.ADD_TO_STAGE = "addtostage";
 UIEvent.REMOVED_FROM_STAGE = "removedfromstage";

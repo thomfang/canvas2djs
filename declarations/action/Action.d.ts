@@ -47,7 +47,7 @@ export declare class Action {
     /**
      * Stop action by target
      */
-    static stop(target: any): void;
+    static stop(target: any, tag?: string): void;
     /**
      * Listen a action list, when all actions are done then publish to listener
      */
@@ -63,7 +63,8 @@ export declare class Action {
      */
     isRunning: boolean;
     target: any;
-    constructor(target: any);
+    tag: string;
+    constructor(target: any, tag?: string);
     isDone(): boolean;
     setRepeatMode(mode: ActionRepeatMode): this;
     repeatMode: ActionRepeatMode;

@@ -13,7 +13,7 @@ module.exports = {
     entry: 'src/canvas2d.ts',
     format: 'umd',
     sourceMap: true,
-    moduleName: 'canvas2djs',
+    moduleName: 'canvas2d',
     moduleId: 'canvas2djs',
     dest: 'dist/canvas2d.js',
     plugins: [
