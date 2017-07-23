@@ -142,6 +142,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
 
         this._reLayoutChildrenOnWidthChanged();
+        this._onChildResize();
     }
 
     get width(): number {
@@ -164,6 +165,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
 
         this._reLayoutChildrenOnHeightChanged();
+        this._onChildResize();
     }
 
     get height(): number {
@@ -381,6 +383,12 @@ export class Sprite<T extends ISprite> extends EventEmitter {
 
     get alignY() {
         return this._alignY;
+    }
+
+    protected _onChildResize() {
+        if (this.parent) {
+            this.parent._onChildResize();
+        }
     }
 
     protected _update(deltaTime: number): void {
