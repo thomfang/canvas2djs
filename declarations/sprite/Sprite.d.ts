@@ -97,6 +97,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     stage: Stage;
     alignX: AlignType;
     alignY: AlignType;
+    protected _onChildResize(): void;
     protected _update(deltaTime: number): void;
     protected _visit(context: CanvasRenderingContext2D): void;
     protected _reLayoutChildrenOnWidthChanged(): void;

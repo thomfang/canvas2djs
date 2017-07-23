@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.7
+ * canvas2djs v2.4.8
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1374,6 +1374,7 @@ var Sprite = (function (_super) {
                 this._adjustAlignX();
             }
             this._reLayoutChildrenOnWidthChanged();
+            this._onChildResize();
         },
         enumerable: true,
         configurable: true
@@ -1395,6 +1396,7 @@ var Sprite = (function (_super) {
                 this._adjustAlignY();
             }
             this._reLayoutChildrenOnHeightChanged();
+            this._onChildResize();
         },
         enumerable: true,
         configurable: true
@@ -1635,6 +1637,11 @@ var Sprite = (function (_super) {
         enumerable: true,
         configurable: true
     });
+    Sprite.prototype._onChildResize = function () {
+        if (this.parent) {
+            this.parent._onChildResize();
+        }
+    };
     Sprite.prototype._update = function (deltaTime) {
         this.emit(UIEvent.FRAME, deltaTime);
         this.update(deltaTime);
@@ -2873,18 +2880,14 @@ var Stage = (function (_super) {
 
 var canvas = document.createElement('canvas');
 var ctx = canvas.getContext('2d');
-// var _cache: { [key: string]: MeasuredSize } = {};
-var _cache2 = {};
+var _cache = {};
 var _cacheCount = 0;
-// function getCacheKey(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number) {
-//     return text + width + fontFace.name + fontSize + lineHeight;
-// }
-function getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth) {
-    return [JSON.stringify(textFlow), width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth].join(':');
+function getCacheKey$1(textFlow, width, fontName, fontSize, fontWeight, fontStyle, lineHeight, wordWrap, autoResizeWidth) {
+    return [JSON.stringify(textFlow), width, fontName, fontSize, fontStyle, lineHeight, wordWrap, autoResizeWidth].join(':');
 }
-function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize, lineHeight, wordWrap, autoResizeWidth) {
-    var cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth);
-    var cached = _cache2[cacheKey];
+function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize, lineHeight, wordWrap, autoResizeWidth) {
+    var cacheKey = getCacheKey$1(textFlow, width, fontName, fontSize, fontWeight, fontStyle, lineHeight, wordWrap, autoResizeWidth);
+    var cached = _cache[cacheKey];
     if (cached) {
         return cached;
     }
@@ -3026,10 +3029,10 @@ function measureText2(textFlow, width, fontName, fontStyle, fontWeight, fontSize
         measuredSize.width = max_1;
     }
     if (_cacheCount > 200) {
-        _cache2 = {};
+        _cache = {};
         _cacheCount = 0;
     }
-    _cache2[cacheKey] = measuredSize;
+    _cache[cacheKey] = measuredSize;
     _cacheCount += 1;
     return measuredSize;
 }
@@ -3063,90 +3066,6 @@ function nextBreak(text, currPos, width, fontSize, autoResizeWidth) {
         required: required
     };
 }
-// export function measureText(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number): MeasuredSize {
-//     var cacheKey = getCacheKey(text, width, fontFace, fontSize, lineHeight);
-//     var cached = _cache[cacheKey];
-//     if (cached) {
-//         return cached;
-//     }
-//     var measuredSize: MeasuredSize = {} as any;
-//     var textMetrics: TextMetrics;
-//     var lastMeasuredWidth: number;
-//     var tryLine: string;
-//     var currentLine: string;
-//     ctx.font = fontFace.style + ' ' + fontFace.weight + ' ' + fontSize + 'px ' + fontFace.name;
-//     textMetrics = ctx.measureText(text);
-//     measuredSize.width = textMetrics.width;
-//     measuredSize.height = lineHeight;
-//     measuredSize.lines = [];
-//     if (measuredSize.width <= width) {
-//         // The entire text string fits.
-//         measuredSize.lines.push({ width: measuredSize.width, text: text });
-//     }
-//     else {
-//         // Break into multiple lines.
-//         measuredSize.width = width;
-//         currentLine = '';
-//         let breaker = new LineBreaker(text, fontSize);
-//         let remainWidth = width;
-//         let index = 0;
-//         let words: string;
-//         while (index < text.length) {
-//             let res = breaker.nextBreak(remainWidth);
-//             if (res.len) {
-//                 words = text.slice(index, index + res.len);
-//                 tryLine = currentLine + words;
-//                 textMetrics = ctx.measureText(tryLine);
-//                 if (textMetrics.width > width) {
-//                     measuredSize.height += lineHeight;
-//                     measuredSize.lines.push({
-//                         width: lastMeasuredWidth,
-//                         text: currentLine.trim(),
-//                     });
-//                     currentLine = words;
-//                     lastMeasuredWidth = ctx.measureText(currentLine.trim()).width;
-//                     remainWidth = width;
-//                 }
-//                 else {
-//                     currentLine = tryLine;
-//                     lastMeasuredWidth = textMetrics.width;
-//                     remainWidth = width - lastMeasuredWidth;
-//                 }
-//             }
-//             else {
-//                 measuredSize.height += lineHeight;
-//                 measuredSize.lines.push({
-//                     width: lastMeasuredWidth,
-//                     text: currentLine.trim(),
-//                 });
-//                 currentLine = "";
-//                 lastMeasuredWidth = 0;
-//                 remainWidth = width;
-//             }
-//             index += res.len;
-//         }
-//         currentLine = currentLine.trim();
-//         if (currentLine.length > 0) {
-//             textMetrics = ctx.measureText(currentLine);
-//             measuredSize.lines.push({ width: textMetrics.width, text: currentLine });
-//         }
-//     }
-//     _cache[cacheKey] = measuredSize;
-//     return measuredSize;
-// }
-// class LineBreaker {
-//     private position = 0;
-//     constructor(public text: string, public fontSize: number) {
-//     }
-//     nextBreak(width: number) {
-//         let len = Math.max(0, Math.floor(width / this.fontSize) - 1);
-//         let pos = this.position;
-//         this.position += len;
-//         return {
-//             len,
-//         };
-//     }
-// }
 
 var DefaultFontSize = 24;
 var TextLabel = (function (_super) {
@@ -3193,7 +3112,10 @@ var TextLabel = (function (_super) {
             else {
                 this._adjustAlignX();
             }
-            this._reMeasureText();
+            if (!this._autoResizeWidth) {
+                this._reMeasureText();
+            }
+            this._onChildResize();
         },
         enumerable: true,
         configurable: true
@@ -3214,6 +3136,7 @@ var TextLabel = (function (_super) {
             else {
                 this._adjustAlignY();
             }
+            this._onChildResize();
         },
         enumerable: true,
         configurable: true
@@ -3341,7 +3264,7 @@ var TextLabel = (function (_super) {
         if (!this._textFlow || !this._textFlow.length || (this.width <= 0 && !this._autoResizeWidth)) {
             return;
         }
-        var result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap, this._autoResizeWidth);
+        var result = measureText(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap, this._autoResizeWidth);
         this._textLines = result.lines;
         if (this._autoResizeWidth) {
             this.width = result.width;

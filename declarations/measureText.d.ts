@@ -18,15 +18,7 @@ export declare type MeasuredSize = {
     height: number;
     lines: {
         width: number;
-        text: string;
-    }[];
-};
-export declare type MeasuredSize2 = {
-    width: number;
-    height: number;
-    lines: {
-        width: number;
         fragments: TextFragment[];
     }[];
 };
-export declare function measureText2(textFlow: TextFlow[], width: number, fontName: string, fontStyle: FontStyle, fontWeight: FontWeight, fontSize: number, lineHeight: number, wordWrap: boolean, autoResizeWidth: boolean): MeasuredSize2;
+export declare function measureText(textFlow: TextFlow[], width: number, fontName: string, fontStyle: FontStyle, fontWeight: FontWeight, fontSize: number, lineHeight: number, wordWrap: boolean, autoResizeWidth: boolean): MeasuredSize;
