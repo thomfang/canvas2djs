@@ -2,7 +2,7 @@
 import { Sprite, ISprite, AlignType } from './Sprite';
 import {
     // measureText, 
-    TextFlow, TextFragment, measureText2
+    TextFlow, TextFragment, measureText
 } from '../measureText';
 
 export type FontWeight = "lighter" | "normal" | "bold" | "bolder";
@@ -78,7 +78,11 @@ export class TextLabel extends Sprite<ITextLabel> {
             this._adjustAlignX();
         }
 
-        this._reMeasureText();
+        if (!this._autoResizeWidth) {
+            this._reMeasureText();
+        }
+
+        this._onChildResize();
     }
 
     get width() {
@@ -99,6 +103,8 @@ export class TextLabel extends Sprite<ITextLabel> {
         else {
             this._adjustAlignY();
         }
+
+        this._onChildResize();
     }
 
     get height() {
@@ -212,7 +218,7 @@ export class TextLabel extends Sprite<ITextLabel> {
         if (!this._textFlow || !this._textFlow.length || (this.width <= 0 && !this._autoResizeWidth)) {
             return;
         }
-        let result = measureText2(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap, this._autoResizeWidth);
+        let result = measureText(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap, this._autoResizeWidth);
         this._textLines = result.lines;
         if (this._autoResizeWidth) {
             this.width = result.width;

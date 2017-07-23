@@ -4,24 +4,21 @@ import { Color } from './Util';
 var canvas = document.createElement('canvas');
 var ctx = canvas.getContext('2d');
 
-// var _cache: { [key: string]: MeasuredSize } = {};
-var _cache2: { [key: string]: MeasuredSize2 } = {};
+var _cache: { [key: string]: MeasuredSize } = {};
 var _cacheCount = 0;
 
-// function getCacheKey(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number) {
-//     return text + width + fontFace.name + fontSize + lineHeight;
-// }
-
-function getCacheKey2(
+function getCacheKey(
     textFlow: TextFlow[],
     width: number,
     fontName: string,
     fontSize: number,
+    fontWeight: FontWeight,
+    fontStyle: FontStyle,
     lineHeight: number,
     wordWrap: boolean,
     autoResizeWidth: boolean,
 ) {
-    return [JSON.stringify(textFlow), width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth].join(':');
+    return [JSON.stringify(textFlow), width, fontName, fontSize, fontStyle, lineHeight, wordWrap, autoResizeWidth].join(':');
 }
 
 export type TextFlow = {
@@ -39,19 +36,7 @@ export type TextFragment = TextFlow & {
     width: number;
 }
 
-// export type FontFace = {
-//     style: string;
-//     weight: string;
-//     name: string;
-// }
-
 export type MeasuredSize = {
-    width: number;
-    height: number;
-    lines: { width: number; text: string }[];
-};
-
-export type MeasuredSize2 = {
     width: number;
     height: number;
     lines: {
@@ -60,7 +45,7 @@ export type MeasuredSize2 = {
     }[];
 };
 
-export function measureText2(
+export function measureText(
     textFlow: TextFlow[],
     width: number,
     fontName: string,
@@ -70,14 +55,14 @@ export function measureText2(
     lineHeight: number,
     wordWrap: boolean,
     autoResizeWidth: boolean,
-): MeasuredSize2 {
-    let cacheKey = getCacheKey2(textFlow, width, fontName, fontSize, lineHeight, wordWrap, autoResizeWidth);
-    let cached = _cache2[cacheKey];
+): MeasuredSize {
+    let cacheKey = getCacheKey(textFlow, width, fontName, fontSize, fontWeight, fontStyle, lineHeight, wordWrap, autoResizeWidth);
+    let cached = _cache[cacheKey];
     if (cached) {
         return cached;
     }
 
-    let measuredSize: MeasuredSize2 = {
+    let measuredSize: MeasuredSize = {
         width: width,
         height: 0,
         lines: [],
@@ -263,10 +248,10 @@ export function measureText2(
     }
 
     if (_cacheCount > 200) {
-        _cache2 = {};
+        _cache = {};
         _cacheCount = 0;
     }
-    _cache2[cacheKey] = measuredSize;
+    _cache[cacheKey] = measuredSize;
     _cacheCount += 1;
     return measuredSize;
 }
@@ -311,105 +296,3 @@ function nextBreak(text: string, currPos: number, width: number, fontSize: numbe
         required: required
     };
 }
-
-
-// export function measureText(text: string, width: number, fontFace: FontFace, fontSize: number, lineHeight: number): MeasuredSize {
-//     var cacheKey = getCacheKey(text, width, fontFace, fontSize, lineHeight);
-//     var cached = _cache[cacheKey];
-//     if (cached) {
-//         return cached;
-//     }
-
-//     var measuredSize: MeasuredSize = {} as any;
-//     var textMetrics: TextMetrics;
-//     var lastMeasuredWidth: number;
-//     var tryLine: string;
-//     var currentLine: string;
-
-//     ctx.font = fontFace.style + ' ' + fontFace.weight + ' ' + fontSize + 'px ' + fontFace.name;
-//     textMetrics = ctx.measureText(text);
-
-//     measuredSize.width = textMetrics.width;
-//     measuredSize.height = lineHeight;
-//     measuredSize.lines = [];
-
-//     if (measuredSize.width <= width) {
-//         // The entire text string fits.
-//         measuredSize.lines.push({ width: measuredSize.width, text: text });
-//     }
-//     else {
-//         // Break into multiple lines.
-//         measuredSize.width = width;
-//         currentLine = '';
-
-//         let breaker = new LineBreaker(text, fontSize);
-//         let remainWidth = width;
-//         let index = 0;
-//         let words: string;
-
-//         while (index < text.length) {
-//             let res = breaker.nextBreak(remainWidth);
-
-//             if (res.len) {
-//                 words = text.slice(index, index + res.len);
-//                 tryLine = currentLine + words;
-//                 textMetrics = ctx.measureText(tryLine);
-//                 if (textMetrics.width > width) {
-//                     measuredSize.height += lineHeight;
-//                     measuredSize.lines.push({
-//                         width: lastMeasuredWidth,
-//                         text: currentLine.trim(),
-//                     });
-//                     currentLine = words;
-//                     lastMeasuredWidth = ctx.measureText(currentLine.trim()).width;
-//                     remainWidth = width;
-//                 }
-//                 else {
-//                     currentLine = tryLine;
-//                     lastMeasuredWidth = textMetrics.width;
-//                     remainWidth = width - lastMeasuredWidth;
-//                 }
-//             }
-//             else {
-//                 measuredSize.height += lineHeight;
-//                 measuredSize.lines.push({
-//                     width: lastMeasuredWidth,
-//                     text: currentLine.trim(),
-//                 });
-//                 currentLine = "";
-//                 lastMeasuredWidth = 0;
-//                 remainWidth = width;
-//             }
-
-//             index += res.len;
-//         }
-
-//         currentLine = currentLine.trim();
-//         if (currentLine.length > 0) {
-//             textMetrics = ctx.measureText(currentLine);
-//             measuredSize.lines.push({ width: textMetrics.width, text: currentLine });
-//         }
-//     }
-
-//     _cache[cacheKey] = measuredSize;
-
-//     return measuredSize;
-// }
-
-// class LineBreaker {
-
-//     private position = 0;
-
-//     constructor(public text: string, public fontSize: number) {
-
-//     }
-
-//     nextBreak(width: number) {
-//         let len = Math.max(0, Math.floor(width / this.fontSize) - 1);
-//         let pos = this.position;
-//         this.position += len;
-//         return {
-//             len,
-//         };
-//     }
-// }
