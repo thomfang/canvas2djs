@@ -449,9 +449,6 @@ export class UIEvent {
 
         for (let i = 0, helper: EventHelper; helper = helpers[i]; i++) {
             if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
-                if (!helper.target) {
-                    helper.target = sprite;
-                }
                 helper.localX = helper.stageX - offsetX;
                 helper.localY = helper.stageY - offsetY;
 
@@ -490,6 +487,11 @@ export class UIEvent {
             hits = hits.filter(helper => triggerreds.indexOf(helper) < 0 || !helper.cancelBubble);
 
             if (hits.length) {
+                hits.forEach(e => {
+                    if (!e.target) {
+                        e.target = sprite;
+                    }
+                });
                 sprite.emit(eventName, hits, event);
                 sprite[methodName] && sprite[methodName](hits, event);
 

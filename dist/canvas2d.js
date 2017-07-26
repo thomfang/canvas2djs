@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.8
+ * canvas2djs v2.4.9
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2310,9 +2310,6 @@ var UIEvent = (function () {
         var count = 0;
         for (var i = 0, helper = void 0; helper = helpers[i]; i++) {
             if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
-                if (!helper.target) {
-                    helper.target = sprite;
-                }
                 helper.localX = helper.stageX - offsetX;
                 helper.localY = helper.stageY - offsetY;
                 // Add for current sprite hit list
@@ -2344,6 +2341,11 @@ var UIEvent = (function () {
             // hits = triggerreds.filter(helper => !helper.cancelBubble);
             hits = hits.filter(function (helper) { return triggerreds_1.indexOf(helper) < 0 || !helper.cancelBubble; });
             if (hits.length) {
+                hits.forEach(function (e) {
+                    if (!e.target) {
+                        e.target = sprite;
+                    }
+                });
                 sprite.emit(eventName, hits, event);
                 sprite[methodName] && sprite[methodName](hits, event);
                 // Click event would just trigger by only a touch
