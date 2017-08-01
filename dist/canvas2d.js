@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.4.9
+ * canvas2djs v2.5.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2584,6 +2584,8 @@ var Stage = (function (_super) {
             style.width = width + 'px';
             style.height = height + 'px';
             style.position = 'absolute';
+            canvas.width = _this.width;
+            canvas.height = _this.height;
             visibleRect.left = deltaWidth;
             visibleRect.right = stageWidth - deltaWidth;
             visibleRect.top = deltaHeight;
@@ -2619,8 +2621,8 @@ var Stage = (function (_super) {
         _this._renderContext = canvas.getContext('2d');
         _this._bufferCanvas = document.createElement("canvas");
         _this._bufferContext = _this._bufferCanvas.getContext("2d");
-        _this._width = canvas.width = _this._bufferCanvas.width = width;
-        _this._height = canvas.height = _this._bufferCanvas.height = height;
+        _this._width = _this._bufferCanvas.width = width;
+        _this._height = _this._bufferCanvas.height = height;
         _this._scaleX = _this._scaleY = 1;
         _this._isPortrait = false;
         _this._visibleRect = { left: 0, right: width, top: 0, bottom: height };

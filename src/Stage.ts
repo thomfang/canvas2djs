@@ -52,7 +52,7 @@ export class Stage extends EventEmitter {
     private _lastUpdateTime: number;
     private _timerId: number;
     private _uiEvent: UIEvent;
-    
+
     touchEnabled: boolean;
     mouseEnabled: boolean;
 
@@ -188,8 +188,8 @@ export class Stage extends EventEmitter {
         this._bufferCanvas = document.createElement("canvas");
         this._bufferContext = this._bufferCanvas.getContext("2d");
 
-        this._width = canvas.width = this._bufferCanvas.width = width;
-        this._height = canvas.height = this._bufferCanvas.height = height;
+        this._width = this._bufferCanvas.width = width;
+        this._height = this._bufferCanvas.height = height;
 
         this._scaleX = this._scaleY = 1;
         this._isPortrait = false;
@@ -293,6 +293,9 @@ export class Stage extends EventEmitter {
         style.width = width + 'px';
         style.height = height + 'px';
         style.position = 'absolute';
+
+        canvas.width = this.width;
+        canvas.height = this.height;
 
         visibleRect.left = deltaWidth;
         visibleRect.right = stageWidth - deltaWidth;
