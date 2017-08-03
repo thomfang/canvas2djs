@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.5.0
+ * canvas2djs v2.5.1
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2584,8 +2584,10 @@ var Stage = (function (_super) {
             style.width = width + 'px';
             style.height = height + 'px';
             style.position = 'absolute';
-            canvas.width = _this.width;
-            canvas.height = _this.height;
+            if (canvas.width != _this.width || canvas.height != _this.height) {
+                canvas.width = _this.width;
+                canvas.height = _this.height;
+            }
             visibleRect.left = deltaWidth;
             visibleRect.right = stageWidth - deltaWidth;
             visibleRect.top = deltaHeight;
@@ -2884,14 +2886,25 @@ var Stage = (function (_super) {
 
 var canvas = document.createElement('canvas');
 var ctx = canvas.getContext('2d');
-var _cache = {};
-var _cacheCount = 0;
+var measuredCache = {};
+var measuredWidthCache = {};
+var cacheCount = 0;
 function getCacheKey$1(textFlow, width, fontName, fontSize, fontWeight, fontStyle, lineHeight, wordWrap, autoResizeWidth) {
     return [JSON.stringify(textFlow), width, fontName, fontSize, fontStyle, lineHeight, wordWrap, autoResizeWidth].join(':');
 }
+function measureTextWidth(text, fontName, fontSize, fontWeight, fontStyle) {
+    var key = [text, fontName, fontSize, fontWeight, fontStyle].join(':');
+    if (measuredWidthCache[key] != null) {
+        return measuredWidthCache[key];
+    }
+    ctx.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
+    var width = ctx.measureText(text).width;
+    measuredWidthCache[key] = width;
+    return width;
+}
 function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize, lineHeight, wordWrap, autoResizeWidth) {
     var cacheKey = getCacheKey$1(textFlow, width, fontName, fontSize, fontWeight, fontStyle, lineHeight, wordWrap, autoResizeWidth);
-    var cached = _cache[cacheKey];
+    var cached = measuredCache[cacheKey];
     if (cached) {
         return cached;
     }
@@ -3032,12 +3045,12 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
         });
         measuredSize.width = max_1;
     }
-    if (_cacheCount > 200) {
-        _cache = {};
-        _cacheCount = 0;
+    if (cacheCount > 200) {
+        measuredCache = {};
+        cacheCount = 0;
     }
-    _cache[cacheKey] = measuredSize;
-    _cacheCount += 1;
+    measuredCache[cacheKey] = measuredSize;
+    cacheCount += 1;
     return measuredSize;
 }
 function nextBreak(text, currPos, width, fontSize, autoResizeWidth) {
@@ -3084,6 +3097,7 @@ var TextLabel = (function (_super) {
         _this._fontWeight = 'normal';
         _this._fontStyle = 'normal';
         _this._autoResizeWidth = false;
+        _this._fragmentsPos = [];
         props && _this.setProps(props);
         return _this;
     }
@@ -3233,6 +3247,7 @@ var TextLabel = (function (_super) {
         set: function (content) {
             if (this._text !== content) {
                 this._text = content;
+                this._isSetByTextFlow = false;
                 if (!content) {
                     this._textFlow = null;
                     this._textLines = null;
@@ -3253,6 +3268,7 @@ var TextLabel = (function (_super) {
         set: function (value) {
             if (this._textFlow != value) {
                 this._textFlow = value;
+                this._isSetByTextFlow = true;
                 if (!value || !value.length) {
                     this._textLines = null;
                 }
@@ -3265,15 +3281,54 @@ var TextLabel = (function (_super) {
         configurable: true
     });
     TextLabel.prototype._reMeasureText = function () {
+        var _this = this;
         if (!this._textFlow || !this._textFlow.length || (this.width <= 0 && !this._autoResizeWidth)) {
             return;
         }
-        var result = measureText(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap, this._autoResizeWidth);
-        this._textLines = result.lines;
-        if (this._autoResizeWidth) {
-            this.width = result.width;
+        if (!this._isSetByTextFlow && !this._wordWrap) {
+            var width_1 = measureTextWidth(this._text, this.fontName, this.fontSize, this.fontWeight, this.fontStyle);
+            // fragment.fontStyle + ' ' + fragment.fontWeight + ' ' + fragment.fontSize + 'px ' + fragment.fontName;
+            this._textLines = [{
+                    width: width_1,
+                    fragments: [{
+                            text: this._text,
+                            width: width_1,
+                            fontStyle: this.fontStyle,
+                            fontSize: this.fontSize,
+                            fontWeight: this.fontWeight,
+                            fontName: this.fontName,
+                        }]
+                }];
+            if (this.autoResizeWidth) {
+                this.width = width_1;
+            }
+            this.height = this.lineHeight;
         }
-        this.height = result.height;
+        else {
+            var result = measureText(this._textFlow, this.width, this.fontName, this.fontStyle, this.fontWeight, this.fontSize, this.lineHeight, this.wordWrap, this._autoResizeWidth);
+            this._textLines = result.lines;
+            if (this._autoResizeWidth) {
+                this.width = result.width;
+            }
+            this.height = result.height;
+        }
+        var _a = this, textAlign = _a.textAlign, lineHeight = _a.lineHeight, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, width = _a.width;
+        var y = -_originPixelY + lineHeight * 0.5;
+        this._fragmentsPos.length = 0;
+        this._textLines.forEach(function (line) {
+            var x = -_originPixelX;
+            if (textAlign === "center") {
+                x += (width - line.width) * 0.5;
+            }
+            else if (textAlign === "right") {
+                x += width - line.width;
+            }
+            line.fragments.forEach(function (fragment) {
+                _this._fragmentsPos.push({ x: x, y: y });
+                x += fragment.width;
+            });
+            y += lineHeight;
+        });
     };
     TextLabel.prototype.addChild = function (target) {
         if (Array.isArray(target)) {
@@ -3297,39 +3352,48 @@ var TextLabel = (function (_super) {
             return;
         }
         var _a = this, textAlign = _a.textAlign, lineHeight = _a.lineHeight, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, width = _a.width;
-        var y = -_originPixelY + lineHeight * 0.5;
+        // let y = -_originPixelY + lineHeight * 0.5;
+        var index = 0;
+        context.save();
+        context.textAlign = "left";
+        context.textBaseline = 'middle';
+        context.lineJoin = 'round';
         this._textLines.forEach(function (line) {
-            var x = -_originPixelX;
-            if (textAlign === "center") {
-                x += (width - line.width) * 0.5;
-            }
-            else if (textAlign === "right") {
-                x += width - line.width;
-            }
+            // let x: number = -_originPixelX;
+            // if (textAlign === "center") {
+            //     x += (width - line.width) * 0.5;
+            // }
+            // else if (textAlign === "right") {
+            //     x += width - line.width;
+            // }
             line.fragments.forEach(function (fragment) {
                 if (fragment.text) {
                     var fontColor = fragment.fontColor != null ? fragment.fontColor : _this.fontColor;
                     var strokeColor = "strokeColor" in fragment ? fragment.strokeColor : _this.strokeColor;
                     var strokeWidth = "strokeWidth" in fragment ? fragment.strokeWidth : _this.strokeWidth;
-                    context.save();
+                    var pos = _this._fragmentsPos[index];
+                    // context.save();
                     context.font = fragment.fontStyle + ' ' + fragment.fontWeight + ' ' + fragment.fontSize + 'px ' + fragment.fontName;
                     context.fillStyle = convertColor(fontColor);
                     // context.textAlign = textAlign;
-                    context.textAlign = "left";
-                    context.textBaseline = 'middle';
-                    context.lineJoin = 'round';
+                    // context.textAlign = "left";
+                    // context.textBaseline = 'middle';
+                    // context.lineJoin = 'round';
                     if (strokeColor != null) {
                         context.strokeStyle = convertColor(strokeColor || 0x000);
                         context.lineWidth = (strokeWidth || 1) * 2;
-                        context.strokeText(fragment.text, x, y);
+                        // context.strokeText(fragment.text, x, y);
+                        context.strokeText(fragment.text, pos.x, pos.y);
                     }
-                    context.fillText(fragment.text, x, y);
-                    context.restore();
+                    context.fillText(fragment.text, pos.x, pos.y);
+                    // context.restore();
                 }
-                x += fragment.width;
+                index += 1;
+                // x += fragment.width;
             });
-            y += lineHeight;
+            // y += lineHeight;
         });
+        context.restore();
     };
     return TextLabel;
 }(Sprite));

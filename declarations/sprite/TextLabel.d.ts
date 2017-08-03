@@ -37,6 +37,11 @@ export declare class TextLabel extends Sprite<ITextLabel> {
         width: number;
     }[];
     protected _text: string;
+    protected _isSetByTextFlow: boolean;
+    protected _fragmentsPos: {
+        x: number;
+        y: number;
+    }[];
     constructor(props?: ITextLabel);
     autoResizeWidth: boolean;
     width: number;

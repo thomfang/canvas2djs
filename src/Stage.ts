@@ -294,8 +294,10 @@ export class Stage extends EventEmitter {
         style.height = height + 'px';
         style.position = 'absolute';
 
-        canvas.width = this.width;
-        canvas.height = this.height;
+        if (canvas.width != this.width || canvas.height != this.height) {
+            canvas.width = this.width;
+            canvas.height = this.height;
+        }
 
         visibleRect.left = deltaWidth;
         visibleRect.right = stageWidth - deltaWidth;

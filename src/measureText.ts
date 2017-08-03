@@ -4,8 +4,9 @@ import { Color } from './Util';
 var canvas = document.createElement('canvas');
 var ctx = canvas.getContext('2d');
 
-var _cache: { [key: string]: MeasuredSize } = {};
-var _cacheCount = 0;
+var measuredCache: { [key: string]: MeasuredSize } = {};
+var measuredWidthCache: { [key: string]: number } = {};
+var cacheCount = 0;
 
 function getCacheKey(
     textFlow: TextFlow[],
@@ -45,6 +46,17 @@ export type MeasuredSize = {
     }[];
 };
 
+export function measureTextWidth(text: string, fontName, fontSize, fontWeight, fontStyle) {
+    let key = [text, fontName, fontSize, fontWeight, fontStyle].join(':');
+    if (measuredWidthCache[key] != null) {
+        return measuredWidthCache[key];
+    }
+    ctx.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
+    let width = ctx.measureText(text).width;
+    measuredWidthCache[key] = width;
+    return width;
+}
+
 export function measureText(
     textFlow: TextFlow[],
     width: number,
@@ -57,7 +69,7 @@ export function measureText(
     autoResizeWidth: boolean,
 ): MeasuredSize {
     let cacheKey = getCacheKey(textFlow, width, fontName, fontSize, fontWeight, fontStyle, lineHeight, wordWrap, autoResizeWidth);
-    let cached = _cache[cacheKey];
+    let cached = measuredCache[cacheKey];
     if (cached) {
         return cached;
     }
@@ -247,12 +259,12 @@ export function measureText(
         measuredSize.width = max;
     }
 
-    if (_cacheCount > 200) {
-        _cache = {};
-        _cacheCount = 0;
+    if (cacheCount > 200) {
+        measuredCache = {};
+        cacheCount = 0;
     }
-    _cache[cacheKey] = measuredSize;
-    _cacheCount += 1;
+    measuredCache[cacheKey] = measuredSize;
+    cacheCount += 1;
     return measuredSize;
 }
 
