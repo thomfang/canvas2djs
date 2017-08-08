@@ -2,6 +2,8 @@
 import { Sprite } from './sprite/Sprite';
 import { Action } from './action/Action';
 import { EventEmitter } from './EventEmitter';
+// import { CanvasRenderer } from './renderer/canvas/CanvasRenderer';
+// import { WebGLRenderer } from './renderer/webgl/WebGLRenderer';
 
 export enum ScaleMode {
     SHOW_ALL,
@@ -25,6 +27,7 @@ export type VisibleRect = {
 };
 
 export class Stage extends EventEmitter {
+    // private _renderer: CanvasRenderer | WebGLRenderer;
 
     private _elapsedTime: number = 0;
     private _frameCount: number = 0;
@@ -174,8 +177,10 @@ export class Stage extends EventEmitter {
         super();
 
         this._sprite = new Sprite({
-            x: width * 0.5,
-            y: height * 0.5,
+            // x: width * 0.5,
+            // y: height * 0.5,
+            originX: 0,
+            originY: 0,
             width: width,
             height: height
         });
@@ -183,8 +188,13 @@ export class Stage extends EventEmitter {
         this._scaleMode = scaleMode;
 
         this._canvas = canvas;
-        this._renderContext = canvas.getContext('2d');
 
+        // this._renderer = new WebGLRenderer();
+        // this._renderer = new CanvasRenderer();
+        // this._renderer.init(canvas);
+        // this.setSize(width, height);
+
+        this._renderContext = canvas.getContext('2d');
         this._bufferCanvas = document.createElement("canvas");
         this._bufferContext = this._bufferCanvas.getContext("2d");
 
@@ -196,20 +206,23 @@ export class Stage extends EventEmitter {
         this._visibleRect = { left: 0, right: width, top: 0, bottom: height };
         this._orientation = orientation;
         this.autoAdjustCanvasSize = autoAdjustCanvasSize;
-
         this._uiEvent = new UIEvent(this);
     }
 
     setSize(width: number, height: number) {
-        this._width = this._canvas.width = this._bufferCanvas.width = width;
-        this._height = this._canvas.height = this._bufferCanvas.height = height;
+        this._width = this._bufferCanvas.width = width;
+        this._height = this._bufferCanvas.height = height;
+
+        // this._width = width;
+        // this._height = height;
+        // this._renderer.setSize(width, height);
 
         if (this._autoAdjustCanvasSize) {
             this.adjustCanvasSize();
         }
 
-        this._sprite.x = width * 0.5;
-        this._sprite.y = height * 0.5;
+        // this._sprite.x = width * 0.5;
+        // this._sprite.y = height * 0.5;
         this._sprite.width = width;
         this._sprite.height = height;
     }
@@ -375,6 +388,9 @@ export class Stage extends EventEmitter {
         }
 
         var startRenderTime = Date.now();
+
+        // this._renderer.draw(this._sprite);
+
         var { width, height } = this._canvas;
 
         this._bufferContext.clearRect(0, 0, width, height);
@@ -412,7 +428,9 @@ export class Stage extends EventEmitter {
         this.stop(true);
         this._uiEvent.release();
         this._sprite.release(true);
-        this._sprite = this._uiEvent = this._canvas = this._renderContext = this._bufferCanvas = this._bufferContext = null;
+        this._sprite = this._uiEvent = this._canvas =
+            // this._renderContext = this._bufferCanvas = this._bufferContext  = 
+            null;
     }
 
     private _startTimer() {

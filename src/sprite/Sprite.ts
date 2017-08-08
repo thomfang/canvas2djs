@@ -6,6 +6,7 @@ import { EventEmitter } from '../EventEmitter';
 import { ReleasePool } from '../ReleasePool';
 import { Stage } from '../Stage';
 import { SpriteProps } from '../createSprite';
+// import { CanvasFrameBuffer } from '../framebuffer/CanvasFrameBuffer';
 
 export const RAD_PER_DEG: number = Math.PI / 180;
 
@@ -30,7 +31,8 @@ export enum BlendMode {
     COPY,
     XOR,
 }
-const BlendModeStrings = {
+
+export const BlendModeStrings = {
     [BlendMode.SOURCE_IN]: "source-in",
     [BlendMode.SOURCE_OVER]: "source-over",
     [BlendMode.SOURCE_ATOP]: "source-atop",
@@ -54,7 +56,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     protected _originX: number = 0.5;
     protected _originY: number = 0.5;
     protected _rotation: number = 0;
-    protected _rotationRad: number = 0;
+    protected _rotationInRadians: number = 0;
     protected _texture: Texture;
     protected _alignX: AlignType;
     protected _alignY: AlignType;
@@ -73,6 +75,8 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     protected _originPixelY: number = 0;
 
     protected _grid: number[];
+
+    // protected _canvasFrameBuffer: CanvasFrameBuffer;
 
     id: number;
 
@@ -111,6 +115,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     constructor(props?: T & SpriteProps) {
         super();
         this.id = uid(this);
+        // this._canvasFrameBuffer = CanvasFrameBuffer.create(this.id);
         this._init(props);
     }
 
@@ -124,6 +129,22 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         Object.keys(props).forEach(key => {
             this[key] = props[key];
         });
+    }
+
+    // get canvasFrameBuffer() {
+    //     return this._canvasFrameBuffer;
+    // }
+
+    get rotationInRadians() {
+        return this._rotationInRadians;
+    }
+
+    get originPixelX() {
+        return this._originPixelX;
+    }
+
+    get originPixelY() {
+        return this._originPixelY;
     }
 
     set width(value: number) {
@@ -285,7 +306,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
 
         this._rotation = value;
-        this._rotationRad = this._rotation * RAD_PER_DEG;
+        this._rotationInRadians = this._rotation * RAD_PER_DEG;
     }
 
     get rotation(): number {
@@ -400,50 +421,6 @@ export class Sprite<T extends ISprite> extends EventEmitter {
                 child._update(deltaTime);
             });
         }
-    }
-
-    protected _visit(context: CanvasRenderingContext2D): void {
-        if (!this.visible || this.opacity === 0) {
-            return;
-        }
-
-        var sx: number = this.scaleX;
-        var sy: number = this.scaleY;
-
-        context.save();
-
-        if (this.blendMode != null) {
-            context.globalCompositeOperation = BlendModeStrings[this.blendMode];
-        }
-        if (this.x !== 0 || this.y !== 0) {
-            context.translate(this.x, this.y);
-        }
-        if (this.opacity !== 1) {
-            context.globalAlpha = this.opacity;
-        }
-        if (this.flippedX) {
-            sx = -sx;
-        }
-        if (this.flippedY) {
-            sy = -sy;
-        }
-        if (sx !== 1 || sy !== 1) {
-            context.scale(sx, sy);
-        }
-
-        var rotationRad: number = this._rotationRad % 360;
-
-        if (rotationRad !== 0) {
-            context.rotate(rotationRad);
-        }
-
-        if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
-            this.draw(context);
-        }
-
-        this._visitChildren(context);
-
-        context.restore();
     }
 
     protected _reLayoutChildrenOnWidthChanged() {
@@ -570,6 +547,48 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             this.y = y;
         }
         return true;
+    }
+
+    protected _visit(context: CanvasRenderingContext2D): void {
+        if (!this.visible || this.opacity === 0) {
+            return;
+        }
+
+        var sx: number = this.scaleX;
+        var sy: number = this.scaleY;
+
+        context.save();
+
+        if (this.blendMode != null) {
+            context.globalCompositeOperation = BlendModeStrings[this.blendMode];
+        }
+        if (this.x !== 0 || this.y !== 0) {
+            context.translate(this.x, this.y);
+        }
+        if (this.opacity !== 1) {
+            context.globalAlpha = this.opacity;
+        }
+        if (this.flippedX) {
+            sx = -sx;
+        }
+        if (this.flippedY) {
+            sy = -sy;
+        }
+        if (sx !== 1 || sy !== 1) {
+            context.scale(sx, sy);
+        }
+
+        if (this.rotation % 360 !== 0) {
+            context.rotate(this._rotationInRadians);
+        }
+
+        if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
+            this.draw(context);
+        }
+
+        this._visitChildren(context);
+
+        context.restore();
     }
 
     protected _visitChildren(context: CanvasRenderingContext2D): void {
@@ -772,6 +791,7 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             this.parent.removeChild(this);
         }
 
+        // CanvasFrameBuffer.remove(this.id);
         ReleasePool.instance.add(this);
         this.removeAllListeners();
     }

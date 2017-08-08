@@ -176,7 +176,7 @@ export class UIEvent {
             else if (!justGet) {
                 helper._moved = x - helper.beginX !== 0 || y - helper.beginY !== 0;
             }
-
+            helper.cancelBubble = false;
             helper.stageX = x;
             helper.stageY = y;
 
@@ -376,31 +376,34 @@ export class UIEvent {
             }
         }
 
-        var hits: EventHelper[] = triggerreds.filter(helper => !helper.cancelBubble);
-        var rect: Rect = {
-            x: offsetX,
-            y: offsetY,
-            width: sprite.width,
-            height: sprite.height
-        };
-        var circle = {
-            x: offsetX,
-            y: offsetY,
-            radius: sprite.radius
-        };
-        var count = 0;
+        let hits: EventHelper[] = triggerreds.filter(helper => !helper.cancelBubble);
+        let count = 0;
+        
+        if (tmpHelpers.length) {
+            let rect: Rect = {
+                x: offsetX,
+                y: offsetY,
+                width: sprite.width,
+                height: sprite.height
+            };
+            let circle = {
+                x: offsetX,
+                y: offsetY,
+                radius: sprite.radius
+            };
 
-        for (let i = 0, helper: EventHelper; helper = tmpHelpers[i]; i++) {
-            if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
-                if (!helper.target) {
-                    helper.target = sprite;
+            for (let i = 0, helper: EventHelper; helper = tmpHelpers[i]; i++) {
+                if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+                    if (!helper.target) {
+                        helper.target = sprite;
+                    }
+                    helper.localX = helper.stageX - rect.x;
+                    helper.localY = helper.stageY - rect.y;
+
+                    // Add for current sprite hit list
+                    hits.push(helper);
+                    count++;
                 }
-                helper.localX = helper.stageX - rect.x;
-                helper.localY = helper.stageY - rect.y;
-
-                // Add for current sprite hit list
-                hits.push(helper);
-                count++;
             }
         }
 
@@ -417,7 +420,7 @@ export class UIEvent {
             if (needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
                 sprite.emit(UIEvent.CLICK, hits[0], event);
                 sprite[onClick] && sprite[onClick](hits[0], event as any);
-                addArrayItem(triggerreds, hits[0]);
+                // addArrayItem(triggerreds, hits[0]);
             }
         }
         return triggerreds;
@@ -484,25 +487,25 @@ export class UIEvent {
             }
 
             // hits = triggerreds.filter(helper => !helper.cancelBubble);
-            hits = hits.filter(helper => triggerreds.indexOf(helper) < 0 || !helper.cancelBubble);
+            let bubbleHits = hits.filter(helper => !helper.cancelBubble);
 
-            if (hits.length) {
-                hits.forEach(e => {
+            if (bubbleHits.length) {
+                bubbleHits.forEach(e => {
                     if (!e.target) {
                         e.target = sprite;
                     }
                 });
-                sprite.emit(eventName, hits, event);
-                sprite[methodName] && sprite[methodName](hits, event);
+                sprite.emit(eventName, bubbleHits, event);
+                sprite[methodName] && sprite[methodName](bubbleHits, event);
 
                 // Click event would just trigger by only a touch
-                if (needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
-                    sprite.emit(UIEvent.CLICK, hits[0], event);
-                    sprite[onClick] && sprite[onClick](hits[0], event as any);
+                if (needTriggerClick && bubbleHits.length === 1 && (!bubbleHits[0]._moved || isMovedSmallRange(bubbleHits[0]))) {
+                    sprite.emit(UIEvent.CLICK, bubbleHits[0], event);
+                    sprite[onClick] && sprite[onClick](bubbleHits[0], event as any);
                 }
             }
 
-            return triggerreds;
+            return hits;
         }
     }
 

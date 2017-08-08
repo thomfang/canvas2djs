@@ -47,12 +47,20 @@ export class TextLabel extends Sprite<ITextLabel> {
     protected _textLines: { fragments: TextFragment[]; width: number }[];
     protected _text: string;
     protected _isSetByTextFlow: boolean;
-    protected _fragmentsPos: { x: number; y: number }[] = [];
+    protected _fragmentsPos: { x: number; y: number }[];
 
     constructor(props?: ITextLabel) {
         super();
 
         props && this.setProps(props);
+    }
+
+    get fragmentsPos() {
+        return this._fragmentsPos;
+    }
+
+    get textLines() {
+        return this._textLines;
     }
 
     set autoResizeWidth(value: boolean) {
@@ -253,10 +261,12 @@ export class TextLabel extends Sprite<ITextLabel> {
 
         const { textAlign, lineHeight, _originPixelX, _originPixelY, width } = this;
         let y = -_originPixelY + lineHeight * 0.5;
+        // let y = lineHeight * 0.5;
 
-        this._fragmentsPos.length = 0;
+        this._fragmentsPos = [];
         this._textLines.forEach(line => {
             let x: number = -_originPixelX;
+            // let x = 0;
             if (textAlign === "center") {
                 x += (width - line.width) * 0.5;
             }
@@ -294,7 +304,7 @@ export class TextLabel extends Sprite<ITextLabel> {
             return;
         }
 
-        const { textAlign, lineHeight, _originPixelX, _originPixelY, width } = this;
+        // const { textAlign, lineHeight, _originPixelX, _originPixelY, width } = this;
 
         // let y = -_originPixelY + lineHeight * 0.5;
         let index = 0;

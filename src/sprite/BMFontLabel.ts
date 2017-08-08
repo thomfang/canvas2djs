@@ -23,13 +23,22 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     protected _text: string = "";
     protected _textureMap: { [word: string]: Texture };
 
-    protected _lines: { width: number; words: Texture[] }[] = [];
+    protected _bmfontLines: { width: number; fragments: Texture[] }[];
+    protected _fragmentsPos: { x: number; y: number; height: number }[];
     protected _autoResizeHeight: boolean = true;
     protected _isAllTexturesReady: boolean;
 
     constructor(props?: IBMFontLabel) {
         super();
         props && this.setProps(props);
+    }
+
+    get fragmentsPos() {
+        return this._fragmentsPos;
+    }
+
+    get bmfontLines() {
+        return this._bmfontLines;
     }
 
     get autoResizeHeight() {
@@ -39,8 +48,8 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     set autoResizeHeight(value: boolean) {
         if (this._autoResizeHeight !== value) {
             this._autoResizeHeight = value;
-            if (value && this._lines && this._lines.length) {
-                this.height = this._lines.length * this.lineHeight;
+            if (value && this._bmfontLines && this._bmfontLines.length) {
+                this.height = this._bmfontLines.length * this.lineHeight;
             }
         }
     }
@@ -95,6 +104,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     set textAlign(value: TextAlign) {
         if (this._textAlign != value) {
             this._textAlign = value;
+            this._updateFragmentsPos();
         }
     }
 
@@ -105,9 +115,10 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     set lineHeight(value: number) {
         if (this._lineHeight != value) {
             this._lineHeight = value;
-            if (this._autoResizeHeight && this._lines && this._lines.length) {
-                this.height = this._lines.length * value;
+            if (this._autoResizeHeight && this._bmfontLines && this._bmfontLines.length) {
+                this.height = this._bmfontLines.length * value;
             }
+            this._updateFragmentsPos();
         }
     }
 
@@ -187,16 +198,16 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
 
     protected _reMeasureText() {
         if (!this.textureMap || !this._text || !this._isAllTexturesReady || this.width <= 0) {
-            this._lines.length = 0;
+            this._bmfontLines = null;
             return;
         }
 
-        const { _textureMap, text, width, lineHeight, fontSize, wordWrap, wordSpace, _lines } = this;
+        const { _textureMap, text, width, lineHeight, fontSize, wordWrap, wordSpace } = this;
 
-        _lines.length = 0;
+        let _bmfontLines = this._bmfontLines = [];
 
         var words = this._text.split('');
-        var currLine = _lines[0] = { width: 0, words: [] };
+        var currLine = _bmfontLines[0] = { width: 0, fragments: [] };
 
         words.forEach(word => {
             let texture: Texture;
@@ -217,56 +228,109 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
 
             if (!wordWrap || currLine.width + fontSize <= width) {
                 currLine.width += fontSize;
-                currLine.words.push(texture);
+                currLine.fragments.push(texture);
 
                 if (currLine.width + wordSpace >= width) {
-                    currLine = _lines[_lines.length] = {
-                        width: 0, words: []
+                    currLine = _bmfontLines[_bmfontLines.length] = {
+                        width: 0, fragments: []
                     };
                 }
             }
             else {
-                currLine = _lines[_lines.length] = {
-                    width: fontSize, words: [texture]
+                currLine = _bmfontLines[_bmfontLines.length] = {
+                    width: fontSize, fragments: [texture]
                 };
             }
         });
 
         if (this._autoResizeHeight) {
-            this.height = _lines.length * lineHeight;
+            this.height = _bmfontLines.length * lineHeight;
         }
+
+        this._updateFragmentsPos();
+    }
+
+    protected _updateFragmentsPos() {
+        if (!this._bmfontLines) {
+            return;
+        }
+
+        let { _originPixelX, _originPixelY, _textAlign, _bmfontLines, width, fontSize, lineHeight, wordSpace } = this;
+        let _fragmentsPos: { x: number; y: number; height: number }[] = this._fragmentsPos = [];
+        let y: number = -_originPixelY;
+        // let y = 0;
+
+        _bmfontLines.forEach((line, i) => {
+            let x: number;
+
+            if (_textAlign === "right") {
+                x = width - line.width - _originPixelX;
+                // x = width - line.width;
+            }
+            else if (_textAlign == "center") {
+                x = (width - line.width) * 0.5 - _originPixelX;
+                // x = (width - line.width) * 0.5;
+            }
+            else {
+                x = -_originPixelX;
+                // x = 0;
+            }
+
+            line.fragments.forEach((word, j) => {
+                let ty = y;
+                let h = 0;
+                if (word) {
+                    h = fontSize / word.width * word.height;
+                    let p = (lineHeight - h) * 0.5;
+                    ty = y + p;
+                }
+                _fragmentsPos.push({ x, y: ty, height: h });
+                x += fontSize + wordSpace;
+            });
+
+            y += lineHeight;
+        });
     }
 
     protected draw(context: CanvasRenderingContext2D) {
         super.draw(context);
 
+        if (!this._bmfontLines) {
+            return;
+        }
+
         const { _originPixelX, _originPixelY, _textAlign, fontSize, lineHeight, wordSpace, width } = this;
 
-        let y: number = -_originPixelY;
+        // let y: number = -_originPixelY;
+        let _fragmentsPos = this._fragmentsPos;
+        let index = 0;
 
-        this._lines.forEach((line, i) => {
-            let x: number;
+        this._bmfontLines.forEach((line, i) => {
+            // let x: number;
 
-            if (_textAlign === "right") {
-                x = width - line.width - _originPixelX;
-            }
-            else if (_textAlign == "center") {
-                x = (width - line.width) * 0.5 - _originPixelX;
-            }
-            else {
-                x = -_originPixelX;
-            }
+            // if (_textAlign === "right") {
+            //     x = width - line.width - _originPixelX;
+            // }
+            // else if (_textAlign == "center") {
+            //     x = (width - line.width) * 0.5 - _originPixelX;
+            // }
+            // else {
+            //     x = -_originPixelX;
+            // }
 
-            line.words.forEach((word, j) => {
+            line.fragments.forEach((word, j) => {
                 if (word) {
-                    let h = fontSize / word.width * word.height;
-                    let p = (lineHeight - h) * 0.5;
-                    context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
+                    // let h = fontSize / word.width * word.height;
+                    // let p = (lineHeight - h) * 0.5;
+                    // context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
+                    let pos = _fragmentsPos[index];
+                    context.drawImage(word.source, 0, 0, word.width, word.height, pos.x, pos.y, fontSize, pos.height);
                 }
-                x += fontSize + wordSpace;
+                // x += fontSize + wordSpace;
+                index += 1;
             });
 
-            y += lineHeight;
+            // y += lineHeight;
         });
     }
 

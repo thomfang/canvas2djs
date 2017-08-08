@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.5.1
+ * canvas2djs v2.5.2
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -772,6 +772,22 @@ function convertColor(color) {
         return result;
     }
 }
+function hexToRgb(hex) {
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+        return r + r + g + g + b + b;
+    });
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
 
 var ActionListener = (function () {
     function ActionListener(actions) {
@@ -1279,6 +1295,7 @@ var ReleasePool = (function () {
     return ReleasePool;
 }());
 
+// import { CanvasFrameBuffer } from '../framebuffer/CanvasFrameBuffer';
 var RAD_PER_DEG = Math.PI / 180;
 
 (function (AlignType) {
@@ -1324,7 +1341,7 @@ var Sprite = (function (_super) {
         _this._originX = 0.5;
         _this._originY = 0.5;
         _this._rotation = 0;
-        _this._rotationRad = 0;
+        _this._rotationInRadians = 0;
         _this._originPixelX = 0;
         _this._originPixelY = 0;
         _this.x = 0;
@@ -1343,6 +1360,7 @@ var Sprite = (function (_super) {
         _this.touchEnabled = true;
         _this.mouseEnabled = true;
         _this.id = uid(_this);
+        // this._canvasFrameBuffer = CanvasFrameBuffer.create(this.id);
         _this._init(props);
         return _this;
     }
@@ -1357,6 +1375,30 @@ var Sprite = (function (_super) {
             _this[key] = props[key];
         });
     };
+    Object.defineProperty(Sprite.prototype, "rotationInRadians", {
+        // get canvasFrameBuffer() {
+        //     return this._canvasFrameBuffer;
+        // }
+        get: function () {
+            return this._rotationInRadians;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "originPixelX", {
+        get: function () {
+            return this._originPixelX;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Sprite.prototype, "originPixelY", {
+        get: function () {
+            return this._originPixelY;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Sprite.prototype, "width", {
         get: function () {
             return this._width;
@@ -1533,7 +1575,7 @@ var Sprite = (function (_super) {
                 return;
             }
             this._rotation = value;
-            this._rotationRad = this._rotation * RAD_PER_DEG;
+            this._rotationInRadians = this._rotation * RAD_PER_DEG;
         },
         enumerable: true,
         configurable: true
@@ -1651,41 +1693,6 @@ var Sprite = (function (_super) {
             });
         }
     };
-    Sprite.prototype._visit = function (context) {
-        if (!this.visible || this.opacity === 0) {
-            return;
-        }
-        var sx = this.scaleX;
-        var sy = this.scaleY;
-        context.save();
-        if (this.blendMode != null) {
-            context.globalCompositeOperation = BlendModeStrings[this.blendMode];
-        }
-        if (this.x !== 0 || this.y !== 0) {
-            context.translate(this.x, this.y);
-        }
-        if (this.opacity !== 1) {
-            context.globalAlpha = this.opacity;
-        }
-        if (this.flippedX) {
-            sx = -sx;
-        }
-        if (this.flippedY) {
-            sy = -sy;
-        }
-        if (sx !== 1 || sy !== 1) {
-            context.scale(sx, sy);
-        }
-        var rotationRad = this._rotationRad % 360;
-        if (rotationRad !== 0) {
-            context.rotate(rotationRad);
-        }
-        if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
-            this.draw(context);
-        }
-        this._visitChildren(context);
-        context.restore();
-    };
     Sprite.prototype._reLayoutChildrenOnWidthChanged = function () {
         if (!this.children || !this.children.length) {
             return;
@@ -1793,6 +1800,40 @@ var Sprite = (function (_super) {
             this.y = y;
         }
         return true;
+    };
+    Sprite.prototype._visit = function (context) {
+        if (!this.visible || this.opacity === 0) {
+            return;
+        }
+        var sx = this.scaleX;
+        var sy = this.scaleY;
+        context.save();
+        if (this.blendMode != null) {
+            context.globalCompositeOperation = BlendModeStrings[this.blendMode];
+        }
+        if (this.x !== 0 || this.y !== 0) {
+            context.translate(this.x, this.y);
+        }
+        if (this.opacity !== 1) {
+            context.globalAlpha = this.opacity;
+        }
+        if (this.flippedX) {
+            sx = -sx;
+        }
+        if (this.flippedY) {
+            sy = -sy;
+        }
+        if (sx !== 1 || sy !== 1) {
+            context.scale(sx, sy);
+        }
+        if (this.rotation % 360 !== 0) {
+            context.rotate(this._rotationInRadians);
+        }
+        if ((this._width !== 0 && this._height !== 0) || this.radius > 0) {
+            this.draw(context);
+        }
+        this._visitChildren(context);
+        context.restore();
     };
     Sprite.prototype._visitChildren = function (context) {
         if (!this.children || !this.children.length) {
@@ -1982,6 +2023,7 @@ var Sprite = (function (_super) {
         if (this.parent) {
             this.parent.removeChild(this);
         }
+        // CanvasFrameBuffer.remove(this.id);
         ReleasePool.instance.add(this);
         this.removeAllListeners();
     };
@@ -2219,6 +2261,7 @@ var UIEvent = (function () {
             else if (!justGet) {
                 helper._moved = x - helper.beginX !== 0 || y - helper.beginY !== 0;
             }
+            helper.cancelBubble = false;
             helper.stageX = x;
             helper.stageY = y;
             helpers.push(helper);
@@ -2255,28 +2298,30 @@ var UIEvent = (function () {
             }
         }
         var hits = triggerreds.filter(function (helper) { return !helper.cancelBubble; });
-        var rect = {
-            x: offsetX,
-            y: offsetY,
-            width: sprite.width,
-            height: sprite.height
-        };
-        var circle = {
-            x: offsetX,
-            y: offsetY,
-            radius: sprite.radius
-        };
         var count = 0;
-        for (var i = 0, helper = void 0; helper = tmpHelpers[i]; i++) {
-            if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
-                if (!helper.target) {
-                    helper.target = sprite;
+        if (tmpHelpers.length) {
+            var rect = {
+                x: offsetX,
+                y: offsetY,
+                width: sprite.width,
+                height: sprite.height
+            };
+            var circle = {
+                x: offsetX,
+                y: offsetY,
+                radius: sprite.radius
+            };
+            for (var i = 0, helper = void 0; helper = tmpHelpers[i]; i++) {
+                if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+                    if (!helper.target) {
+                        helper.target = sprite;
+                    }
+                    helper.localX = helper.stageX - rect.x;
+                    helper.localY = helper.stageY - rect.y;
+                    // Add for current sprite hit list
+                    hits.push(helper);
+                    count++;
                 }
-                helper.localX = helper.stageX - rect.x;
-                helper.localY = helper.stageY - rect.y;
-                // Add for current sprite hit list
-                hits.push(helper);
-                count++;
             }
         }
         if (hits.length) {
@@ -2289,7 +2334,7 @@ var UIEvent = (function () {
             if (needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
                 sprite.emit(UIEvent.CLICK, hits[0], event);
                 sprite[onClick] && sprite[onClick](hits[0], event);
-                addArrayItem(triggerreds, hits[0]);
+                // addArrayItem(triggerreds, hits[0]);
             }
         }
         return triggerreds;
@@ -2319,7 +2364,7 @@ var UIEvent = (function () {
         }
         if (hits.length) {
             var children = sprite.children;
-            var triggerreds_1 = [];
+            var triggerreds = [];
             if (children && children.length) {
                 var index = children.length;
                 var result_1;
@@ -2328,7 +2373,7 @@ var UIEvent = (function () {
                 while (--index >= 0) {
                     result_1 = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, eventName, needTriggerClick);
                     if (result_1 && result_1.length) {
-                        triggerreds_1.push.apply(triggerreds_1, result_1);
+                        triggerreds.push.apply(triggerreds, result_1);
                         // Remove triggerred touch helper, it won't pass to other child sprites
                         tmpHelpers = tmpHelpers.filter(filterUnTriggerred);
                         // All triggerred then exit the loop
@@ -2339,22 +2384,22 @@ var UIEvent = (function () {
                 }
             }
             // hits = triggerreds.filter(helper => !helper.cancelBubble);
-            hits = hits.filter(function (helper) { return triggerreds_1.indexOf(helper) < 0 || !helper.cancelBubble; });
-            if (hits.length) {
-                hits.forEach(function (e) {
+            var bubbleHits = hits.filter(function (helper) { return !helper.cancelBubble; });
+            if (bubbleHits.length) {
+                bubbleHits.forEach(function (e) {
                     if (!e.target) {
                         e.target = sprite;
                     }
                 });
-                sprite.emit(eventName, hits, event);
-                sprite[methodName] && sprite[methodName](hits, event);
+                sprite.emit(eventName, bubbleHits, event);
+                sprite[methodName] && sprite[methodName](bubbleHits, event);
                 // Click event would just trigger by only a touch
-                if (needTriggerClick && hits.length === 1 && (!hits[0]._moved || isMovedSmallRange(hits[0]))) {
-                    sprite.emit(UIEvent.CLICK, hits[0], event);
-                    sprite[onClick] && sprite[onClick](hits[0], event);
+                if (needTriggerClick && bubbleHits.length === 1 && (!bubbleHits[0]._moved || isMovedSmallRange(bubbleHits[0]))) {
+                    sprite.emit(UIEvent.CLICK, bubbleHits[0], event);
+                    sprite[onClick] && sprite[onClick](bubbleHits[0], event);
                 }
             }
-            return triggerreds_1;
+            return hits;
         }
     };
     UIEvent.prototype._dispatchMouse = function (sprite, offsetX, offsetY, helper, event, methodName, eventName, needTriggerClick) {
@@ -2478,6 +2523,9 @@ function isMovedSmallRange(e) {
     return x <= 5 && y <= 5;
 }
 
+// import { CanvasRenderer } from './renderer/canvas/CanvasRenderer';
+// import { WebGLRenderer } from './renderer/webgl/WebGLRenderer';
+
 (function (ScaleMode) {
     ScaleMode[ScaleMode["SHOW_ALL"] = 0] = "SHOW_ALL";
     ScaleMode[ScaleMode["NO_BORDER"] = 1] = "NO_BORDER";
@@ -2502,6 +2550,7 @@ var Stage = (function (_super) {
     function Stage(canvas, width, height, scaleMode, autoAdjustCanvasSize, orientation) {
         if (orientation === void 0) { orientation = exports.Orientation.PORTRAIT; }
         var _this = _super.call(this) || this;
+        // private _renderer: CanvasRenderer | WebGLRenderer;
         _this._elapsedTime = 0;
         _this._frameCount = 0;
         _this._computeCostTime = 0;
@@ -2612,14 +2661,20 @@ var Stage = (function (_super) {
             _this._isPortrait = isPortrait;
         };
         _this._sprite = new Sprite({
-            x: width * 0.5,
-            y: height * 0.5,
+            // x: width * 0.5,
+            // y: height * 0.5,
+            originX: 0,
+            originY: 0,
             width: width,
             height: height
         });
         _this._sprite.stage = _this;
         _this._scaleMode = scaleMode;
         _this._canvas = canvas;
+        // this._renderer = new WebGLRenderer();
+        // this._renderer = new CanvasRenderer();
+        // this._renderer.init(canvas);
+        // this.setSize(width, height);
         _this._renderContext = canvas.getContext('2d');
         _this._bufferCanvas = document.createElement("canvas");
         _this._bufferContext = _this._bufferCanvas.getContext("2d");
@@ -2781,13 +2836,16 @@ var Stage = (function (_super) {
         configurable: true
     });
     Stage.prototype.setSize = function (width, height) {
-        this._width = this._canvas.width = this._bufferCanvas.width = width;
-        this._height = this._canvas.height = this._bufferCanvas.height = height;
+        this._width = this._bufferCanvas.width = width;
+        this._height = this._bufferCanvas.height = height;
+        // this._width = width;
+        // this._height = height;
+        // this._renderer.setSize(width, height);
         if (this._autoAdjustCanvasSize) {
             this.adjustCanvasSize();
         }
-        this._sprite.x = width * 0.5;
-        this._sprite.y = height * 0.5;
+        // this._sprite.x = width * 0.5;
+        // this._sprite.y = height * 0.5;
         this._sprite.width = width;
         this._sprite.height = height;
     };
@@ -2830,6 +2888,7 @@ var Stage = (function (_super) {
             return;
         }
         var startRenderTime = Date.now();
+        // this._renderer.draw(this._sprite);
         var _a = this._canvas, width = _a.width, height = _a.height;
         this._bufferContext.clearRect(0, 0, width, height);
         this._sprite._visit(this._bufferContext);
@@ -2860,7 +2919,9 @@ var Stage = (function (_super) {
         this.stop(true);
         this._uiEvent.release();
         this._sprite.release(true);
-        this._sprite = this._uiEvent = this._canvas = this._renderContext = this._bufferCanvas = this._bufferContext = null;
+        this._sprite = this._uiEvent = this._canvas =
+            // this._renderContext = this._bufferCanvas = this._bufferContext  = 
+            null;
     };
     Stage.prototype._startTimer = function () {
         var _this = this;
@@ -3097,10 +3158,23 @@ var TextLabel = (function (_super) {
         _this._fontWeight = 'normal';
         _this._fontStyle = 'normal';
         _this._autoResizeWidth = false;
-        _this._fragmentsPos = [];
         props && _this.setProps(props);
         return _this;
     }
+    Object.defineProperty(TextLabel.prototype, "fragmentsPos", {
+        get: function () {
+            return this._fragmentsPos;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "textLines", {
+        get: function () {
+            return this._textLines;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(TextLabel.prototype, "autoResizeWidth", {
         get: function () {
             return this._autoResizeWidth;
@@ -3314,9 +3388,11 @@ var TextLabel = (function (_super) {
         }
         var _a = this, textAlign = _a.textAlign, lineHeight = _a.lineHeight, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, width = _a.width;
         var y = -_originPixelY + lineHeight * 0.5;
-        this._fragmentsPos.length = 0;
+        // let y = lineHeight * 0.5;
+        this._fragmentsPos = [];
         this._textLines.forEach(function (line) {
             var x = -_originPixelX;
+            // let x = 0;
             if (textAlign === "center") {
                 x += (width - line.width) * 0.5;
             }
@@ -3351,7 +3427,7 @@ var TextLabel = (function (_super) {
         if (!this._textLines || this._textLines.length === 0) {
             return;
         }
-        var _a = this, textAlign = _a.textAlign, lineHeight = _a.lineHeight, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, width = _a.width;
+        // const { textAlign, lineHeight, _originPixelX, _originPixelY, width } = this;
         // let y = -_originPixelY + lineHeight * 0.5;
         var index = 0;
         context.save();
@@ -3408,11 +3484,24 @@ var BMFontLabel = (function (_super) {
         _this._textAlign = "center";
         _this._wordWrap = true;
         _this._text = "";
-        _this._lines = [];
         _this._autoResizeHeight = true;
         props && _this.setProps(props);
         return _this;
     }
+    Object.defineProperty(BMFontLabel.prototype, "fragmentsPos", {
+        get: function () {
+            return this._fragmentsPos;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BMFontLabel.prototype, "bmfontLines", {
+        get: function () {
+            return this._bmfontLines;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(BMFontLabel.prototype, "autoResizeHeight", {
         get: function () {
             return this._autoResizeHeight;
@@ -3420,8 +3509,8 @@ var BMFontLabel = (function (_super) {
         set: function (value) {
             if (this._autoResizeHeight !== value) {
                 this._autoResizeHeight = value;
-                if (value && this._lines && this._lines.length) {
-                    this.height = this._lines.length * this.lineHeight;
+                if (value && this._bmfontLines && this._bmfontLines.length) {
+                    this.height = this._bmfontLines.length * this.lineHeight;
                 }
             }
         },
@@ -3483,6 +3572,7 @@ var BMFontLabel = (function (_super) {
         set: function (value) {
             if (this._textAlign != value) {
                 this._textAlign = value;
+                this._updateFragmentsPos();
             }
         },
         enumerable: true,
@@ -3495,9 +3585,10 @@ var BMFontLabel = (function (_super) {
         set: function (value) {
             if (this._lineHeight != value) {
                 this._lineHeight = value;
-                if (this._autoResizeHeight && this._lines && this._lines.length) {
-                    this.height = this._lines.length * value;
+                if (this._autoResizeHeight && this._bmfontLines && this._bmfontLines.length) {
+                    this.height = this._bmfontLines.length * value;
                 }
+                this._updateFragmentsPos();
             }
         },
         enumerable: true,
@@ -3586,13 +3677,13 @@ var BMFontLabel = (function (_super) {
     BMFontLabel.prototype._reMeasureText = function () {
         var _this = this;
         if (!this.textureMap || !this._text || !this._isAllTexturesReady || this.width <= 0) {
-            this._lines.length = 0;
+            this._bmfontLines = null;
             return;
         }
-        var _a = this, _textureMap = _a._textureMap, text = _a.text, width = _a.width, lineHeight = _a.lineHeight, fontSize = _a.fontSize, wordWrap = _a.wordWrap, wordSpace = _a.wordSpace, _lines = _a._lines;
-        _lines.length = 0;
+        var _a = this, _textureMap = _a._textureMap, text = _a.text, width = _a.width, lineHeight = _a.lineHeight, fontSize = _a.fontSize, wordWrap = _a.wordWrap, wordSpace = _a.wordSpace;
+        var _bmfontLines = this._bmfontLines = [];
         var words = this._text.split('');
-        var currLine = _lines[0] = { width: 0, words: [] };
+        var currLine = _bmfontLines[0] = { width: 0, fragments: [] };
         words.forEach(function (word) {
             var texture;
             if (word === " ") {
@@ -3611,47 +3702,92 @@ var BMFontLabel = (function (_super) {
             }
             if (!wordWrap || currLine.width + fontSize <= width) {
                 currLine.width += fontSize;
-                currLine.words.push(texture);
+                currLine.fragments.push(texture);
                 if (currLine.width + wordSpace >= width) {
-                    currLine = _lines[_lines.length] = {
-                        width: 0, words: []
+                    currLine = _bmfontLines[_bmfontLines.length] = {
+                        width: 0, fragments: []
                     };
                 }
             }
             else {
-                currLine = _lines[_lines.length] = {
-                    width: fontSize, words: [texture]
+                currLine = _bmfontLines[_bmfontLines.length] = {
+                    width: fontSize, fragments: [texture]
                 };
             }
         });
         if (this._autoResizeHeight) {
-            this.height = _lines.length * lineHeight;
+            this.height = _bmfontLines.length * lineHeight;
         }
+        this._updateFragmentsPos();
     };
-    BMFontLabel.prototype.draw = function (context) {
-        _super.prototype.draw.call(this, context);
-        var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace, width = _a.width;
+    BMFontLabel.prototype._updateFragmentsPos = function () {
+        if (!this._bmfontLines) {
+            return;
+        }
+        var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, _bmfontLines = _a._bmfontLines, width = _a.width, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace;
+        var _fragmentsPos = this._fragmentsPos = [];
         var y = -_originPixelY;
-        this._lines.forEach(function (line, i) {
+        // let y = 0;
+        _bmfontLines.forEach(function (line, i) {
             var x;
             if (_textAlign === "right") {
                 x = width - line.width - _originPixelX;
+                // x = width - line.width;
             }
             else if (_textAlign == "center") {
                 x = (width - line.width) * 0.5 - _originPixelX;
+                // x = (width - line.width) * 0.5;
             }
             else {
                 x = -_originPixelX;
+                // x = 0;
             }
-            line.words.forEach(function (word, j) {
+            line.fragments.forEach(function (word, j) {
+                var ty = y;
+                var h = 0;
                 if (word) {
-                    var h = fontSize / word.width * word.height;
+                    h = fontSize / word.width * word.height;
                     var p = (lineHeight - h) * 0.5;
-                    context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
+                    ty = y + p;
                 }
+                _fragmentsPos.push({ x: x, y: ty, height: h });
                 x += fontSize + wordSpace;
             });
             y += lineHeight;
+        });
+    };
+    BMFontLabel.prototype.draw = function (context) {
+        _super.prototype.draw.call(this, context);
+        if (!this._bmfontLines) {
+            return;
+        }
+        var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace, width = _a.width;
+        // let y: number = -_originPixelY;
+        var _fragmentsPos = this._fragmentsPos;
+        var index = 0;
+        this._bmfontLines.forEach(function (line, i) {
+            // let x: number;
+            // if (_textAlign === "right") {
+            //     x = width - line.width - _originPixelX;
+            // }
+            // else if (_textAlign == "center") {
+            //     x = (width - line.width) * 0.5 - _originPixelX;
+            // }
+            // else {
+            //     x = -_originPixelX;
+            // }
+            line.fragments.forEach(function (word, j) {
+                if (word) {
+                    // let h = fontSize / word.width * word.height;
+                    // let p = (lineHeight - h) * 0.5;
+                    // context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
+                    var pos = _fragmentsPos[index];
+                    context.drawImage(word.source, 0, 0, word.width, word.height, pos.x, pos.y, fontSize, pos.height);
+                }
+                // x += fontSize + wordSpace;
+                index += 1;
+            });
+            // y += lineHeight;
         });
     };
     BMFontLabel.prototype.addChild = function (target) {
@@ -4264,11 +4400,14 @@ exports.uid = uid;
 exports.addArrayItem = addArrayItem;
 exports.removeArrayItem = removeArrayItem;
 exports.convertColor = convertColor;
+exports.hexToRgb = hexToRgb;
+exports.rgbToHex = rgbToHex;
 exports.SoundManager = SoundManager;
 exports.Sound = Sound;
 exports.HTMLAudio = HTMLAudio;
 exports.WebAudio = WebAudio;
 exports.RAD_PER_DEG = RAD_PER_DEG;
+exports.BlendModeStrings = BlendModeStrings;
 exports.Sprite = Sprite;
 exports.BMFontLabel = BMFontLabel;
 exports.TextLabel = TextLabel;

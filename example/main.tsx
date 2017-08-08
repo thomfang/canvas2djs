@@ -112,6 +112,7 @@ namespace demo {
     export var santaProps: canvas2d.SpriteProps = {
         alignX: canvas2d.AlignType.CENTER,
         alignY: canvas2d.AlignType.CENTER,
+        // texture: "img/Run_0.png",
         actions: [
             {
                 queue: [{
