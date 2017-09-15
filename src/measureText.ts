@@ -263,6 +263,8 @@ export function measureText(
         measuredCache = {};
         cacheCount = 0;
     }
+    measuredSize.width = Math.round(measuredSize.width);
+    measuredSize.height = Math.round(measuredSize.height);
     measuredCache[cacheKey] = measuredSize;
     cacheCount += 1;
     return measuredSize;

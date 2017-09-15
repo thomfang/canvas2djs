@@ -3,7 +3,7 @@ import { Texture } from '../Texture';
 import { uid, convertColor } from '../Util';
 import { TextFragment } from '../measureText';
 
-export class CanvasFrameBuffer {
+export class CanvasRenderTarget {
     protected options: CanvasFrameBufferOptions;
     protected context: CanvasRenderingContext2D;
     protected isIdle: boolean;
@@ -51,7 +51,16 @@ export class CanvasFrameBuffer {
             if (key === 'bgColor' || key === 'borderColor' || key === 'fontColor' || key === 'strokeColor') {
                 value = convertColor(value);
             }
-            if (this.options[key] != value) {
+            if (key === 'texture') {
+                let texture = value as Texture;
+                if (this.options.texture != texture) {
+                    if (!texture || texture.ready) {
+                        this.options.texture = texture;
+                        needUpdate = true;
+                    }
+                }
+            }
+            else if (this.options[key] != value) {
                 this.options[key] = value;
                 needUpdate = true;
             }
@@ -71,29 +80,31 @@ export class CanvasFrameBuffer {
             (bgColor == null && borderColor == null && texture == null && textLines == null && bmfontLines == null)) {
             return this.hasSomethingToDraw = false;
         }
-        if (!this.source) {
-            this.createCanvas();
-        }
 
-        let { source, context } = this;
         let canvasWidth: number;
         let canvasHeight: number;
         if (radius > 0) {
-            // source.width = source.height = radius * 2;
-            canvasWidth = canvasHeight = radius * 2;
+            canvasWidth = canvasHeight = Math.ceil(radius * 2);
         }
         else {
-            // source.width = width;
-            // source.height = height;
-            canvasWidth = width;
-            canvasHeight = height;
+            canvasWidth = Math.ceil(width);
+            canvasHeight = Math.ceil(height);
         }
+        if (canvasWidth === 0 || canvasHeight === 0) {
+            this.hasSomethingToDraw = false;
+            return;
+        }
+        
+        if (!this.source) {
+            this.createCanvas();
+        }
+        let { source, context } = this;
         if (source.width != canvasWidth || source.height !== canvasHeight) {
             source.width = canvasWidth;
             source.height = canvasHeight;
         }
         else {
-            context.clearRect(0, 0, width, height);
+            context.clearRect(0, 0, source.width, source.height);
         }
 
         context.save();
@@ -148,8 +159,8 @@ export class CanvasFrameBuffer {
         let context = this.context;
         let { borderWidth, sourceX, sourceY, sourceWidth, sourceHeight, grid, texture, width, height } = this.options;
         if (texture && texture.ready && texture.width !== 0 && texture.height !== 0) {
-            sourceWidth = sourceWidth == null ? width : sourceWidth;
-            sourceHeight = sourceHeight == null ? height : sourceHeight;
+            sourceWidth = sourceWidth == null ? texture.width : sourceWidth;
+            sourceHeight = sourceHeight == null ? texture.height : sourceHeight;
 
             if (!Array.isArray(grid)) {
                 context.drawImage(texture.source, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
@@ -185,7 +196,7 @@ export class CanvasFrameBuffer {
 
                         if (_strokeColor != null) {
                             context.strokeStyle = convertColor(_strokeColor || 0x000);
-                            context.lineWidth = (_strokeWidth || 1) * 2;
+                            context.lineWidth = _strokeWidth || 1;
                             context.strokeText(fragment.text, pos.x, pos.y);
                         }
                         context.fillText(fragment.text, pos.x, pos.y);
@@ -220,25 +231,25 @@ export class CanvasFrameBuffer {
         this.context = this.source.getContext('2d');
     }
 
-    protected static instanceMap: { [id: number]: CanvasFrameBuffer } = {};
-    protected static instanceList: CanvasFrameBuffer[] = [];
+    protected static instanceMap: { [id: number]: CanvasRenderTarget } = {};
+    protected static instanceList: CanvasRenderTarget[] = [];
 
     public static create(id: number) {
-        let spriteTexture = this.instanceMap[id];
-        if (!spriteTexture) {
-            for (let i = 0; spriteTexture = this.instanceList[i]; i++) {
-                if (spriteTexture.isIdle) {
+        let renderTarget = this.instanceMap[id];
+        if (!renderTarget) {
+            for (let i = 0; renderTarget = this.instanceList[i]; i++) {
+                if (renderTarget.isIdle) {
                     break;
                 }
             }
-            if (!spriteTexture) {
-                spriteTexture = new this();
-                this.instanceList.push(spriteTexture);
+            if (!renderTarget) {
+                renderTarget = new this();
+                this.instanceList.push(renderTarget);
             }
-            spriteTexture.init();
-            this.instanceMap[id] = spriteTexture;
+            renderTarget.init();
+            this.instanceMap[id] = renderTarget;
         }
-        return spriteTexture;
+        return renderTarget;
     }
 
     public static remove(id: number) {

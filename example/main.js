@@ -158,6 +158,7 @@ var demo;
             sprites,
             canvas2d.createSprite("sprite", __assign({ ref: function (e) { return demo.btn = e; }, onClick: santaJump }, jumpBtnProps),
                 canvas2d.createSprite("text", __assign({}, jumpBtnLabelProps), "Jump!")),
+            canvas2d.createSprite("sprite", { touchEnabled: false, left: 10, right: 10, top: 10, bottom: 10, grid: [20, 20, 20, 20], texture: "img/roundrect-bg.png" }),
             canvas2d.createSprite("text", __assign({}, titleProps)),
             canvas2d.createSprite("text", __assign({}, stateProps, { update: function () {
                     stateLabel.textFlow = [{ text: "FPS:" + demo.stage.currFPS + "\nRender:" + demo.stage.renderCostTime + "\nCompute:" + demo.stage.computeCostTime + "\nAction:" + canvas2d.Action.scheduleCostTime }];

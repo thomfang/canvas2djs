@@ -28,6 +28,7 @@ export type VisibleRect = {
 
 export class Stage extends EventEmitter {
     // private _renderer: CanvasRenderer | WebGLRenderer;
+    // private _renderer: CanvasRenderer;
 
     private _elapsedTime: number = 0;
     private _frameCount: number = 0;
@@ -221,8 +222,6 @@ export class Stage extends EventEmitter {
             this.adjustCanvasSize();
         }
 
-        // this._sprite.x = width * 0.5;
-        // this._sprite.y = height * 0.5;
         this._sprite.width = width;
         this._sprite.height = height;
     }
@@ -235,14 +234,15 @@ export class Stage extends EventEmitter {
         var visibleRect = this._visibleRect;
         var orientation = this._orientation;
 
-        if (!canvas || !canvas.parentNode) {
+        if (!canvas || !canvas.parentElement) {
             return;
         }
 
+        var parentElement = canvas.parentElement;
         var style = canvas.style;
         var container = {
-            width: canvas.parentElement.offsetWidth,
-            height: canvas.parentElement.offsetHeight
+            width: parentElement.clientWidth || parentElement.offsetWidth,
+            height: parentElement.clientHeight || parentElement.offsetHeight
         };
         var isPortrait = container.width < container.height;
 
@@ -318,10 +318,6 @@ export class Stage extends EventEmitter {
         visibleRect.bottom = stageHeight - deltaHeight;
 
         if (orientation !== Orientation.PORTRAIT && isPortrait) {
-            // style.top = ((container.width - width) * 0.5) + 'px';
-            // style.left = ((container.height - height) * 0.5) + 'px';
-            // style.transformOrigin = style['webkitTransformOrigin'] = '0 0 0';
-            // style.transform = style['webkitTransform'] = `translateX(${height}px) rotate(90deg)`;
             let rotate = orientation === Orientation.LANDSCAPE2 ? -90 : 90;
             style.top = '50%';
             style.left = '50%';
@@ -389,7 +385,7 @@ export class Stage extends EventEmitter {
 
         var startRenderTime = Date.now();
 
-        // this._renderer.draw(this._sprite);
+        // this._renderer.render(this._sprite);
 
         var { width, height } = this._canvas;
 

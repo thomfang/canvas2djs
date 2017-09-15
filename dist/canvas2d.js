@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.5.2
+ * canvas2djs v2.5.3
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -310,9 +310,6 @@ var Tween = {
     }
 };
 
-var cache = {};
-var loaded = {};
-var loading = {};
 /**
  * Sprite texture
  */
@@ -328,8 +325,8 @@ var Texture = (function () {
         this.width = 0;
         this.height = 0;
         var name = getCacheKey(source, sourceRect, textureRect);
-        if (cache[name]) {
-            return cache[name];
+        if (Texture.textureCache[name]) {
+            return Texture.textureCache[name];
         }
         if (typeof source === 'string') {
             this._createByPath(source, sourceRect, textureRect);
@@ -341,38 +338,38 @@ var Texture = (function () {
             throw new Error("Invalid texture source");
         }
         if (name) {
-            cache[name] = this;
+            Texture.textureCache[name] = this;
         }
     }
     Texture.create = function (source, sourceRect, textureRect) {
         var name = getCacheKey(source, sourceRect, textureRect);
-        if (name && cache[name]) {
-            return cache[name];
+        if (name && this.textureCache[name]) {
+            return this.textureCache[name];
         }
         return new Texture(source, sourceRect, textureRect);
     };
     Texture.getByName = function (name) {
-        return cache[name];
+        return this.textureCache[name];
     };
     /**
      * 缓存Texture实例
      */
     Texture.cacheAs = function (name, texture) {
-        cache[name] = texture;
+        this.textureCache[name] = texture;
     };
     /**
      * 清除缓存
      */
     Texture.clearCache = function (name) {
         if (name != null) {
-            var texture = cache[name];
+            var texture = this.textureCache[name];
             if (texture) {
                 texture.clearCacheGridSources();
             }
-            delete cache[name];
+            delete this.textureCache[name];
         }
         else {
-            cache = {};
+            this.textureCache = {};
         }
     };
     Texture.prototype.onReady = function (callback) {
@@ -385,6 +382,8 @@ var Texture = (function () {
     };
     Texture.prototype.createGridSource = function (w, h, sx, sy, sw, sh, grid) {
         var _this = this;
+        w = Math.ceil(w);
+        h = Math.ceil(h);
         var cacheKey = getGridCacheKey(w, h, sx, sy, sw, sh, grid);
         if (this._gridSourceCache[cacheKey]) {
             return this._gridSourceCache[cacheKey];
@@ -411,18 +410,13 @@ var Texture = (function () {
             }
         });
         if (repeat) {
-            var cvs = createCanvas(this.source, {
+            var cvs_1 = getRepeatPatternSource(this.source, {
                 x: centerGrid.sx,
                 y: centerGrid.sy,
                 width: centerGrid.sw,
-                height: centerGrid.sh
-            }, {
-                x: 0,
-                y: 0,
-                width: centerGrid.sw,
-                height: centerGrid.sh
-            });
-            var pattern = context.createPattern(cvs, "repeat");
+                height: centerGrid.sh,
+            }, centerGrid.sw, centerGrid.sh);
+            var pattern = context.createPattern(cvs_1, "repeat");
             context.fillStyle = pattern;
             context.fillRect(Math.ceil(centerGrid.x), Math.ceil(centerGrid.y), Math.ceil(centerGrid.w), Math.ceil(centerGrid.h));
         }
@@ -439,50 +433,61 @@ var Texture = (function () {
     };
     Texture.prototype._createByPath = function (path, sourceRect, textureRect) {
         var _this = this;
-        var img = new Image();
-        img.onload = function () {
-            _this._createByImage(img, sourceRect, textureRect);
-            // if (!loaded[path]) {
-            //     console.log(`canvas2d: "${path}" loaded.`);
-            // }
-            loaded[path] = true;
-            if (_this._readyCallbacks.length) {
-                var size_1 = { width: _this.width, height: _this.height };
-                _this._readyCallbacks.forEach(function (callback) {
-                    callback(size_1);
-                });
-                _this._readyCallbacks.length = 0;
-            }
-            img = null;
-        };
-        img.onerror = function () {
+        if (Texture.loadedImages[path]) {
+            return this._onImageLoaded(img, path, sourceRect, textureRect);
+        }
+        var img = Texture.loadingImages[path] || new Image();
+        img.addEventListener('load', function () {
+            _this._onImageLoaded(img, path, sourceRect, textureRect);
+        });
+        img.addEventListener('error', function () {
+            delete Texture.loadingImages[path];
             img = null;
             console.warn("canvas2d: Texture creating fail, error loading source \"" + path + "\".");
-        };
-        // if (!loading[path]) {
-        //     console.log(`canvas2d: Start to load: "${path}".`);
-        // }
-        img.src = path;
-        loading[path] = true;
+        });
+        if (!Texture.loadingImages[path]) {
+            img.crossOrigin = 'anonymous';
+            img.src = path;
+            Texture.loadingImages[path] = img;
+        }
+    };
+    Texture.prototype._onImageLoaded = function (img, path, sourceRect, textureRect) {
+        this._createByImage(img, sourceRect, textureRect);
+        Texture.loadedImages[path] = img;
+        delete Texture.loadingImages[path];
+        if (this._readyCallbacks.length) {
+            var size_1 = { width: this.width, height: this.height };
+            this._readyCallbacks.forEach(function (callback) {
+                callback(size_1);
+            });
+            this._readyCallbacks.length = 0;
+        }
+        img = null;
     };
     Texture.prototype._createByImage = function (image, sourceRect, textureRect) {
-        if (!sourceRect) {
-            sourceRect = {
-                x: 0,
-                y: 0,
-                width: image.width,
-                height: image.height
-            };
+        var source;
+        if (!sourceRect && !textureRect) {
+            source = image;
         }
-        if (!textureRect) {
-            textureRect = {
-                x: 0,
-                y: 0,
-                width: sourceRect.width,
-                height: sourceRect.height,
-            };
+        else {
+            if (!sourceRect) {
+                sourceRect = {
+                    x: 0,
+                    y: 0,
+                    width: image.width,
+                    height: image.height
+                };
+            }
+            if (!textureRect) {
+                textureRect = {
+                    x: 0,
+                    y: 0,
+                    width: sourceRect.width,
+                    height: sourceRect.height,
+                };
+            }
+            source = createCanvas(image, sourceRect, textureRect);
         }
-        var source = createCanvas(image, sourceRect, textureRect);
         this.width = source.width;
         this.height = source.height;
         this.source = source;
@@ -490,6 +495,9 @@ var Texture = (function () {
     };
     return Texture;
 }());
+Texture.textureCache = {};
+Texture.loadingImages = {};
+Texture.loadedImages = {};
 function getGridCacheKey() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
@@ -514,6 +522,18 @@ function createCanvas(image, sourceRect, textureRect) {
     canvas.height = textureRect.height;
     context.drawImage(image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
     return canvas;
+}
+var cvs;
+var ctx;
+function getRepeatPatternSource(source, sourceRect, canvasWidth, canvasHeight) {
+    if (!cvs) {
+        cvs = document.createElement("canvas");
+        ctx = cvs.getContext("2d");
+    }
+    cvs.width = canvasWidth;
+    cvs.height = canvasHeight;
+    ctx.drawImage(source, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, 0, 0, sourceRect.width, sourceRect.height);
+    return cvs;
 }
 
 /*! *****************************************************************************
@@ -2551,6 +2571,7 @@ var Stage = (function (_super) {
         if (orientation === void 0) { orientation = exports.Orientation.PORTRAIT; }
         var _this = _super.call(this) || this;
         // private _renderer: CanvasRenderer | WebGLRenderer;
+        // private _renderer: CanvasRenderer;
         _this._elapsedTime = 0;
         _this._frameCount = 0;
         _this._computeCostTime = 0;
@@ -2567,13 +2588,14 @@ var Stage = (function (_super) {
             var scaleMode = _this._scaleMode;
             var visibleRect = _this._visibleRect;
             var orientation = _this._orientation;
-            if (!canvas || !canvas.parentNode) {
+            if (!canvas || !canvas.parentElement) {
                 return;
             }
+            var parentElement = canvas.parentElement;
             var style = canvas.style;
             var container = {
-                width: canvas.parentElement.offsetWidth,
-                height: canvas.parentElement.offsetHeight
+                width: parentElement.clientWidth || parentElement.offsetWidth,
+                height: parentElement.clientHeight || parentElement.offsetHeight
             };
             var isPortrait = container.width < container.height;
             if (orientation !== exports.Orientation.PORTRAIT && isPortrait) {
@@ -2642,10 +2664,6 @@ var Stage = (function (_super) {
             visibleRect.top = deltaHeight;
             visibleRect.bottom = stageHeight - deltaHeight;
             if (orientation !== exports.Orientation.PORTRAIT && isPortrait) {
-                // style.top = ((container.width - width) * 0.5) + 'px';
-                // style.left = ((container.height - height) * 0.5) + 'px';
-                // style.transformOrigin = style['webkitTransformOrigin'] = '0 0 0';
-                // style.transform = style['webkitTransform'] = `translateX(${height}px) rotate(90deg)`;
                 var rotate = orientation === exports.Orientation.LANDSCAPE2 ? -90 : 90;
                 style.top = '50%';
                 style.left = '50%';
@@ -2844,8 +2862,6 @@ var Stage = (function (_super) {
         if (this._autoAdjustCanvasSize) {
             this.adjustCanvasSize();
         }
-        // this._sprite.x = width * 0.5;
-        // this._sprite.y = height * 0.5;
         this._sprite.width = width;
         this._sprite.height = height;
     };
@@ -2888,7 +2904,7 @@ var Stage = (function (_super) {
             return;
         }
         var startRenderTime = Date.now();
-        // this._renderer.draw(this._sprite);
+        // this._renderer.render(this._sprite);
         var _a = this._canvas, width = _a.width, height = _a.height;
         this._bufferContext.clearRect(0, 0, width, height);
         this._sprite._visit(this._bufferContext);
@@ -2946,7 +2962,7 @@ var Stage = (function (_super) {
 }(EventEmitter));
 
 var canvas = document.createElement('canvas');
-var ctx = canvas.getContext('2d');
+var ctx$1 = canvas.getContext('2d');
 var measuredCache = {};
 var measuredWidthCache = {};
 var cacheCount = 0;
@@ -2958,8 +2974,8 @@ function measureTextWidth(text, fontName, fontSize, fontWeight, fontStyle) {
     if (measuredWidthCache[key] != null) {
         return measuredWidthCache[key];
     }
-    ctx.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
-    var width = ctx.measureText(text).width;
+    ctx$1.font = fontStyle + ' ' + fontWeight + ' ' + fontSize + 'px ' + fontName;
+    var width = ctx$1.measureText(text).width;
     measuredWidthCache[key] = width;
     return width;
 }
@@ -2984,9 +3000,9 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
             fontStyle: fontStyle,
             fontName: fontName,
             fontWeight: fontWeight }, flow);
-        ctx.font = props.fontStyle + ' ' + props.fontWeight + ' ' + props.fontSize + 'px ' + props.fontName;
+        ctx$1.font = props.fontStyle + ' ' + props.fontWeight + ' ' + props.fontSize + 'px ' + props.fontName;
         if (!wordWrap) {
-            textMetrics = ctx.measureText(text);
+            textMetrics = ctx$1.measureText(text);
             lineFragments.push(__assign({}, props, { text: text, width: textMetrics.width }));
             lineWidth += textMetrics.width;
             return;
@@ -3000,7 +3016,7 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
             var breaker = nextBreak(text, currentPos, remainWidth, props.fontSize, autoResizeWidth);
             if (breaker.words) {
                 tryLine = currentLine + breaker.words;
-                textMetrics = ctx.measureText(tryLine);
+                textMetrics = ctx$1.measureText(tryLine);
                 if (autoResizeWidth && !breaker.required) {
                     currentLine = tryLine;
                     lastMeasuredWidth = textMetrics.width;
@@ -3034,7 +3050,7 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
                     lineFragments = [];
                     lineWidth = 0;
                     currentLine = breaker.words;
-                    lastMeasuredWidth = ctx.measureText(currentLine.trim()).width;
+                    lastMeasuredWidth = ctx$1.measureText(currentLine.trim()).width;
                     remainWidth = width - lastMeasuredWidth;
                     if (breaker.required) {
                         measuredSize.lines.push({
@@ -3110,6 +3126,8 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
         measuredCache = {};
         cacheCount = 0;
     }
+    measuredSize.width = Math.round(measuredSize.width);
+    measuredSize.height = Math.round(measuredSize.height);
     measuredCache[cacheKey] = measuredSize;
     cacheCount += 1;
     return measuredSize;

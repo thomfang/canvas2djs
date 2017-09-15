@@ -23,13 +23,27 @@ export declare class BMFontLabel extends Sprite<IBMFontLabel> {
     protected _textureMap: {
         [word: string]: Texture;
     };
-    protected _lines: {
+    protected _bmfontLines: {
         width: number;
-        words: Texture[];
+        fragments: Texture[];
+    }[];
+    protected _fragmentsPos: {
+        x: number;
+        y: number;
+        height: number;
     }[];
     protected _autoResizeHeight: boolean;
     protected _isAllTexturesReady: boolean;
     constructor(props?: IBMFontLabel);
+    readonly fragmentsPos: {
+        x: number;
+        y: number;
+        height: number;
+    }[];
+    readonly bmfontLines: {
+        width: number;
+        fragments: Texture[];
+    }[];
     autoResizeHeight: boolean;
     text: string;
     textureMap: {
@@ -43,6 +57,7 @@ export declare class BMFontLabel extends Sprite<IBMFontLabel> {
     width: number;
     height: number;
     protected _reMeasureText(): void;
+    protected _updateFragmentsPos(): void;
     protected draw(context: CanvasRenderingContext2D): void;
     addChild(target: any): void;
     addChildren(...children: any[]): void;

@@ -25,6 +25,9 @@ export declare enum BlendMode {
     COPY = 9,
     XOR = 10,
 }
+export declare const BlendModeStrings: {
+    [x: number]: string;
+};
 export declare class Sprite<T extends ISprite> extends EventEmitter {
     protected _props: T & SpriteProps;
     protected _width: number;
@@ -32,7 +35,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     protected _originX: number;
     protected _originY: number;
     protected _rotation: number;
-    protected _rotationRad: number;
+    protected _rotationInRadians: number;
     protected _texture: Texture;
     protected _alignX: AlignType;
     protected _alignY: AlignType;
@@ -80,6 +83,9 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     constructor(props?: T & SpriteProps);
     protected _init(props?: T & SpriteProps): void;
     setProps(props: T & SpriteProps): void;
+    readonly rotationInRadians: number;
+    readonly originPixelX: number;
+    readonly originPixelY: number;
     width: number;
     height: number;
     originX: number;
@@ -99,7 +105,6 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     alignY: AlignType;
     protected _onChildResize(): void;
     protected _update(deltaTime: number): void;
-    protected _visit(context: CanvasRenderingContext2D): void;
     protected _reLayoutChildrenOnWidthChanged(): void;
     protected _reLayoutChildrenOnHeightChanged(): void;
     protected _resizeWidth(): void;
@@ -108,6 +113,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     protected _reCalcY(): void;
     protected _adjustAlignX(): boolean;
     protected _adjustAlignY(): boolean;
+    protected _visit(context: CanvasRenderingContext2D): void;
     protected _visitChildren(context: CanvasRenderingContext2D): void;
     protected _clip(context: CanvasRenderingContext2D): void;
     protected _drawBgColor(context: CanvasRenderingContext2D): void;

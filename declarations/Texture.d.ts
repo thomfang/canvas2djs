@@ -8,16 +8,12 @@ export declare type Rect = {
  * Sprite texture
  */
 export declare class Texture {
+    private static textureCache;
+    private static loadingImages;
+    private static loadedImages;
     private _readyCallbacks;
     private _gridSourceCache;
     private _gridSourceCount;
-    /**
-     * Texture resource loading state
-     */
-    ready: boolean;
-    width: number;
-    height: number;
-    source: HTMLCanvasElement;
     static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture;
     static getByName(name: string): Texture;
     /**
@@ -28,6 +24,13 @@ export declare class Texture {
      * 清除缓存
      */
     static clearCache(name?: string): void;
+    /**
+     * Texture resource loading state
+     */
+    ready: boolean;
+    width: number;
+    height: number;
+    source: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement;
     constructor(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect);
     onReady(callback: (size: {
         width: number;
@@ -36,5 +39,6 @@ export declare class Texture {
     createGridSource(w: number, h: number, sx: number, sy: number, sw: number, sh: number, grid: number[]): HTMLCanvasElement;
     clearCacheGridSources(): void;
     private _createByPath(path, sourceRect?, textureRect?);
+    private _onImageLoaded(img, path, sourceRect, textureRect);
     private _createByImage(image, sourceRect?, textureRect?);
 }

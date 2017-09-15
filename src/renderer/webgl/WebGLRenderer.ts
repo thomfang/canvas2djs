@@ -5,7 +5,7 @@ import { VertexData } from './VertexData';
 import { TransformData } from './TransformData';
 import { Matrix3 } from "./Matrix3";
 import { WebGLUtil } from "./WebGLUtil";
-import { CanvasFrameBuffer } from '../../framebuffer/CanvasFrameBuffer';
+import { CanvasRenderTarget } from '../../rendertarget/CanvasRenderTarget';
 
 export class WebGLRenderer {
     private textureManager: WebGLTextureManager;
@@ -111,7 +111,7 @@ export class WebGLRenderer {
         }
     }
 
-    drawTexture(sprite: Sprite<{}>, canvasFrameBuffer: CanvasFrameBuffer, x: number, y: number, alpha: number, hasUpdated: boolean) {
+    drawTexture(sprite: Sprite<{}>, canvasFrameBuffer: CanvasRenderTarget, x: number, y: number, alpha: number, hasUpdated: boolean) {
         var gl = this.gl;
         var vertexData = VertexData.getVertexData(sprite.id);
 

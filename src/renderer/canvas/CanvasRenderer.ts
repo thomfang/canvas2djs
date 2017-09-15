@@ -21,7 +21,7 @@ export class CanvasRenderer {
         this.size = { width, height };
     }
 
-    draw(sprite: Sprite<{}>) {
+    render(sprite: Sprite<{}>) {
         let { width, height } = this.size;
 
         this.bufferContext.clearRect(0, 0, width, height);
@@ -29,10 +29,6 @@ export class CanvasRenderer {
 
         this.context.clearRect(0, 0, width, height);
         this.context.drawImage(this.bufferCanvas, 0, 0, width, height);
-    }
-
-    removeData(sprite: Sprite<{}>) {
-        
     }
 
     private drawSprite(sprite: Sprite<{}>) {
@@ -85,13 +81,13 @@ export class CanvasRenderer {
 
     private drawOnCanvas(sprite: Sprite<{}>): void {
         // let context = this.bufferContext;
-        // let canvasFrameBuffer = sprite.canvasFrameBuffer;
+        // let renderTarget = sprite.renderTarget;
         // this.clip(sprite);
 
-        // if (canvasFrameBuffer) {
-        //     canvasFrameBuffer.update(sprite);
-        //     if (canvasFrameBuffer.hasSomethingToDraw) {
-        //         context.drawImage(canvasFrameBuffer.source, -sprite.originPixelX, -sprite.originPixelY, sprite.width, sprite.height);
+        // if (renderTarget) {
+        //     renderTarget.update(sprite);
+        //     if (renderTarget.hasSomethingToDraw && renderTarget.source && renderTarget.source.width !== 0 && renderTarget.source.height !== 0) {
+        //         context.drawImage(renderTarget.source, -sprite.originPixelX, -sprite.originPixelY, sprite.width, sprite.height);
         //     }
         // }
     }
