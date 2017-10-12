@@ -1,7 +1,5 @@
 import { uid, addArrayItem, removeArrayItem } from './Util';
 
-var counter = 0;
-
 export type EventListener = (...args: any[]) => any;
 
 export class EventEmitter {
@@ -24,8 +22,10 @@ export class EventEmitter {
             EventEmitter._eventCache[id][type] = [];
         }
         let events = EventEmitter._eventCache[id][type];
-        if (events.some(ev => ev.listener === listener && !ev.once)) {
-            return this;
+        for (let i = 0, ev; ev = events[i]; i++) {
+            if (ev.listener === listener && !ev.once) {
+                return this;
+            }
         }
         events.push({ listener });
         return this;
@@ -44,8 +44,10 @@ export class EventEmitter {
             EventEmitter._eventCache[id][type] = [];
         }
         let events = EventEmitter._eventCache[id][type];
-        if (events.some(ev => ev.listener === listener && ev.once)) {
-            return this;
+        for (let i = 0, ev; ev = events[i]; i++) {
+            if (ev.listener === listener && ev.once) {
+                return this;
+            }
         }
         events.push({ listener, once: true });
         return this;
@@ -56,11 +58,13 @@ export class EventEmitter {
 
         if (cache && cache[type]) {
             let events = cache[type];
-            events.slice().forEach((ev, index) => {
-                if (ev.listener === listener) { 
+            let temp = events.slice();
+            for (let i = 0, l = temp.length; i < l; i++) {
+                let ev = temp[i];
+                if (ev.listener === listener) {
                     removeArrayItem(events, ev);
                 }
-            });
+            }
             if (!events.length) {
                 delete cache[type];
             }
@@ -74,7 +78,7 @@ export class EventEmitter {
 
         if (cache) {
             if (type == null) {
-                EventEmitter[id] = null;
+                EventEmitter._eventCache[id] = null;
             }
             else {
                 delete cache[type];
@@ -89,12 +93,16 @@ export class EventEmitter {
 
         if (cache && cache[type]) {
             let events = cache[type];
-            events.slice().forEach(ev => {
-                ev.listener.apply(this, args);
-                if (ev.once) {
-                    removeArrayItem(events, ev);
+            let temp = events.slice();
+            for (let i = 0, l = temp.length; i < l; i++) {
+                let ev = temp[i];
+                if (ev) {
+                    ev.listener.apply(this, args);
+                    if (ev.once) {
+                        removeArrayItem(events, ev);
+                    }
                 }
-            });
+            }
         }
         return this;
     }

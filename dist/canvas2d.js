@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.5.3
+ * canvas2djs v2.5.4
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1207,8 +1207,10 @@ var EventEmitter = (function () {
             EventEmitter._eventCache[id][type] = [];
         }
         var events = EventEmitter._eventCache[id][type];
-        if (events.some(function (ev) { return ev.listener === listener && !ev.once; })) {
-            return this;
+        for (var i = 0, ev = void 0; ev = events[i]; i++) {
+            if (ev.listener === listener && !ev.once) {
+                return this;
+            }
         }
         events.push({ listener: listener });
         return this;
@@ -1225,8 +1227,10 @@ var EventEmitter = (function () {
             EventEmitter._eventCache[id][type] = [];
         }
         var events = EventEmitter._eventCache[id][type];
-        if (events.some(function (ev) { return ev.listener === listener && ev.once; })) {
-            return this;
+        for (var i = 0, ev = void 0; ev = events[i]; i++) {
+            if (ev.listener === listener && ev.once) {
+                return this;
+            }
         }
         events.push({ listener: listener, once: true });
         return this;
@@ -1234,13 +1238,15 @@ var EventEmitter = (function () {
     EventEmitter.prototype.removeListener = function (type, listener) {
         var cache = EventEmitter._eventCache[uid(this)];
         if (cache && cache[type]) {
-            var events_1 = cache[type];
-            events_1.slice().forEach(function (ev, index) {
+            var events = cache[type];
+            var temp = events.slice();
+            for (var i = 0, l = temp.length; i < l; i++) {
+                var ev = temp[i];
                 if (ev.listener === listener) {
-                    removeArrayItem(events_1, ev);
+                    removeArrayItem(events, ev);
                 }
-            });
-            if (!events_1.length) {
+            }
+            if (!events.length) {
                 delete cache[type];
             }
         }
@@ -1251,7 +1257,7 @@ var EventEmitter = (function () {
         var cache = EventEmitter._eventCache[id];
         if (cache) {
             if (type == null) {
-                EventEmitter[id] = null;
+                EventEmitter._eventCache[id] = null;
             }
             else {
                 delete cache[type];
@@ -1260,7 +1266,6 @@ var EventEmitter = (function () {
         return this;
     };
     EventEmitter.prototype.emit = function (type) {
-        var _this = this;
         var args = [];
         for (var _i = 1; _i < arguments.length; _i++) {
             args[_i - 1] = arguments[_i];
@@ -1268,13 +1273,17 @@ var EventEmitter = (function () {
         var id = uid(this);
         var cache = EventEmitter._eventCache[id];
         if (cache && cache[type]) {
-            var events_2 = cache[type];
-            events_2.slice().forEach(function (ev) {
-                ev.listener.apply(_this, args);
-                if (ev.once) {
-                    removeArrayItem(events_2, ev);
+            var events = cache[type];
+            var temp = events.slice();
+            for (var i = 0, l = temp.length; i < l; i++) {
+                var ev = temp[i];
+                if (ev) {
+                    ev.listener.apply(this, args);
+                    if (ev.once) {
+                        removeArrayItem(events, ev);
+                    }
                 }
-            });
+            }
         }
         return this;
     };
