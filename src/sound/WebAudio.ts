@@ -123,11 +123,11 @@ export class WebAudio extends EventEmitter {
 
         if (this._isLoading) {
             cloned._isLoading = true;
-            let onLoad = () => {
+            let onLoadEnded = () => {
                 cloned._onDecodeCompleted(this._buffer);
-                this.removeListener("load", onload);
+                this.removeListener("load", onLoadEnded);
             };
-            this.on('load', onload);
+            this.on('load', onLoadEnded);
         }
         else if (this.loaded) {
             cloned._onDecodeCompleted(this._buffer);

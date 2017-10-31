@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.5.4
+ * canvas2djs v2.5.5
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -1199,6 +1199,9 @@ var EventEmitter = (function () {
     function EventEmitter() {
     }
     EventEmitter.prototype.addListener = function (type, listener) {
+        if (typeof listener !== 'function') {
+            return this;
+        }
         var id = uid(this);
         if (!EventEmitter._eventCache[id]) {
             EventEmitter._eventCache[id] = {};
@@ -1219,6 +1222,9 @@ var EventEmitter = (function () {
         return this.addListener(type, listener);
     };
     EventEmitter.prototype.once = function (type, listener) {
+        if (typeof listener !== 'function') {
+            return this;
+        }
         var id = uid(this);
         if (!EventEmitter._eventCache[id]) {
             EventEmitter._eventCache[id] = {};
@@ -1278,7 +1284,9 @@ var EventEmitter = (function () {
             for (var i = 0, l = temp.length; i < l; i++) {
                 var ev = temp[i];
                 if (ev) {
-                    ev.listener.apply(this, args);
+                    if (typeof ev.listener === 'function') {
+                        ev.listener.apply(this, args);
+                    }
                     if (ev.once) {
                         removeArrayItem(events, ev);
                     }
@@ -2676,7 +2684,7 @@ var Stage = (function (_super) {
                 var rotate = orientation === exports.Orientation.LANDSCAPE2 ? -90 : 90;
                 style.top = '50%';
                 style.left = '50%';
-                style.transform = style['webkitTransform'] = "translate(-50%, -50%) rotate(" + rotate + "deg)";
+                style.transform = style.webkitTransform = "translate(-50%, -50%) rotate(" + rotate + "deg)";
             }
             else {
                 style.transform = '';
@@ -4134,11 +4142,11 @@ var WebAudio = (function (_super) {
         var cloned = new WebAudio(this.src);
         if (this._isLoading) {
             cloned._isLoading = true;
-            var onLoad = function () {
+            var onLoadEnded_1 = function () {
                 cloned._onDecodeCompleted(_this._buffer);
-                _this.removeListener("load", onload);
+                _this.removeListener("load", onLoadEnded_1);
             };
-            this.on('load', onload);
+            this.on('load', onLoadEnded_1);
         }
         else if (this.loaded) {
             cloned._onDecodeCompleted(this._buffer);

@@ -14,6 +14,9 @@ export class EventEmitter {
     } = {};
 
     addListener(type: string, listener: EventListener) {
+        if (typeof listener !== 'function') {
+            return this;
+        }
         let id = uid(this);
         if (!EventEmitter._eventCache[id]) {
             EventEmitter._eventCache[id] = {};
@@ -36,6 +39,9 @@ export class EventEmitter {
     }
 
     once(type: string, listener: EventListener) {
+        if (typeof listener !== 'function') {
+            return this;
+        }
         let id = uid(this);
         if (!EventEmitter._eventCache[id]) {
             EventEmitter._eventCache[id] = {};
@@ -97,7 +103,9 @@ export class EventEmitter {
             for (let i = 0, l = temp.length; i < l; i++) {
                 let ev = temp[i];
                 if (ev) {
-                    ev.listener.apply(this, args);
+                    if (typeof ev.listener === 'function') {
+                        ev.listener.apply(this, args);
+                    }
                     if (ev.once) {
                         removeArrayItem(events, ev);
                     }

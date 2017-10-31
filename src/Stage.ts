@@ -321,7 +321,7 @@ export class Stage extends EventEmitter {
             let rotate = orientation === Orientation.LANDSCAPE2 ? -90 : 90;
             style.top = '50%';
             style.left = '50%';
-            style.transform = style['webkitTransform'] = `translate(-50%, -50%) rotate(${rotate}deg)`;
+            style.transform = style.webkitTransform = `translate(-50%, -50%) rotate(${rotate}deg)`;
         }
         else {
             style.transform = '';
