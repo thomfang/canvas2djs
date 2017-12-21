@@ -14,6 +14,8 @@ export declare class Texture {
     private _readyCallbacks;
     private _gridSourceCache;
     private _gridSourceCount;
+    static retryTimes: number;
+    static version: string;
     static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture;
     static getByName(name: string): Texture;
     /**
@@ -30,7 +32,9 @@ export declare class Texture {
     ready: boolean;
     width: number;
     height: number;
+    name: string;
     source: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement;
+    private canvasSource;
     constructor(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect);
     onReady(callback: (size: {
         width: number;
@@ -38,7 +42,8 @@ export declare class Texture {
     }) => any): void;
     createGridSource(w: number, h: number, sx: number, sy: number, sw: number, sh: number, grid: number[]): HTMLCanvasElement;
     clearCacheGridSources(): void;
-    private _createByPath(path, sourceRect?, textureRect?);
+    destroy(): void;
+    private _createByPath(path, sourceRect, textureRect, retryTimes);
     private _onImageLoaded(img, path, sourceRect, textureRect);
-    private _createByImage(image, sourceRect?, textureRect?);
+    private _createByImage(image, sourceRect, textureRect);
 }

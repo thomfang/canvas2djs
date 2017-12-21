@@ -67,8 +67,8 @@ export class SoundManager {
         return returnAll ? all : all[0];
     }
 
-    load(baseUri: string, name: string, onComplete: (loaded: boolean) => any, channels = 1) {
-        var src = baseUri + name + this._ext;
+    load(baseUri: string, name: string, onComplete: (loaded: boolean) => any, channels = 1, version?: string) {
+        var src = baseUri + name + this._ext + (version == null ? '' : `?v=${version}`);
         var audio = WebAudio.isSupported ? new WebAudio(src) : new HTMLAudio(src);
 
         audio.on('load', () => {
@@ -101,7 +101,7 @@ export class SoundManager {
     /**
      * Load multiple sound resources
      */
-    loadList(baseUri: string, resources: { name: string; channels?: number; }[], onAllCompleted?: (success: string[], errors: string[]) => any, onProgress?: (percent: number) => any) {
+    loadList(baseUri: string, resources: { name: string; channels?: number; }[], onAllCompleted?: (success: string[], errors: string[]) => any, onProgress?: (percent: number) => any, version?: string) {
         let totalCount = resources.length;
         let endedCount = 0;
         let errors: string[] = [];
@@ -125,7 +125,11 @@ export class SoundManager {
             }
         }
 
-        resources.forEach(res => this.load(baseUri, res.name, (loaded) => onCompleted(res.name, loaded), res.channels));
+        resources.forEach(res => {
+            this.load(baseUri, res.name, (loaded) => {
+                onCompleted(res.name, loaded);
+            }, res.channels, version);
+        });
     }
 
     /**
@@ -155,7 +159,9 @@ export class SoundManager {
         let list = this.getAllAudioes(name);
 
         if (list) {
-            list.forEach(audio => audio.pause());
+            for (let i = 0, audio: WebAudio | HTMLAudio; audio = list[i]; i++) {
+                audio.pause();
+            }
         }
     }
 
@@ -166,7 +172,9 @@ export class SoundManager {
         let list = this._audioCache[name];
 
         if (list) {
-            list.forEach(audio => audio.stop());
+            for (let i = 0, audio: WebAudio | HTMLAudio; audio = list[i]; i++) {
+                audio.stop();
+            }
         }
     }
 
@@ -176,7 +184,11 @@ export class SoundManager {
     resume(name: string): void {
         let list = this._audioCache[name];
         if (list) {
-            list.forEach(audio => !audio.playing && audio.currentTime > 0 && audio.resume());
+            for (let i = 0, audio: WebAudio | HTMLAudio; audio = list[i]; i++) {
+                if (!audio.playing && audio.currentTime > 0) {
+                    audio.resume();
+                }
+            }
         }
     }
 
@@ -186,9 +198,9 @@ export class SoundManager {
             HTMLAudio.enabled = true;
 
             if (this._pausedAudios) {
-                Object.keys(this._pausedAudios).forEach(id => {
+                for (let id in this._pausedAudios) {
                     this._pausedAudios[id].resume();
-                });
+                }
                 this._pausedAudios = null;
             }
         }
@@ -197,14 +209,15 @@ export class SoundManager {
             HTMLAudio.enabled = false;
 
             this._pausedAudios = {};
-            Object.keys(this._audioCache).forEach(name => {
-                this._audioCache[name].forEach(audio => {
+            for (let name in this._audioCache) {
+                let list = this._audioCache[name];
+                for (let i = 0, audio: HTMLAudio | WebAudio; audio = list[i]; i++) {
                     if (audio.playing) {
                         audio.pause();
                         this._pausedAudios[uid(audio)] = audio;
                     }
-                });
-            });
+                }
+            }
         }
 
         this._enabled = value;

@@ -48,22 +48,26 @@ export class ActionListener implements IActionListener {
         var allDone: boolean = true;
         var anyDone: boolean = false;
 
-        this._actions.forEach((action) => {
+        for (let i = 0, action: Action; action = this._actions[i]; i++) {
             if (action.isDone()) {
                 anyDone = true;
             }
             else {
                 allDone = false;
             }
-        });
+        }
 
         if (anyDone && this._callbacks.any) {
-            this._callbacks.any.forEach(callback => callback());
+            for (let i = 0, callback: Function; callback = this._callbacks.any[i]; i++) {
+                callback();
+            }
             this._callbacks.any = null;
         }
 
         if (allDone && this._callbacks.all) {
-            this._callbacks.all.forEach(callback => callback());
+            for (let i = 0, callback: Function; callback = this._callbacks.all[i]; i++) {
+                callback();
+            }
             Action.removeListener(this);
             this._resolved = true;
         }

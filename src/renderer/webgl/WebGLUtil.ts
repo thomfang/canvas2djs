@@ -63,10 +63,11 @@ export namespace WebGLUtil {
 
     export function createProgram(gl: WebGLRenderingContext, shaders: { type: number; source: string }[]) {
         let program = gl.createProgram();
-        shaders.forEach(shaderInfo => {
+        for (let i = 0, l = shaders.length; i < l; i++) {
+            let shaderInfo = shaders[i];
             let shader = createShader(gl, shaderInfo.type, shaderInfo.source);
             gl.attachShader(program, shader);
-        });
+        }
         gl.linkProgram(program);
         if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
             console.warn(gl.getProgramInfoLog(program));

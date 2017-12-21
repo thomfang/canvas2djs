@@ -14,9 +14,11 @@ export class ReleasePool {
     }
 
     private _release() {
-        this._objs.forEach(obj => {
-            Object.keys(obj).forEach(key => delete obj[key]);
-        });
+        for (let i = 0, obj; obj = this._objs[i]; i++) {
+            for (let key in obj) {
+                delete obj[key]
+            }
+        }
         this._timerId = null;
         this._objs.length = 0;
     }

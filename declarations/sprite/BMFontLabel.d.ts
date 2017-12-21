@@ -1,6 +1,7 @@
 import { Texture } from '../Texture';
 import { Sprite, ISprite } from './Sprite';
 import { TextAlign } from './TextLabel';
+import { CanvasSource } from '../CanvasSource';
 export declare type IBMFontLabel = ISprite & {
     textureMap: {
         [word: string]: Texture | string;
@@ -34,6 +35,7 @@ export declare class BMFontLabel extends Sprite<IBMFontLabel> {
     }[];
     protected _autoResizeHeight: boolean;
     protected _isAllTexturesReady: boolean;
+    protected _canvasSource: CanvasSource;
     constructor(props?: IBMFontLabel);
     readonly fragmentsPos: {
         x: number;
@@ -61,4 +63,5 @@ export declare class BMFontLabel extends Sprite<IBMFontLabel> {
     protected draw(context: CanvasRenderingContext2D): void;
     addChild(target: any): void;
     addChildren(...children: any[]): void;
+    release(recusive?: boolean): void;
 }

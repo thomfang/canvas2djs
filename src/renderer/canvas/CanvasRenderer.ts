@@ -73,7 +73,9 @@ export class CanvasRenderer {
             if (sprite.originPixelX !== 0 || sprite.originPixelY !== 0) {
                 context.translate(-sprite.originPixelX, -sprite.originPixelY);
             }
-            sprite.children.forEach(child => this.drawSprite(child));
+            for (let i = 0, child: Sprite<{}>; child = sprite.children[i]; i++) {
+                this.drawSprite(child);
+            }
         }
 
         context.restore();

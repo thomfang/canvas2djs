@@ -126,9 +126,9 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     setProps(props: T & SpriteProps) {
-        Object.keys(props).forEach(key => {
-            this[key] = props[key];
-        });
+        for (let key in props) {
+            this[key as any] = props[key];
+        }
     }
 
     // get canvasFrameBuffer() {
@@ -339,8 +339,10 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             }
             else {
                 texture.onReady((size) => {
-                    this.width = size.width;
-                    this.height = size.height;
+                    if (this.autoResize || (this.width === 0 && this.height === 0)) {
+                        this.width = size.width;
+                        this.height = size.height;
+                    }
                 });
             }
         }
@@ -379,7 +381,11 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             this._stage = stage;
             this.emit(UIEvent.ADD_TO_STAGE);
         }
-        this.children && this.children.forEach(child => child.stage = stage);
+        if (this.children) {
+            for (let i = 0, child: Sprite<{}>; child = this.children[i]; i++) {
+                child.stage = stage;
+            }
+        }
     }
 
     set alignX(value: AlignType) {
@@ -417,9 +423,10 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         this.update(deltaTime);
 
         if (this.children && this.children.length) {
-            this.children.slice().forEach((child) => {
+            let list = this.children.slice();
+            for (let i = 0, child: Sprite<{}>; child = list[i]; i++) {
                 child._update(deltaTime);
-            });
+            }
         }
     }
 
@@ -427,20 +434,20 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         if (!this.children || !this.children.length) {
             return;
         }
-        this.children.forEach(child => {
+        for (let i = 0, child: Sprite<{}>; child = this.children[i]; i++) {
             child._resizeWidth();
             child._adjustAlignX();
-        });
+        }
     }
 
     protected _reLayoutChildrenOnHeightChanged() {
         if (!this.children || !this.children.length) {
             return;
         }
-        this.children.forEach(child => {
+        for (let i = 0, child: Sprite<{}>; child = this.children[i]; i++) {
             child._resizeHeight();
             child._adjustAlignY();
-        });
+        }
     }
 
     protected _resizeWidth() {
@@ -599,9 +606,9 @@ export class Sprite<T extends ISprite> extends EventEmitter {
             context.translate(-this._originPixelX, -this._originPixelY);
         }
 
-        this.children.forEach((child) => {
+        for (let i = 0, child: Sprite<{}>; child = this.children[i]; i++) {
             child._visit(context);
-        });
+        }
     }
 
     protected _clip(context: CanvasRenderingContext2D) {
@@ -712,9 +719,9 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     addChildren(...children: Sprite<{}>[]) {
-        children.forEach(child => {
+        for (let i = 0, child: Sprite<{}>; child = children[i]; i++) {
             this.addChild(child);
-        });
+        }
     }
 
     removeChild(target: Sprite<{}>): void {
@@ -730,9 +737,9 @@ export class Sprite<T extends ISprite> extends EventEmitter {
     }
 
     removeChildren(...children: Sprite<{}>[]) {
-        children.forEach(child => {
+        for (let i = 0, child: Sprite<{}>; child = children[i]; i++) {
             this.removeChild(child);
-        });
+        }
     }
 
     removeAllChildren(recusive?: boolean): void {
@@ -763,16 +770,25 @@ export class Sprite<T extends ISprite> extends EventEmitter {
         }
         this.removeChild(oldChild);
         // this.addChild(newChild, index);
-        newChildren.forEach(child => {
+        for (let i = 0, child: Sprite<{}>; child = newChildren[i]; i++) {
             this.addChild(child, index++);
-        });
+        }
     }
 
     contains(target: Sprite<{}>) {
-        if (!this.children || !this.children.length) {
+        let children = this.children;
+        if (!children || !children.length) {
             return false;
         }
-        return this.children.indexOf(target) > -1 || this.children.some(c => c.contains(target));
+        if (children.indexOf(target) > -1) {
+            return true;
+        }
+        for (let i = 0, child: Sprite<{}>; child = children[i]; i++) {
+            if (child.contains(target)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     release(recusive?: boolean) {

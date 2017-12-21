@@ -1,6 +1,7 @@
 import { Color } from '../Util';
 import { Sprite, ISprite } from './Sprite';
 import { TextFlow, TextFragment } from '../measureText';
+import { CanvasSource } from '../CanvasSource';
 export declare type FontWeight = "lighter" | "normal" | "bold" | "bolder";
 export declare type FontStyle = "oblique" | "normal" | "italic";
 export declare type TextAlign = "left" | "right" | "center" | "start" | "end";
@@ -20,16 +21,17 @@ export declare type ITextLabel = ISprite & {
     autoResizeWidth?: boolean;
 };
 export declare class TextLabel extends Sprite<ITextLabel> {
-    textAlign: TextAlign;
-    strokeColor: Color;
-    strokeWidth: number;
-    fontColor: Color;
+    protected _canvasSource: CanvasSource;
     protected _wordWrap: boolean;
     protected _fontName: string;
     protected _lineHeight: number;
     protected _fontSize: number;
     protected _fontWeight: FontWeight;
     protected _fontStyle: FontStyle;
+    protected _textAlign: TextAlign;
+    protected _strokeColor: Color;
+    protected _strokeWidth: number;
+    protected _fontColor: Color;
     protected _textFlow: Array<TextFlow>;
     protected _autoResizeWidth: boolean;
     protected _textLines: {
@@ -51,6 +53,10 @@ export declare class TextLabel extends Sprite<ITextLabel> {
         fragments: TextFragment[];
         width: number;
     }[];
+    textAlign: TextAlign;
+    strokeColor: Color;
+    strokeWidth: number;
+    fontColor: Color;
     autoResizeWidth: boolean;
     width: number;
     height: number;
@@ -63,7 +69,10 @@ export declare class TextLabel extends Sprite<ITextLabel> {
     text: string;
     textFlow: Array<TextFlow>;
     private _reMeasureText();
+    protected _updateFragmentsPos(): void;
+    protected _updateCanvasSource(): void;
     addChild(target: any): void;
     addChildren(...children: any[]): void;
     protected draw(context: CanvasRenderingContext2D): void;
+    release(recusive?: boolean): void;
 }

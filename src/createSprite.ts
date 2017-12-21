@@ -63,13 +63,13 @@ export function createSprite<T, U>(type: any, props: any, ...children: any[]): a
         console.error(`canvas2d.createSprite(): Unknown sprite type`, type);
     }
     else if (actions && actions.length) {
-        (<ActionProps['actions']>actions).forEach(detail => {
+        for (let i = 0, detail: ActionProps['actions'][0]; detail = actions[i]; i++) {
             let instance = new Action(sprite).queue(detail.queue);
             if (detail.repeatMode != null) {
                 instance.setRepeatMode(detail.repeatMode);
             }
             instance.start();
-        });
+        }
     }
 
     if (ref) {
@@ -96,7 +96,12 @@ function createStage(props: StageProps, children: Sprite<{}>[]) {
     stage.start(useExternalTimer);
 
     if (children.length) {
-        children.forEach(child => child && stage.addChild(child));
+        for (let i = 0, l = children.length; i < l; i++) {
+            let child = children[i];
+            if (child) {
+                stage.addChild(child);
+            }
+        }
     }
 
     return stage;
@@ -106,9 +111,10 @@ function addChildren(sprite: Sprite<{}>, children: any[]) {
     if (!children.length) {
         return;
     }
-    children.forEach(child => {
+    for (let i = 0, l = children.length; i < l; i++) {
+        let child = children[i];
         if (!child) {
-            return;
+            continue;
         }
         if (Array.isArray(child)) {
             addChildren(sprite, child);
@@ -116,5 +122,5 @@ function addChildren(sprite: Sprite<{}>, children: any[]) {
         else {
             sprite.addChild(child);
         }
-    });
+    }
 }

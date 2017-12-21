@@ -66,13 +66,14 @@ export class Action {
      * Stop action by target
      */
     public static stop(target: any, tag?: string) {
-        Action._actionList.slice().forEach((action) => {
+        let list = Action._actionList.slice();
+        for (let i = 0, action: Action; action = list[i]; i++) {
             if (action.target === target) {
                 if (tag == null || action.tag == tag) {
                     action.stop();
                 }
             }
-        });
+        }
     }
 
     /**
@@ -90,18 +91,20 @@ export class Action {
 
     public static schedule(deltaTime: number): void {
         var startTime = Date.now();
+        var actionList = Action._actionList.slice();
+        var listenerList = Action._listenerList.slice() as ActionListener[];
 
-        Action._actionList.slice().forEach(action => {
+        for (let i = 0, action: Action; action = actionList[i]; i++) {
             action._step(deltaTime);
 
             if (action._done) {
                 removeArrayItem(Action._actionList, action);
             }
-        });
+        }
 
-        Action._listenerList.slice().forEach((listener: ActionListener) => {
+        for (let i = 0, listener: ActionListener; listener = listenerList[i]; i++) {
             listener._step();
-        });
+        }
 
         Action._scheduleCostTime = Date.now() - startTime;
     }
@@ -141,7 +144,7 @@ export class Action {
     }
 
     queue(actions: ActionQueue) {
-        actions.forEach(action => {
+        for (let i = 0, action: ActionQueue[0]; action = actions[i]; i++) {
             switch (action.type) {
                 case ActionType.ANIM:
                     this.animate(action.frameList, action.frameRate, action.repetitions);
@@ -159,7 +162,7 @@ export class Action {
                     this.then(action.callback);
                     break;
             }
-        });
+        }
         return this;
     }
 
@@ -220,7 +223,9 @@ export class Action {
      * Stop the action
      */
     stop() {
-        this._queue.forEach(action => action.destroy());
+        for (let i = 0, action: BaseAction; action = this._queue[i]; i++) {
+            action.destroy();
+        }
 
         this._done = true;
         this.isRunning = false;
@@ -230,7 +235,9 @@ export class Action {
     }
 
     clear() {
-        this._queue.forEach(action => action.destroy());
+        for (let i = 0, action: BaseAction; action = this._queue[i]; i++) {
+            action.destroy();
+        }
 
         this._done = false;
         this.isRunning = false;
@@ -265,18 +272,24 @@ export class Action {
     protected _onAllActionDone() {
         switch (this._repeatMode) {
             case ActionRepeatMode.REPEAT:
-                this._queue.forEach(a => a.reset());
+                for (let i = 0, action: BaseAction; action = this._queue[i]; i++) {
+                    action.reset();
+                }
                 this._currentIndex = 0;
                 break;
             case ActionRepeatMode.REVERSE_REPEAT:
-                this._queue.forEach(a => a.reverse());
+                for (let i = 0, action: BaseAction; action = this._queue[i]; i++) {
+                    action.reverse();
+                }
                 this._currentIndex = 0;
                 break;
             default:
                 this._done = true;
                 this.isRunning = false;
                 this.target = null;
-                this._queue.forEach(a => a.destroy());
+                for (let i = 0, action: BaseAction; action = this._queue[i]; i++) {
+                    action.destroy();
+                }
                 this._queue.length = 0;
                 break;
         }

@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.5.5
+ * canvas2djs v2.5.9
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -310,6 +310,48 @@ var Tween = {
     }
 };
 
+var CanvasSource = (function () {
+    function CanvasSource() {
+        this.isIdle = false;
+        this.canvas = document.createElement('canvas');
+        this.context = this.canvas.getContext('2d');
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+    }
+    CanvasSource.create = function () {
+        var instance;
+        var instanceList = this.instanceList;
+        for (var i = 0; instance = instanceList[i]; i++) {
+            if (instance.isIdle) {
+                instance.isIdle = false;
+                this.activeCount += 1;
+                return instance;
+            }
+        }
+        if (!instance) {
+            instance = new CanvasSource();
+            instanceList.push(instance);
+        }
+        this.activeCount += 1;
+        return instance;
+    };
+    CanvasSource.prototype.setSize = function (width, height) {
+        this.canvas.width = this.width = width;
+        this.canvas.height = this.height = height;
+    };
+    CanvasSource.prototype.clear = function () {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    };
+    CanvasSource.prototype.recycle = function () {
+        CanvasSource.activeCount -= 1;
+        this.setSize(0, 0);
+        this.isIdle = true;
+    };
+    return CanvasSource;
+}());
+CanvasSource.instanceList = [];
+CanvasSource.activeCount = 0;
+
 /**
  * Sprite texture
  */
@@ -329,7 +371,7 @@ var Texture = (function () {
             return Texture.textureCache[name];
         }
         if (typeof source === 'string') {
-            this._createByPath(source, sourceRect, textureRect);
+            this._createByPath(source, sourceRect, textureRect, Texture.retryTimes);
         }
         else if ((source instanceof HTMLImageElement) || (source instanceof HTMLCanvasElement)) {
             this._createByImage(source, sourceRect, textureRect);
@@ -338,6 +380,7 @@ var Texture = (function () {
             throw new Error("Invalid texture source");
         }
         if (name) {
+            this.name = name;
             Texture.textureCache[name] = this;
         }
     }
@@ -381,12 +424,11 @@ var Texture = (function () {
         }
     };
     Texture.prototype.createGridSource = function (w, h, sx, sy, sw, sh, grid) {
-        var _this = this;
         w = Math.ceil(w);
         h = Math.ceil(h);
-        var cacheKey = getGridCacheKey(w, h, sx, sy, sw, sh, grid);
+        var cacheKey = [w, h, sx, sy, sw, sh, grid].join(':');
         if (this._gridSourceCache[cacheKey]) {
-            return this._gridSourceCache[cacheKey];
+            return this._gridSourceCache[cacheKey].canvas;
         }
         var top = grid[0], right = grid[1], bottom = grid[2], left = grid[3], repeat = grid[4];
         var grids = [
@@ -400,15 +442,16 @@ var Texture = (function () {
             { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom },
         ];
         var centerGrid = { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom };
-        var canvas = document.createElement("canvas");
-        var context = canvas.getContext("2d");
-        canvas.width = w;
-        canvas.height = h;
-        grids.forEach(function (g) {
+        var source = CanvasSource.create();
+        var canvas = source.canvas;
+        var context = source.context;
+        source.setSize(w, h);
+        for (var i = 0, l = grids.length; i < l; i++) {
+            var g = grids[i];
             if (g.w && g.h) {
-                context.drawImage(_this.source, g.sx, g.sy, g.sw, g.sh, Math.ceil(g.x), Math.ceil(g.y), Math.ceil(g.w), Math.ceil(g.h));
+                context.drawImage(this.source, g.sx, g.sy, g.sw, g.sh, Math.ceil(g.x), Math.ceil(g.y), Math.ceil(g.w), Math.ceil(g.h));
             }
-        });
+        }
         if (repeat) {
             var cvs_1 = getRepeatPatternSource(this.source, {
                 x: centerGrid.sx,
@@ -423,32 +466,59 @@ var Texture = (function () {
         else if (centerGrid.w && centerGrid.h) {
             context.drawImage(this.source, centerGrid.sx, centerGrid.sy, centerGrid.sw, centerGrid.sh, Math.ceil(centerGrid.x), Math.ceil(centerGrid.y), Math.ceil(centerGrid.w), Math.ceil(centerGrid.h));
         }
-        this._gridSourceCache[cacheKey] = canvas;
+        this._gridSourceCache[cacheKey] = source;
         this._gridSourceCount += 1;
         return canvas;
     };
     Texture.prototype.clearCacheGridSources = function () {
+        for (var k in this._gridSourceCache) {
+            this._gridSourceCache[k].recycle();
+        }
         this._gridSourceCache = {};
         this._gridSourceCount = 0;
     };
-    Texture.prototype._createByPath = function (path, sourceRect, textureRect) {
+    Texture.prototype.destroy = function () {
+        if (this.canvasSource) {
+            this.canvasSource.recycle();
+        }
+        this.clearCacheGridSources();
+        this._readyCallbacks.length = 0;
+        this.source = this.canvasSource = null;
+    };
+    Texture.prototype._createByPath = function (path, sourceRect, textureRect, retryTimes) {
         var _this = this;
         if (Texture.loadedImages[path]) {
             return this._onImageLoaded(img, path, sourceRect, textureRect);
         }
         var img = Texture.loadingImages[path] || new Image();
-        img.addEventListener('load', function () {
+        var onLoad = function () {
             _this._onImageLoaded(img, path, sourceRect, textureRect);
-        });
-        img.addEventListener('error', function () {
+            img.removeEventListener("load", onLoad);
+            img.removeEventListener("error", onError);
+        };
+        var onError = function () {
+            img.removeEventListener("load", onLoad);
+            img.removeEventListener("error", onError);
             delete Texture.loadingImages[path];
             img = null;
+            if (retryTimes) {
+                _this._createByPath(path, sourceRect, textureRect, --retryTimes);
+            }
+            else {
+                _this._readyCallbacks.length = 0;
+                if (_this.name != null) {
+                    delete Texture.textureCache[_this.name];
+                }
+            }
             console.warn("canvas2d: Texture creating fail, error loading source \"" + path + "\".");
-        });
+        };
+        img.addEventListener('load', onLoad);
+        img.addEventListener('error', onError);
+        var src = Texture.version != null ? path + '?v=' + Texture.version : path;
         if (!Texture.loadingImages[path]) {
             img.crossOrigin = 'anonymous';
-            img.src = path;
             Texture.loadingImages[path] = img;
+            img.src = src;
         }
     };
     Texture.prototype._onImageLoaded = function (img, path, sourceRect, textureRect) {
@@ -456,10 +526,10 @@ var Texture = (function () {
         Texture.loadedImages[path] = img;
         delete Texture.loadingImages[path];
         if (this._readyCallbacks.length) {
-            var size_1 = { width: this.width, height: this.height };
-            this._readyCallbacks.forEach(function (callback) {
-                callback(size_1);
-            });
+            var size = { width: this.width, height: this.height };
+            for (var i = 0, callback = void 0; callback = this._readyCallbacks[i]; i++) {
+                callback(size);
+            }
             this._readyCallbacks.length = 0;
         }
         img = null;
@@ -486,7 +556,11 @@ var Texture = (function () {
                     height: sourceRect.height,
                 };
             }
-            source = createCanvas(image, sourceRect, textureRect);
+            // source = createCanvas(image, sourceRect, textureRect);
+            var canvasSource = this.canvasSource = CanvasSource.create();
+            canvasSource.setSize(textureRect.width, textureRect.height);
+            canvasSource.context.drawImage(image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
+            source = canvasSource.canvas;
         }
         this.width = source.width;
         this.height = source.height;
@@ -498,13 +572,7 @@ var Texture = (function () {
 Texture.textureCache = {};
 Texture.loadingImages = {};
 Texture.loadedImages = {};
-function getGridCacheKey() {
-    var args = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        args[_i] = arguments[_i];
-    }
-    return args.join(':');
-}
+Texture.retryTimes = 2;
 function getCacheKey(source, sourceRect, textureRect) {
     var isStr = typeof source === 'string';
     if (!isStr && !source.src) {
@@ -515,14 +583,16 @@ function getCacheKey(source, sourceRect, textureRect) {
     var textureRectStr = textureRect ? [textureRect.x, textureRect.y, textureRect.width, textureRect.height].join(',') : '';
     return src + sourceRectStr + textureRectStr;
 }
-function createCanvas(image, sourceRect, textureRect) {
-    var canvas = document.createElement("canvas");
-    var context = canvas.getContext('2d');
-    canvas.width = textureRect.width;
-    canvas.height = textureRect.height;
-    context.drawImage(image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
-    return canvas;
-}
+// function createCanvas(image: any, sourceRect: Rect, textureRect: Rect): HTMLCanvasElement {
+//     var canvas: HTMLCanvasElement = document.createElement("canvas");
+//     var context: CanvasRenderingContext2D = canvas.getContext('2d');
+//     canvas.width = textureRect.width;
+//     canvas.height = textureRect.height;
+//     context.drawImage(
+//         image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height,
+//         textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
+//     return canvas;
+// }
 var cvs;
 var ctx;
 function getRepeatPatternSource(source, sourceRect, canvasWidth, canvasHeight) {
@@ -842,20 +912,24 @@ var ActionListener = (function () {
     ActionListener.prototype._step = function () {
         var allDone = true;
         var anyDone = false;
-        this._actions.forEach(function (action) {
+        for (var i = 0, action = void 0; action = this._actions[i]; i++) {
             if (action.isDone()) {
                 anyDone = true;
             }
             else {
                 allDone = false;
             }
-        });
+        }
         if (anyDone && this._callbacks.any) {
-            this._callbacks.any.forEach(function (callback) { return callback(); });
+            for (var i = 0, callback = void 0; callback = this._callbacks.any[i]; i++) {
+                callback();
+            }
             this._callbacks.any = null;
         }
         if (allDone && this._callbacks.all) {
-            this._callbacks.all.forEach(function (callback) { return callback(); });
+            for (var i = 0, callback = void 0; callback = this._callbacks.all[i]; i++) {
+                callback();
+            }
             Action.removeListener(this);
             this._resolved = true;
         }
@@ -884,11 +958,10 @@ var Transition = (function (_super) {
         this.defaultEasingFunc = func;
     };
     Transition.prototype._initAsTransitionTo = function (options) {
-        var _this = this;
-        Object.keys(options).forEach(function (name) {
+        for (var name in options) {
             var info = options[name];
-            var easing;
-            var dest;
+            var easing = void 0;
+            var dest = void 0;
             if (typeof info === 'number') {
                 dest = info;
             }
@@ -896,16 +969,15 @@ var Transition = (function (_super) {
                 easing = info.easing;
                 dest = info.dest;
             }
-            _this.options.push({ name: name, dest: dest, easing: easing });
-        });
+            this.options.push({ name: name, dest: dest, easing: easing });
+        }
     };
     Transition.prototype._initAsTransitionBy = function (options) {
-        var _this = this;
         var deltaValue = this.deltaValue;
-        Object.keys(options).forEach(function (name) {
+        for (var name in options) {
             var info = options[name];
-            var easing;
-            var dest;
+            var easing = void 0;
+            var dest = void 0;
             if (typeof info === 'number') {
                 deltaValue[name] = info;
             }
@@ -913,23 +985,23 @@ var Transition = (function (_super) {
                 easing = info.easing;
                 deltaValue[name] = info.value;
             }
-            _this.options.push({ name: name, dest: dest, easing: easing });
-        });
+            this.options.push({ name: name, dest: dest, easing: easing });
+        }
     };
     Transition.prototype._initBeginValue = function (target) {
         var beginValue = this.beginValue = {};
         var deltaValue = this.deltaValue;
         if (this.isTransitionBy) {
-            this.options.forEach(function (option) {
+            for (var i = 0, option = void 0; option = this.options[i]; i++) {
                 beginValue[option.name] = target[option.name];
                 option.dest = target[option.name] + deltaValue[option.name];
-            });
+            }
         }
         else {
-            this.options.forEach(function (option) {
+            for (var i = 0, option = void 0; option = this.options[i]; i++) {
                 beginValue[option.name] = target[option.name];
                 deltaValue[option.name] = option.dest - target[option.name];
-            });
+            }
         }
     };
     Transition.prototype.step = function (deltaTime, target) {
@@ -943,16 +1015,16 @@ var Transition = (function (_super) {
         var percent = this.elapsed / this.duration;
         var beginValue = this.beginValue;
         var deltaValue = this.deltaValue;
-        this.options.forEach(function (_a) {
-            var name = _a.name, dest = _a.dest, easing = _a.easing;
+        for (var i = 0, option = void 0; option = this.options[i]; i++) {
+            var name = option.name, dest = option.dest, easing = option.easing;
             easing = easing || Transition.defaultEasingFunc;
             target[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
-        });
+        }
     };
     Transition.prototype.end = function (target) {
-        this.options.forEach(function (attr) {
-            target[attr.name] = attr.dest;
-        });
+        for (var i = 0, option = void 0; option = this.options[i]; i++) {
+            target[option.name] = option.dest;
+        }
         this.done = true;
     };
     Transition.prototype.destroy = function () {
@@ -968,12 +1040,12 @@ var Transition = (function (_super) {
         this.done = false;
         this.elapsed = 0;
         var _a = this, options = _a.options, beginValue = _a.beginValue, deltaValue = _a.deltaValue;
-        options.forEach(function (e) {
-            var dest = beginValue[e.name];
-            beginValue[e.name] = e.dest;
-            deltaValue[e.name] = -deltaValue[e.name];
-            e.dest = dest;
-        });
+        for (var i = 0, option = void 0; option = options[i]; i++) {
+            var dest = beginValue[option.name];
+            beginValue[option.name] = option.dest;
+            deltaValue[option.name] = -deltaValue[option.name];
+            option.dest = dest;
+        }
     };
     return Transition;
 }(BaseAction));
@@ -1016,13 +1088,14 @@ var Action = (function () {
      * Stop action by target
      */
     Action.stop = function (target, tag) {
-        Action._actionList.slice().forEach(function (action) {
+        var list = Action._actionList.slice();
+        for (var i = 0, action = void 0; action = list[i]; i++) {
             if (action.target === target) {
                 if (tag == null || action.tag == tag) {
                     action.stop();
                 }
             }
-        });
+        }
     };
     /**
      * Listen a action list, when all actions are done then publish to listener
@@ -1037,15 +1110,17 @@ var Action = (function () {
     };
     Action.schedule = function (deltaTime) {
         var startTime = Date.now();
-        Action._actionList.slice().forEach(function (action) {
+        var actionList = Action._actionList.slice();
+        var listenerList = Action._listenerList.slice();
+        for (var i = 0, action = void 0; action = actionList[i]; i++) {
             action._step(deltaTime);
             if (action._done) {
                 removeArrayItem(Action._actionList, action);
             }
-        });
-        Action._listenerList.slice().forEach(function (listener) {
+        }
+        for (var i = 0, listener = void 0; listener = listenerList[i]; i++) {
             listener._step();
-        });
+        }
         Action._scheduleCostTime = Date.now() - startTime;
     };
     Action.prototype.isDone = function () {
@@ -1066,26 +1141,25 @@ var Action = (function () {
         configurable: true
     });
     Action.prototype.queue = function (actions) {
-        var _this = this;
-        actions.forEach(function (action) {
+        for (var i = 0, action = void 0; action = actions[i]; i++) {
             switch (action.type) {
                 case exports.ActionType.ANIM:
-                    _this.animate(action.frameList, action.frameRate, action.repetitions);
+                    this.animate(action.frameList, action.frameRate, action.repetitions);
                     break;
                 case exports.ActionType.BY:
-                    _this.by(action.options, action.duration);
+                    this.by(action.options, action.duration);
                     break;
                 case exports.ActionType.TO:
-                    _this.to(action.options, action.duration);
+                    this.to(action.options, action.duration);
                     break;
                 case exports.ActionType.WAIT:
-                    _this.wait(action.duration);
+                    this.wait(action.duration);
                     break;
                 case exports.ActionType.CALLBACK:
-                    _this.then(action.callback);
+                    this.then(action.callback);
                     break;
             }
-        });
+        }
         return this;
     };
     /**
@@ -1139,14 +1213,18 @@ var Action = (function () {
      * Stop the action
      */
     Action.prototype.stop = function () {
-        this._queue.forEach(function (action) { return action.destroy(); });
+        for (var i = 0, action = void 0; action = this._queue[i]; i++) {
+            action.destroy();
+        }
         this._done = true;
         this.isRunning = false;
         this._queue.length = 0;
         removeArrayItem(Action._actionList, this);
     };
     Action.prototype.clear = function () {
-        this._queue.forEach(function (action) { return action.destroy(); });
+        for (var i = 0, action = void 0; action = this._queue[i]; i++) {
+            action.destroy();
+        }
         this._done = false;
         this.isRunning = false;
         this._queue.length = 0;
@@ -1173,18 +1251,24 @@ var Action = (function () {
     Action.prototype._onAllActionDone = function () {
         switch (this._repeatMode) {
             case exports.ActionRepeatMode.REPEAT:
-                this._queue.forEach(function (a) { return a.reset(); });
+                for (var i = 0, action = void 0; action = this._queue[i]; i++) {
+                    action.reset();
+                }
                 this._currentIndex = 0;
                 break;
             case exports.ActionRepeatMode.REVERSE_REPEAT:
-                this._queue.forEach(function (a) { return a.reverse(); });
+                for (var i = 0, action = void 0; action = this._queue[i]; i++) {
+                    action.reverse();
+                }
                 this._currentIndex = 0;
                 break;
             default:
                 this._done = true;
                 this.isRunning = false;
                 this.target = null;
-                this._queue.forEach(function (a) { return a.destroy(); });
+                for (var i = 0, action = void 0; action = this._queue[i]; i++) {
+                    action.destroy();
+                }
                 this._queue.length = 0;
                 break;
         }
@@ -1271,6 +1355,14 @@ var EventEmitter = (function () {
         }
         return this;
     };
+    EventEmitter.prototype.hasListener = function (type) {
+        var id = uid(this);
+        var eventCache = EventEmitter._eventCache;
+        if (!eventCache[id] || !eventCache[id][type] || !eventCache[id][type].length) {
+            return false;
+        }
+        return true;
+    };
     EventEmitter.prototype.emit = function (type) {
         var args = [];
         for (var _i = 1; _i < arguments.length; _i++) {
@@ -1313,9 +1405,11 @@ var ReleasePool = (function () {
         this._timerId = setTimeout(function () { return _this._release(); }, 0);
     };
     ReleasePool.prototype._release = function () {
-        this._objs.forEach(function (obj) {
-            Object.keys(obj).forEach(function (key) { return delete obj[key]; });
-        });
+        for (var i = 0, obj = void 0; obj = this._objs[i]; i++) {
+            for (var key in obj) {
+                delete obj[key];
+            }
+        }
         this._timerId = null;
         this._objs.length = 0;
     };
@@ -1407,10 +1501,9 @@ var Sprite = (function (_super) {
         }
     };
     Sprite.prototype.setProps = function (props) {
-        var _this = this;
-        Object.keys(props).forEach(function (key) {
-            _this[key] = props[key];
-        });
+        for (var key in props) {
+            this[key] = props[key];
+        }
     };
     Object.defineProperty(Sprite.prototype, "rotationInRadians", {
         // get canvasFrameBuffer() {
@@ -1644,8 +1737,10 @@ var Sprite = (function (_super) {
                 }
                 else {
                     texture.onReady(function (size) {
-                        _this.width = size.width;
-                        _this.height = size.height;
+                        if (_this.autoResize || (_this.width === 0 && _this.height === 0)) {
+                            _this.width = size.width;
+                            _this.height = size.height;
+                        }
                     });
                 }
             }
@@ -1683,7 +1778,11 @@ var Sprite = (function (_super) {
                 this._stage = stage;
                 this.emit(UIEvent.ADD_TO_STAGE);
             }
-            this.children && this.children.forEach(function (child) { return child.stage = stage; });
+            if (this.children) {
+                for (var i = 0, child = void 0; child = this.children[i]; i++) {
+                    child.stage = stage;
+                }
+            }
         },
         enumerable: true,
         configurable: true
@@ -1725,28 +1824,29 @@ var Sprite = (function (_super) {
         this.emit(UIEvent.FRAME, deltaTime);
         this.update(deltaTime);
         if (this.children && this.children.length) {
-            this.children.slice().forEach(function (child) {
+            var list = this.children.slice();
+            for (var i = 0, child = void 0; child = list[i]; i++) {
                 child._update(deltaTime);
-            });
+            }
         }
     };
     Sprite.prototype._reLayoutChildrenOnWidthChanged = function () {
         if (!this.children || !this.children.length) {
             return;
         }
-        this.children.forEach(function (child) {
+        for (var i = 0, child = void 0; child = this.children[i]; i++) {
             child._resizeWidth();
             child._adjustAlignX();
-        });
+        }
     };
     Sprite.prototype._reLayoutChildrenOnHeightChanged = function () {
         if (!this.children || !this.children.length) {
             return;
         }
-        this.children.forEach(function (child) {
+        for (var i = 0, child = void 0; child = this.children[i]; i++) {
             child._resizeHeight();
             child._adjustAlignY();
-        });
+        }
     };
     Sprite.prototype._resizeWidth = function () {
         if (this.parent == null) {
@@ -1879,9 +1979,9 @@ var Sprite = (function (_super) {
         if (this._originPixelX !== 0 || this._originPixelY !== 0) {
             context.translate(-this._originPixelX, -this._originPixelY);
         }
-        this.children.forEach(function (child) {
+        for (var i = 0, child = void 0; child = this.children[i]; i++) {
             child._visit(context);
-        });
+        }
     };
     Sprite.prototype._clip = function (context) {
         if (!this.clipOverflow) {
@@ -1978,14 +2078,13 @@ var Sprite = (function (_super) {
         }
     };
     Sprite.prototype.addChildren = function () {
-        var _this = this;
         var children = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             children[_i] = arguments[_i];
         }
-        children.forEach(function (child) {
-            _this.addChild(child);
-        });
+        for (var i = 0, child = void 0; child = children[i]; i++) {
+            this.addChild(child);
+        }
     };
     Sprite.prototype.removeChild = function (target) {
         if (!this.children || !this.children.length) {
@@ -1999,14 +2098,13 @@ var Sprite = (function (_super) {
         }
     };
     Sprite.prototype.removeChildren = function () {
-        var _this = this;
         var children = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             children[_i] = arguments[_i];
         }
-        children.forEach(function (child) {
-            _this.removeChild(child);
-        });
+        for (var i = 0, child = void 0; child = children[i]; i++) {
+            this.removeChild(child);
+        }
     };
     Sprite.prototype.removeAllChildren = function (recusive) {
         if (!this.children || !this.children.length) {
@@ -2023,7 +2121,6 @@ var Sprite = (function (_super) {
         this.children = null;
     };
     Sprite.prototype.replaceChild = function (oldChild) {
-        var _this = this;
         var newChildren = [];
         for (var _i = 1; _i < arguments.length; _i++) {
             newChildren[_i - 1] = arguments[_i];
@@ -2037,15 +2134,24 @@ var Sprite = (function (_super) {
         }
         this.removeChild(oldChild);
         // this.addChild(newChild, index);
-        newChildren.forEach(function (child) {
-            _this.addChild(child, index++);
-        });
+        for (var i = 0, child = void 0; child = newChildren[i]; i++) {
+            this.addChild(child, index++);
+        }
     };
     Sprite.prototype.contains = function (target) {
-        if (!this.children || !this.children.length) {
+        var children = this.children;
+        if (!children || !children.length) {
             return false;
         }
-        return this.children.indexOf(target) > -1 || this.children.some(function (c) { return c.contains(target); });
+        if (children.indexOf(target) > -1) {
+            return true;
+        }
+        for (var i = 0, child = void 0; child = children[i]; i++) {
+            if (child.contains(target)) {
+                return true;
+            }
+        }
+        return false;
     };
     Sprite.prototype.release = function (recusive) {
         Action.stop(this);
@@ -2088,9 +2194,9 @@ var UIEvent = (function () {
             }
             var helpers = _this._transformTouches(event.changedTouches);
             _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin, UIEvent.TOUCH_BEGIN);
-            helpers.forEach(function (touch) {
+            for (var i = 0, touch = void 0; touch = helpers[i]; i++) {
                 touch.beginTarget = touch.target;
-            });
+            }
             stage.emit(UIEvent.TOUCH_BEGIN, helpers, event);
             event.preventDefault();
         };
@@ -2109,14 +2215,14 @@ var UIEvent = (function () {
             if (stage.isRunning && stage.touchEnabled) {
                 var helpers = _this._transformTouches(event.changedTouches, true);
                 _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, UIEvent.TOUCH_ENDED, true);
-                helpers.forEach(function (helper) {
+                for (var i = 0, helper = void 0; helper = helpers[i]; i++) {
                     if (!helper._moved || isMovedSmallRange(helper)) {
                         stage.emit(UIEvent.CLICK, helper, event);
                     }
                     helper.target = null;
                     helper.beginTarget = null;
                     _this._touchHelperMap[helper.identifier] = null;
-                });
+                }
                 stage.emit(UIEvent.TOUCH_ENDED, helpers, event);
                 helpers = null;
             }
@@ -2318,7 +2424,6 @@ var UIEvent = (function () {
         var tmpHelpers = helpers.slice();
         var triggerreds = [];
         var result;
-        var callback = function (helper) { return result.indexOf(helper) === -1; };
         if (children && children.length) {
             var index = children.length;
             while (--index >= 0) {
@@ -2326,7 +2431,13 @@ var UIEvent = (function () {
                 if (result && result.length) {
                     triggerreds.push.apply(triggerreds, result);
                     // Remove triggerred touch helper, it won't pass to other child sprites
-                    tmpHelpers = tmpHelpers.filter(callback);
+                    var t = [];
+                    for (var j = 0, e = void 0; e = tmpHelpers[j]; j++) {
+                        if (result.indexOf(e) === -1) {
+                            t.push(e);
+                        }
+                    }
+                    tmpHelpers = t;
                     // All triggerred then exit the loop
                     if (!tmpHelpers.length) {
                         break;
@@ -2334,8 +2445,13 @@ var UIEvent = (function () {
                 }
             }
         }
-        var hits = triggerreds.filter(function (helper) { return !helper.cancelBubble; });
+        var hits = [];
         var count = 0;
+        for (var k = 0, helper = void 0; helper = triggerreds[k]; k++) {
+            if (!helper.cancelBubble) {
+                hits.push(helper);
+            }
+        }
         if (tmpHelpers.length) {
             var rect = {
                 x: offsetX,
@@ -2349,7 +2465,7 @@ var UIEvent = (function () {
                 radius: sprite.radius
             };
             for (var i = 0, helper = void 0; helper = tmpHelpers[i]; i++) {
-                if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+                if (isRectContainsPoint(rect, helper) || isCircleContainsPoint(circle, helper)) {
                     if (!helper.target) {
                         helper.target = sprite;
                     }
@@ -2391,7 +2507,7 @@ var UIEvent = (function () {
         };
         var count = 0;
         for (var i = 0, helper = void 0; helper = helpers[i]; i++) {
-            if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+            if (isRectContainsPoint(rect, helper) || isCircleContainsPoint(circle, helper)) {
                 helper.localX = helper.stageX - offsetX;
                 helper.localY = helper.stageY - offsetY;
                 // Add for current sprite hit list
@@ -2404,15 +2520,20 @@ var UIEvent = (function () {
             var triggerreds = [];
             if (children && children.length) {
                 var index = children.length;
-                var result_1;
-                var filterUnTriggerred = function (helper) { return result_1.indexOf(helper) === -1; };
+                var result = void 0;
                 var tmpHelpers = hits.slice();
                 while (--index >= 0) {
-                    result_1 = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, eventName, needTriggerClick);
-                    if (result_1 && result_1.length) {
-                        triggerreds.push.apply(triggerreds, result_1);
+                    result = this._dispatchTouch(children[index], offsetX, offsetY, tmpHelpers, event, methodName, eventName, needTriggerClick);
+                    if (result && result.length) {
+                        triggerreds.push.apply(triggerreds, result);
                         // Remove triggerred touch helper, it won't pass to other child sprites
-                        tmpHelpers = tmpHelpers.filter(filterUnTriggerred);
+                        var t = [];
+                        for (var j = 0, e = void 0; e = tmpHelpers[j]; j++) {
+                            if (result.indexOf(e) === -1) {
+                                t.push(e);
+                            }
+                        }
+                        tmpHelpers = t;
                         // All triggerred then exit the loop
                         if (!tmpHelpers.length) {
                             break;
@@ -2420,14 +2541,18 @@ var UIEvent = (function () {
                     }
                 }
             }
-            // hits = triggerreds.filter(helper => !helper.cancelBubble);
-            var bubbleHits = hits.filter(function (helper) { return !helper.cancelBubble; });
+            var bubbleHits = [];
+            for (var k = 0, helper = void 0; helper = hits[k]; k++) {
+                if (!helper.cancelBubble) {
+                    bubbleHits.push(helper);
+                }
+            }
             if (bubbleHits.length) {
-                bubbleHits.forEach(function (e) {
+                for (var i = 0, e = void 0; e = bubbleHits[i]; i++) {
                     if (!e.target) {
                         e.target = sprite;
                     }
-                });
+                }
                 sprite.emit(eventName, bubbleHits, event);
                 sprite[methodName] && sprite[methodName](bubbleHits, event);
                 // Click event would just trigger by only a touch
@@ -2473,7 +2598,7 @@ var UIEvent = (function () {
             y: offsetY,
             radius: sprite.radius
         };
-        if (triggerred || isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+        if (triggerred || isRectContainsPoint(rect, helper) || isCircleContainsPoint(circle, helper)) {
             if (!helper.target) {
                 helper.target = sprite;
             }
@@ -2500,7 +2625,7 @@ var UIEvent = (function () {
             y: offsetY,
             radius: sprite.radius
         };
-        if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+        if (isRectContainsPoint(rect, helper) || isCircleContainsPoint(circle, helper)) {
             var children = sprite.children;
             var triggerred = false;
             if (children && children.length) {
@@ -2542,11 +2667,11 @@ UIEvent.CLICK = "click";
 UIEvent.ADD_TO_STAGE = "addtostage";
 UIEvent.REMOVED_FROM_STAGE = "removedfromstage";
 UIEvent.FRAME = "frame";
-function isRectContainPoint(rect, p) {
+function isRectContainsPoint(rect, p) {
     return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
         rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
 }
-function isCircleContainPoint(circle, p) {
+function isCircleContainsPoint(circle, p) {
     var dx = p.stageX - circle.x;
     var dy = p.stageY - circle.y;
     return Math.sqrt(dx * dx + dy * dy) <= circle.radius;
@@ -3011,7 +3136,7 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
     var lineFragments = [];
     var lineWidth = 0;
     var textMetrics;
-    textFlow.forEach(function (flow) {
+    for (var i = 0, flow = void 0; flow = textFlow[i]; i++) {
         var text = flow.text;
         var props = __assign({ fontSize: fontSize,
             fontStyle: fontStyle,
@@ -3022,12 +3147,12 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
             textMetrics = ctx$1.measureText(text);
             lineFragments.push(__assign({}, props, { text: text, width: textMetrics.width }));
             lineWidth += textMetrics.width;
-            return;
+            continue;
         }
         var currentPos = 0;
         var lastMeasuredWidth = 0;
         var currentLine = "";
-        var tryLine;
+        var tryLine = void 0;
         while (currentPos < text.length) {
             // console.log("remain width", remainWidth)
             var breaker = nextBreak(text, currentPos, remainWidth, props.fontSize, autoResizeWidth);
@@ -3122,7 +3247,7 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
             lineWidth += lastMeasuredWidth;
             remainWidth = width - lineWidth;
         }
-    });
+    }
     if (lineFragments.length) {
         measuredSize.lines.push({
             width: lineWidth,
@@ -3131,13 +3256,14 @@ function measureText(textFlow, width, fontName, fontStyle, fontWeight, fontSize,
         measuredSize.height += lineHeight;
     }
     if (autoResizeWidth) {
-        var max_1 = 0;
-        measuredSize.lines.forEach(function (l) {
-            if (l.width > max_1) {
-                max_1 = l.width;
+        var max = 0;
+        for (var i = 0, l = measuredSize.lines.length; i < l; i++) {
+            var line = measuredSize.lines[i];
+            if (line.width > max) {
+                max = line.width;
             }
-        });
-        measuredSize.width = max_1;
+        }
+        measuredSize.width = max;
     }
     if (cacheCount > 200) {
         measuredCache = {};
@@ -3185,13 +3311,13 @@ var TextLabel = (function (_super) {
     __extends(TextLabel, _super);
     function TextLabel(props) {
         var _this = _super.call(this) || this;
-        _this.textAlign = 'center';
-        _this.fontColor = 0x000;
         _this._wordWrap = true;
         _this._fontName = 'sans-serif';
         _this._fontSize = DefaultFontSize;
         _this._fontWeight = 'normal';
         _this._fontStyle = 'normal';
+        _this._textAlign = 'center';
+        _this._fontColor = 0x000;
         _this._autoResizeWidth = false;
         props && _this.setProps(props);
         return _this;
@@ -3206,6 +3332,58 @@ var TextLabel = (function (_super) {
     Object.defineProperty(TextLabel.prototype, "textLines", {
         get: function () {
             return this._textLines;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "textAlign", {
+        get: function () {
+            return this._textAlign;
+        },
+        set: function (value) {
+            if (this._textAlign !== value) {
+                this._textAlign = value;
+                this._updateFragmentsPos();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "strokeColor", {
+        get: function () {
+            return this._strokeColor;
+        },
+        set: function (value) {
+            if (this._strokeColor !== value) {
+                this._strokeColor = value;
+                this._updateCanvasSource();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "strokeWidth", {
+        get: function () {
+            return this._strokeWidth;
+        },
+        set: function (value) {
+            if (this._strokeWidth != value) {
+                this._strokeWidth = value;
+                this._updateCanvasSource();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(TextLabel.prototype, "fontColor", {
+        get: function () {
+            return this._fontColor;
+        },
+        set: function (value) {
+            if (this._fontColor !== value) {
+                this._fontColor = value;
+                this._updateCanvasSource();
+            }
         },
         enumerable: true,
         configurable: true
@@ -3390,18 +3568,17 @@ var TextLabel = (function (_super) {
         configurable: true
     });
     TextLabel.prototype._reMeasureText = function () {
-        var _this = this;
         if (!this._textFlow || !this._textFlow.length || (this.width <= 0 && !this._autoResizeWidth)) {
             return;
         }
         if (!this._isSetByTextFlow && !this._wordWrap) {
-            var width_1 = measureTextWidth(this._text, this.fontName, this.fontSize, this.fontWeight, this.fontStyle);
+            var width = measureTextWidth(this._text, this.fontName, this.fontSize, this.fontWeight, this.fontStyle);
             // fragment.fontStyle + ' ' + fragment.fontWeight + ' ' + fragment.fontSize + 'px ' + fragment.fontName;
             this._textLines = [{
-                    width: width_1,
+                    width: width,
                     fragments: [{
                             text: this._text,
-                            width: width_1,
+                            width: width,
                             fontStyle: this.fontStyle,
                             fontSize: this.fontSize,
                             fontWeight: this.fontWeight,
@@ -3409,7 +3586,7 @@ var TextLabel = (function (_super) {
                         }]
                 }];
             if (this.autoResizeWidth) {
-                this.width = width_1;
+                this.width = width;
             }
             this.height = this.lineHeight;
         }
@@ -3421,26 +3598,116 @@ var TextLabel = (function (_super) {
             }
             this.height = result.height;
         }
-        var _a = this, textAlign = _a.textAlign, lineHeight = _a.lineHeight, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, width = _a.width;
-        var y = -_originPixelY + lineHeight * 0.5;
-        // let y = lineHeight * 0.5;
+        this._updateFragmentsPos();
+    };
+    TextLabel.prototype._updateFragmentsPos = function () {
+        if (!this._textLines || !this._textLines.length) {
+            if (this._canvasSource) {
+                this._canvasSource.clear();
+            }
+            return;
+        }
+        if (!this._canvasSource) {
+            this._canvasSource = CanvasSource.create();
+        }
+        var _a = this, textAlign = _a.textAlign, lineHeight = _a.lineHeight, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, width = _a.width, height = _a.height, _canvasSource = _a._canvasSource, fontSize = _a.fontSize;
+        var context = _canvasSource.context;
+        var y = lineHeight * 1.5;
+        width += fontSize * 2;
+        height += lineHeight * 2;
+        _canvasSource.setSize(width, height);
+        context.save();
+        context.textAlign = "left";
+        context.textBaseline = 'middle';
+        context.lineJoin = 'round';
         this._fragmentsPos = [];
-        this._textLines.forEach(function (line) {
-            var x = -_originPixelX;
-            // let x = 0;
+        for (var i = 0, l = this._textLines.length; i < l; i++) {
+            var line = this._textLines[i];
+            var x = 0;
             if (textAlign === "center") {
                 x += (width - line.width) * 0.5;
             }
             else if (textAlign === "right") {
                 x += width - line.width;
             }
-            line.fragments.forEach(function (fragment) {
-                _this._fragmentsPos.push({ x: x, y: y });
+            else {
+                x = fontSize;
+            }
+            for (var j = 0, fragment = void 0; fragment = line.fragments[j]; j++) {
+                this._fragmentsPos.push({ x: x, y: y });
+                var fontColor = fragment.fontColor != null ? fragment.fontColor : this.fontColor;
+                var strokeColor = "strokeColor" in fragment ? fragment.strokeColor : this.strokeColor;
+                var strokeWidth = "strokeWidth" in fragment ? fragment.strokeWidth : this.strokeWidth;
+                context.font = fragment.fontStyle + ' ' + fragment.fontWeight + ' ' + fragment.fontSize + 'px ' + fragment.fontName;
+                context.fillStyle = convertColor(fontColor);
+                if (strokeColor != null) {
+                    context.strokeStyle = convertColor(strokeColor || 0x000);
+                    context.lineWidth = (strokeWidth || 1) * 2;
+                    context.strokeText(fragment.text, x, y);
+                }
+                context.fillText(fragment.text, x, y);
                 x += fragment.width;
-            });
+            }
             y += lineHeight;
-        });
+        }
+        context.restore();
     };
+    TextLabel.prototype._updateCanvasSource = function () {
+        if (!this._canvasSource) {
+            return;
+        }
+        var _a = this, textAlign = _a.textAlign, lineHeight = _a.lineHeight, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, width = _a.width, _canvasSource = _a._canvasSource, _fragmentsPos = _a._fragmentsPos;
+        var index = 0;
+        var context = _canvasSource.context;
+        _canvasSource.clear();
+        context.save();
+        context.textAlign = "left";
+        context.textBaseline = 'middle';
+        context.lineJoin = 'round';
+        for (var i = 0, l = this._textLines.length; i < l; i++) {
+            var line = this._textLines[i];
+            for (var j = 0, fragment = void 0; fragment = line.fragments[j]; j++) {
+                if (fragment.text) {
+                    var fontColor = fragment.fontColor != null ? fragment.fontColor : this.fontColor;
+                    var strokeColor = "strokeColor" in fragment ? fragment.strokeColor : this.strokeColor;
+                    var strokeWidth = "strokeWidth" in fragment ? fragment.strokeWidth : this.strokeWidth;
+                    var pos = _fragmentsPos[index];
+                    context.font = fragment.fontStyle + ' ' + fragment.fontWeight + ' ' + fragment.fontSize + 'px ' + fragment.fontName;
+                    context.fillStyle = convertColor(fontColor);
+                    if (strokeColor != null) {
+                        context.strokeStyle = convertColor(strokeColor || 0x000);
+                        context.lineWidth = (strokeWidth || 1) * 2;
+                        context.strokeText(fragment.text, pos.x, pos.y);
+                    }
+                    context.fillText(fragment.text, pos.x, pos.y);
+                }
+                index += 1;
+            }
+        }
+        context.restore();
+    };
+    // protected _updateFragmentsPos() {
+    //     const { textAlign, lineHeight, _originPixelX, _originPixelY, width } = this;
+    //     let y = -_originPixelY + lineHeight * 0.5;
+    //     // let y = lineHeight * 0.5;
+    //     this._fragmentsPos = [];
+    //     for (let i = 0, l = this._textLines.length; i < l; i++) {
+    //         let line = this._textLines[i];
+    //         let x: number = -_originPixelX;
+    //         // let x = 0;
+    //         if (textAlign === "center") {
+    //             x += (width - line.width) * 0.5;
+    //         }
+    //         else if (textAlign === "right") {
+    //             x += width - line.width;
+    //         }
+    //         for (let j = 0, fragment: TextFragment; fragment = line.fragments[j]; j++) {
+    //             this._fragmentsPos.push({ x, y });
+    //             x += fragment.width;
+    //         }
+    //         y += lineHeight;
+    //     }
+    // }
     TextLabel.prototype.addChild = function (target) {
         if (Array.isArray(target)) {
             this.text += target.join("");
@@ -3457,54 +3724,70 @@ var TextLabel = (function (_super) {
         this.text += children.join("");
     };
     TextLabel.prototype.draw = function (context) {
-        var _this = this;
         _super.prototype.draw.call(this, context);
-        if (!this._textLines || this._textLines.length === 0) {
+        var _a = this, _textLines = _a._textLines, _canvasSource = _a._canvasSource;
+        if (!_textLines || !_canvasSource) {
             return;
         }
-        // const { textAlign, lineHeight, _originPixelX, _originPixelY, width } = this;
-        // let y = -_originPixelY + lineHeight * 0.5;
-        var index = 0;
-        context.save();
-        context.textAlign = "left";
-        context.textBaseline = 'middle';
-        context.lineJoin = 'round';
-        this._textLines.forEach(function (line) {
-            // let x: number = -_originPixelX;
-            // if (textAlign === "center") {
-            //     x += (width - line.width) * 0.5;
-            // }
-            // else if (textAlign === "right") {
-            //     x += width - line.width;
-            // }
-            line.fragments.forEach(function (fragment) {
-                if (fragment.text) {
-                    var fontColor = fragment.fontColor != null ? fragment.fontColor : _this.fontColor;
-                    var strokeColor = "strokeColor" in fragment ? fragment.strokeColor : _this.strokeColor;
-                    var strokeWidth = "strokeWidth" in fragment ? fragment.strokeWidth : _this.strokeWidth;
-                    var pos = _this._fragmentsPos[index];
-                    // context.save();
-                    context.font = fragment.fontStyle + ' ' + fragment.fontWeight + ' ' + fragment.fontSize + 'px ' + fragment.fontName;
-                    context.fillStyle = convertColor(fontColor);
-                    // context.textAlign = textAlign;
-                    // context.textAlign = "left";
-                    // context.textBaseline = 'middle';
-                    // context.lineJoin = 'round';
-                    if (strokeColor != null) {
-                        context.strokeStyle = convertColor(strokeColor || 0x000);
-                        context.lineWidth = (strokeWidth || 1) * 2;
-                        // context.strokeText(fragment.text, x, y);
-                        context.strokeText(fragment.text, pos.x, pos.y);
-                    }
-                    context.fillText(fragment.text, pos.x, pos.y);
-                    // context.restore();
-                }
-                index += 1;
-                // x += fragment.width;
-            });
-            // y += lineHeight;
-        });
-        context.restore();
+        var _b = this, _originPixelX = _b._originPixelX, _originPixelY = _b._originPixelY, lineHeight = _b.lineHeight, _fontSize = _b._fontSize;
+        context.drawImage(_canvasSource.canvas, 0, 0, _canvasSource.width, _canvasSource.height, -_originPixelX - _fontSize, -_originPixelY - lineHeight, _canvasSource.width, _canvasSource.height);
+    };
+    // protected draw(context: CanvasRenderingContext2D): void {
+    //     super.draw(context);
+    //     if (!this._textLines || this._textLines.length === 0) {
+    //         return;
+    //     }
+    //     // const { textAlign, lineHeight, _originPixelX, _originPixelY, width } = this;
+    //     // let y = -_originPixelY + lineHeight * 0.5;
+    //     let index = 0;
+    //     context.save();
+    //     context.textAlign = "left";
+    //     context.textBaseline = 'middle';
+    //     context.lineJoin = 'round';
+    //     for (let i = 0, l = this._textLines.length; i < l; i++) {
+    //         let line = this._textLines[i];
+    //         // let x: number = -_originPixelX;
+    //         // if (textAlign === "center") {
+    //         //     x += (width - line.width) * 0.5;
+    //         // }
+    //         // else if (textAlign === "right") {
+    //         //     x += width - line.width;
+    //         // }
+    //         for (let j = 0, fragment: TextFragment; fragment = line.fragments[j]; j++) {
+    //             if (fragment.text) {
+    //                 let fontColor = fragment.fontColor != null ? fragment.fontColor : this.fontColor;
+    //                 let strokeColor = "strokeColor" in fragment ? fragment.strokeColor : this.strokeColor;
+    //                 let strokeWidth = "strokeWidth" in fragment ? fragment.strokeWidth : this.strokeWidth;
+    //                 let pos = this._fragmentsPos[index];
+    //                 // context.save();
+    //                 context.font = fragment.fontStyle + ' ' + fragment.fontWeight + ' ' + fragment.fontSize + 'px ' + fragment.fontName;
+    //                 context.fillStyle = convertColor(fontColor);
+    //                 // context.textAlign = textAlign;
+    //                 // context.textAlign = "left";
+    //                 // context.textBaseline = 'middle';
+    //                 // context.lineJoin = 'round';
+    //                 if (strokeColor != null) {
+    //                     context.strokeStyle = convertColor(strokeColor || 0x000);
+    //                     context.lineWidth = (strokeWidth || 1) * 2;
+    //                     // context.strokeText(fragment.text, x, y);
+    //                     context.strokeText(fragment.text, pos.x, pos.y);
+    //                 }
+    //                 context.fillText(fragment.text, pos.x, pos.y);
+    //                 // context.restore();
+    //             }
+    //             index += 1;
+    //             // x += fragment.width;
+    //         }
+    //         // y += lineHeight;
+    //     }
+    //     context.restore();
+    // }
+    TextLabel.prototype.release = function (recusive) {
+        if (this._canvasSource) {
+            this._canvasSource.recycle();
+            this._canvasSource = null;
+        }
+        _super.prototype.release.call(this, recusive);
     };
     return TextLabel;
 }(Sprite));
@@ -3573,25 +3856,25 @@ var BMFontLabel = (function (_super) {
         set: function (textureMap) {
             var _this = this;
             if (textureMap != null) {
-                var _textureMap_1 = {};
+                var _textureMap = {};
                 var unReadyCount_1 = 0;
-                var onReady_1 = function () {
+                var onReady = function () {
                     if (_this._isAllTexturesReady = --unReadyCount_1 === 0) {
                         _this._reMeasureText();
                     }
                 };
-                Object.keys(textureMap).forEach(function (word) {
+                for (var word in textureMap) {
                     var wordTexture = textureMap[word];
                     if (typeof wordTexture === 'string') {
                         unReadyCount_1 += 1;
-                        wordTexture = _textureMap_1[word] = Texture.create(wordTexture);
-                        wordTexture.onReady(onReady_1);
+                        wordTexture = _textureMap[word] = Texture.create(wordTexture);
+                        wordTexture.onReady(onReady);
                     }
                     else {
-                        _textureMap_1[word] = wordTexture;
+                        _textureMap[word] = wordTexture;
                     }
-                });
-                this._textureMap = _textureMap_1;
+                }
+                this._textureMap = _textureMap;
                 if (this._isAllTexturesReady = unReadyCount_1 === 0) {
                     this._reMeasureText();
                 }
@@ -3710,28 +3993,31 @@ var BMFontLabel = (function (_super) {
         configurable: true
     });
     BMFontLabel.prototype._reMeasureText = function () {
-        var _this = this;
         if (!this.textureMap || !this._text || !this._isAllTexturesReady || this.width <= 0) {
             this._bmfontLines = null;
+            if (this._canvasSource) {
+                this._canvasSource.clear();
+            }
             return;
         }
         var _a = this, _textureMap = _a._textureMap, text = _a.text, width = _a.width, lineHeight = _a.lineHeight, fontSize = _a.fontSize, wordWrap = _a.wordWrap, wordSpace = _a.wordSpace;
         var _bmfontLines = this._bmfontLines = [];
         var words = this._text.split('');
         var currLine = _bmfontLines[0] = { width: 0, fragments: [] };
-        words.forEach(function (word) {
-            var texture;
+        for (var i = 0, l = words.length; i < l; i++) {
+            var word = words[i];
+            var texture = void 0;
             if (word === " ") {
                 texture = null;
             }
             else {
                 texture = _textureMap[word];
                 if (!texture) {
-                    console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" not found.", _this);
+                    console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" not found.", this);
                     texture = null;
                 }
                 if (!texture.ready) {
-                    console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" is not ready to use.", _this);
+                    console.error("canvas2d.BMFontLabel: Texture of the word \"" + word + "\" is not ready to use.", this);
                     texture = null;
                 }
             }
@@ -3749,82 +4035,138 @@ var BMFontLabel = (function (_super) {
                     width: fontSize, fragments: [texture]
                 };
             }
-        });
+        }
         if (this._autoResizeHeight) {
             this.height = _bmfontLines.length * lineHeight;
         }
         this._updateFragmentsPos();
     };
     BMFontLabel.prototype._updateFragmentsPos = function () {
-        if (!this._bmfontLines) {
+        if (!this._bmfontLines || !this._bmfontLines.length) {
+            if (this._canvasSource) {
+                this._canvasSource.clear();
+            }
             return;
         }
-        var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, _bmfontLines = _a._bmfontLines, width = _a.width, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace;
+        if (!this._canvasSource) {
+            this._canvasSource = CanvasSource.create();
+        }
+        var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, _bmfontLines = _a._bmfontLines, width = _a.width, height = _a.height, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace, _canvasSource = _a._canvasSource;
         var _fragmentsPos = this._fragmentsPos = [];
-        var y = -_originPixelY;
-        // let y = 0;
-        _bmfontLines.forEach(function (line, i) {
-            var x;
+        var context = _canvasSource.context;
+        var y = 0;
+        _canvasSource.setSize(width, height);
+        for (var i = 0, l = _bmfontLines.length; i < l; i++) {
+            var line = _bmfontLines[i];
+            var x = void 0;
             if (_textAlign === "right") {
-                x = width - line.width - _originPixelX;
-                // x = width - line.width;
+                x = width - line.width;
             }
             else if (_textAlign == "center") {
-                x = (width - line.width) * 0.5 - _originPixelX;
-                // x = (width - line.width) * 0.5;
+                x = (width - line.width) * 0.5;
             }
             else {
-                x = -_originPixelX;
-                // x = 0;
+                x = 0;
             }
-            line.fragments.forEach(function (word, j) {
+            for (var j = 0, n = line.fragments.length; j < n; j++) {
+                var word = line.fragments[j];
                 var ty = y;
                 var h = 0;
                 if (word) {
                     h = fontSize / word.width * word.height;
                     var p = (lineHeight - h) * 0.5;
                     ty = y + p;
+                    context.drawImage(word.source, 0, 0, word.width, word.height, x, ty, fontSize, h);
                 }
                 _fragmentsPos.push({ x: x, y: ty, height: h });
                 x += fontSize + wordSpace;
-            });
+            }
             y += lineHeight;
-        });
+        }
     };
+    // protected _updateFragmentsPos() {
+    //     if (!this._bmfontLines) {
+    //         return;
+    //     }
+    //     let { _originPixelX, _originPixelY, _textAlign, _bmfontLines, width, fontSize, lineHeight, wordSpace } = this;
+    //     let _fragmentsPos: { x: number; y: number; height: number }[] = this._fragmentsPos = [];
+    //     let y: number = -_originPixelY;
+    //     // let y = 0;
+    //     for (let i = 0, l = _bmfontLines.length; i < l; i++) {
+    //         let line = _bmfontLines[i];
+    //         let x: number;
+    //         if (_textAlign === "right") {
+    //             x = width - line.width - _originPixelX;
+    //             // x = width - line.width;
+    //         }
+    //         else if (_textAlign == "center") {
+    //             x = (width - line.width) * 0.5 - _originPixelX;
+    //             // x = (width - line.width) * 0.5;
+    //         }
+    //         else {
+    //             x = -_originPixelX;
+    //             // x = 0;
+    //         }
+    //         for (let j = 0, n = line.fragments.length; j < n; j++) {
+    //             let word = line.fragments[j];
+    //             let ty = y;
+    //             let h = 0;
+    //             if (word) {
+    //                 h = fontSize / word.width * word.height;
+    //                 let p = (lineHeight - h) * 0.5;
+    //                 ty = y + p;
+    //             }
+    //             _fragmentsPos.push({ x, y: ty, height: h });
+    //             x += fontSize + wordSpace;
+    //         }
+    //         y += lineHeight;
+    //     }
+    // }
     BMFontLabel.prototype.draw = function (context) {
         _super.prototype.draw.call(this, context);
-        if (!this._bmfontLines) {
+        var _a = this, _bmfontLines = _a._bmfontLines, _canvasSource = _a._canvasSource;
+        if (!_bmfontLines || !_canvasSource) {
             return;
         }
-        var _a = this, _originPixelX = _a._originPixelX, _originPixelY = _a._originPixelY, _textAlign = _a._textAlign, fontSize = _a.fontSize, lineHeight = _a.lineHeight, wordSpace = _a.wordSpace, width = _a.width;
-        // let y: number = -_originPixelY;
-        var _fragmentsPos = this._fragmentsPos;
-        var index = 0;
-        this._bmfontLines.forEach(function (line, i) {
-            // let x: number;
-            // if (_textAlign === "right") {
-            //     x = width - line.width - _originPixelX;
-            // }
-            // else if (_textAlign == "center") {
-            //     x = (width - line.width) * 0.5 - _originPixelX;
-            // }
-            // else {
-            //     x = -_originPixelX;
-            // }
-            line.fragments.forEach(function (word, j) {
-                if (word) {
-                    // let h = fontSize / word.width * word.height;
-                    // let p = (lineHeight - h) * 0.5;
-                    // context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
-                    var pos = _fragmentsPos[index];
-                    context.drawImage(word.source, 0, 0, word.width, word.height, pos.x, pos.y, fontSize, pos.height);
-                }
-                // x += fontSize + wordSpace;
-                index += 1;
-            });
-            // y += lineHeight;
-        });
+        var _b = this, _originPixelX = _b._originPixelX, _originPixelY = _b._originPixelY;
+        context.drawImage(_canvasSource.canvas, 0, 0, _canvasSource.width, _canvasSource.height, -_originPixelX, -_originPixelY, _canvasSource.width, _canvasSource.height);
     };
+    // protected draw(context: CanvasRenderingContext2D) {
+    //     super.draw(context);
+    //     if (!this._bmfontLines) {
+    //         return;
+    //     }
+    //     const { _originPixelX, _originPixelY, _textAlign, fontSize, lineHeight, wordSpace, width } = this;
+    //     // let y: number = -_originPixelY;
+    //     let _fragmentsPos = this._fragmentsPos;
+    //     let index = 0;
+    //     for (let i = 0, l = this._bmfontLines.length; i < l; i++) {
+    //         let line = this._bmfontLines[i];
+    //         // let x: number;
+    //         // if (_textAlign === "right") {
+    //         //     x = width - line.width - _originPixelX;
+    //         // }
+    //         // else if (_textAlign == "center") {
+    //         //     x = (width - line.width) * 0.5 - _originPixelX;
+    //         // }
+    //         // else {
+    //         //     x = -_originPixelX;
+    //         // }
+    //         for (let j = 0, n = line.fragments.length; j < n; j++) {
+    //             let word = line.fragments[j];
+    //             if (word) {
+    //                 // let h = fontSize / word.width * word.height;
+    //                 // let p = (lineHeight - h) * 0.5;
+    //                 // context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
+    //                 let pos = _fragmentsPos[index];
+    //                 context.drawImage(word.source, 0, 0, word.width, word.height, pos.x, pos.y, fontSize, pos.height);
+    //             }
+    //             // x += fontSize + wordSpace;
+    //             index += 1;
+    //         }
+    //         // y += lineHeight;
+    //     }
+    // }
     BMFontLabel.prototype.addChild = function (target) {
         this._text = (this._text || "") + target;
     };
@@ -3834,6 +4176,13 @@ var BMFontLabel = (function (_super) {
             children[_i] = arguments[_i];
         }
         this._text = (this._text || "") + children.join("");
+    };
+    BMFontLabel.prototype.release = function (recusive) {
+        if (this._canvasSource) {
+            this._canvasSource.recycle();
+            this._canvasSource = null;
+        }
+        _super.prototype.release.call(this, recusive);
     };
     return BMFontLabel;
 }(Sprite));
@@ -3871,13 +4220,13 @@ function createSprite(type, props) {
         console.error("canvas2d.createSprite(): Unknown sprite type", type);
     }
     else if (actions && actions.length) {
-        actions.forEach(function (detail) {
+        for (var i = 0, detail = void 0; detail = actions[i]; i++) {
             var instance = new Action(sprite).queue(detail.queue);
             if (detail.repeatMode != null) {
                 instance.setRepeatMode(detail.repeatMode);
             }
             instance.start();
-        });
+        }
     }
     if (ref) {
         ref.call(undefined, sprite);
@@ -3898,7 +4247,12 @@ function createStage(props, children) {
     stage.mouseEnabled = mouseEnabled;
     stage.start(useExternalTimer);
     if (children.length) {
-        children.forEach(function (child) { return child && stage.addChild(child); });
+        for (var i = 0, l = children.length; i < l; i++) {
+            var child = children[i];
+            if (child) {
+                stage.addChild(child);
+            }
+        }
     }
     return stage;
 }
@@ -3906,9 +4260,10 @@ function addChildren(sprite, children) {
     if (!children.length) {
         return;
     }
-    children.forEach(function (child) {
+    for (var i = 0, l = children.length; i < l; i++) {
+        var child = children[i];
         if (!child) {
-            return;
+            continue;
         }
         if (Array.isArray(child)) {
             addChildren(sprite, child);
@@ -3916,7 +4271,7 @@ function addChildren(sprite, children) {
         else {
             sprite.addChild(child);
         }
-    });
+    }
 }
 
 var HTMLAudio = (function (_super) {
@@ -4279,10 +4634,10 @@ var SoundManager = (function () {
         }
         return returnAll ? all : all[0];
     };
-    SoundManager.prototype.load = function (baseUri, name, onComplete, channels) {
+    SoundManager.prototype.load = function (baseUri, name, onComplete, channels, version) {
         var _this = this;
         if (channels === void 0) { channels = 1; }
-        var src = baseUri + name + this._ext;
+        var src = baseUri + name + this._ext + (version == null ? '' : "?v=" + version);
         var audio = WebAudio.isSupported ? new WebAudio(src) : new HTMLAudio(src);
         audio.on('load', function () {
             if (onComplete) {
@@ -4310,7 +4665,7 @@ var SoundManager = (function () {
     /**
      * Load multiple sound resources
      */
-    SoundManager.prototype.loadList = function (baseUri, resources, onAllCompleted, onProgress) {
+    SoundManager.prototype.loadList = function (baseUri, resources, onAllCompleted, onProgress, version) {
         var _this = this;
         var totalCount = resources.length;
         var endedCount = 0;
@@ -4331,7 +4686,11 @@ var SoundManager = (function () {
                 onAllCompleted(success, errors);
             }
         };
-        resources.forEach(function (res) { return _this.load(baseUri, res.name, function (loaded) { return onCompleted(res.name, loaded); }, res.channels); });
+        resources.forEach(function (res) {
+            _this.load(baseUri, res.name, function (loaded) {
+                onCompleted(res.name, loaded);
+            }, res.channels, version);
+        });
     };
     /**
      * Get all audioes by name
@@ -4357,7 +4716,9 @@ var SoundManager = (function () {
     SoundManager.prototype.pause = function (name) {
         var list = this.getAllAudioes(name);
         if (list) {
-            list.forEach(function (audio) { return audio.pause(); });
+            for (var i = 0, audio = void 0; audio = list[i]; i++) {
+                audio.pause();
+            }
         }
     };
     /**
@@ -4366,7 +4727,9 @@ var SoundManager = (function () {
     SoundManager.prototype.stop = function (name) {
         var list = this._audioCache[name];
         if (list) {
-            list.forEach(function (audio) { return audio.stop(); });
+            for (var i = 0, audio = void 0; audio = list[i]; i++) {
+                audio.stop();
+            }
         }
     };
     /**
@@ -4375,18 +4738,21 @@ var SoundManager = (function () {
     SoundManager.prototype.resume = function (name) {
         var list = this._audioCache[name];
         if (list) {
-            list.forEach(function (audio) { return !audio.playing && audio.currentTime > 0 && audio.resume(); });
+            for (var i = 0, audio = void 0; audio = list[i]; i++) {
+                if (!audio.playing && audio.currentTime > 0) {
+                    audio.resume();
+                }
+            }
         }
     };
     SoundManager.prototype._setEnabled = function (value) {
-        var _this = this;
         if (value) {
             WebAudio.enabled = true;
             HTMLAudio.enabled = true;
             if (this._pausedAudios) {
-                Object.keys(this._pausedAudios).forEach(function (id) {
-                    _this._pausedAudios[id].resume();
-                });
+                for (var id in this._pausedAudios) {
+                    this._pausedAudios[id].resume();
+                }
                 this._pausedAudios = null;
             }
         }
@@ -4394,14 +4760,15 @@ var SoundManager = (function () {
             WebAudio.enabled = false;
             HTMLAudio.enabled = false;
             this._pausedAudios = {};
-            Object.keys(this._audioCache).forEach(function (name) {
-                _this._audioCache[name].forEach(function (audio) {
+            for (var name in this._audioCache) {
+                var list = this._audioCache[name];
+                for (var i = 0, audio = void 0; audio = list[i]; i++) {
                     if (audio.playing) {
                         audio.pause();
-                        _this._pausedAudios[uid(audio)] = audio;
+                        this._pausedAudios[uid(audio)] = audio;
                     }
-                });
-            });
+                }
+            }
         }
         this._enabled = value;
     };
@@ -4437,6 +4804,8 @@ exports.removeArrayItem = removeArrayItem;
 exports.convertColor = convertColor;
 exports.hexToRgb = hexToRgb;
 exports.rgbToHex = rgbToHex;
+exports.ReleasePool = ReleasePool;
+exports.CanvasSource = CanvasSource;
 exports.SoundManager = SoundManager;
 exports.Sound = Sound;
 exports.HTMLAudio = HTMLAudio;

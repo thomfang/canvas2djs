@@ -1,6 +1,7 @@
 import { Texture } from '../Texture';
 import { Sprite, ISprite } from './Sprite';
 import { TextAlign } from './TextLabel';
+import { CanvasSource } from '../CanvasSource';
 
 export type IBMFontLabel = ISprite & {
     textureMap: { [word: string]: Texture | string };
@@ -27,6 +28,8 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     protected _fragmentsPos: { x: number; y: number; height: number }[];
     protected _autoResizeHeight: boolean = true;
     protected _isAllTexturesReady: boolean;
+
+    protected _canvasSource: CanvasSource;
 
     constructor(props?: IBMFontLabel) {
         super();
@@ -78,7 +81,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
                     this._reMeasureText();
                 }
             };
-            Object.keys(textureMap).forEach(word => {
+            for (let word in textureMap) {
                 let wordTexture = textureMap[word];
                 if (typeof wordTexture === 'string') {
                     unReadyCount += 1;
@@ -88,7 +91,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
                 else {
                     _textureMap[word] = wordTexture;
                 }
-            });
+            }
 
             this._textureMap = _textureMap;
             if (this._isAllTexturesReady = unReadyCount === 0) {
@@ -199,6 +202,9 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     protected _reMeasureText() {
         if (!this.textureMap || !this._text || !this._isAllTexturesReady || this.width <= 0) {
             this._bmfontLines = null;
+            if (this._canvasSource) {
+                this._canvasSource.clear();
+            }
             return;
         }
 
@@ -209,7 +215,8 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
         var words = this._text.split('');
         var currLine = _bmfontLines[0] = { width: 0, fragments: [] };
 
-        words.forEach(word => {
+        for (let i = 0, l = words.length; i < l; i++) {
+            let word = words[i];
             let texture: Texture;
             if (word === " ") {
                 texture = null;
@@ -241,7 +248,7 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
                     width: fontSize, fragments: [texture]
                 };
             }
-        });
+        }
 
         if (this._autoResizeHeight) {
             this.height = _bmfontLines.length * lineHeight;
@@ -251,88 +258,154 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
     }
 
     protected _updateFragmentsPos() {
-        if (!this._bmfontLines) {
+        if (!this._bmfontLines || !this._bmfontLines.length) {
+            if (this._canvasSource) {
+                this._canvasSource.clear();
+            }
             return;
         }
 
-        let { _originPixelX, _originPixelY, _textAlign, _bmfontLines, width, fontSize, lineHeight, wordSpace } = this;
-        let _fragmentsPos: { x: number; y: number; height: number }[] = this._fragmentsPos = [];
-        let y: number = -_originPixelY;
-        // let y = 0;
+        if (!this._canvasSource) {
+            this._canvasSource = CanvasSource.create();
+        }
 
-        _bmfontLines.forEach((line, i) => {
+        let { _originPixelX, _originPixelY, _textAlign, _bmfontLines, width, height, fontSize, lineHeight, wordSpace, _canvasSource } = this;
+        let _fragmentsPos: { x: number; y: number; height: number }[] = this._fragmentsPos = [];
+        let context = _canvasSource.context;
+        let y = 0;
+
+        _canvasSource.setSize(width, height);
+
+        for (let i = 0, l = _bmfontLines.length; i < l; i++) {
+            let line = _bmfontLines[i];
             let x: number;
 
             if (_textAlign === "right") {
-                x = width - line.width - _originPixelX;
-                // x = width - line.width;
+                x = width - line.width;
             }
             else if (_textAlign == "center") {
-                x = (width - line.width) * 0.5 - _originPixelX;
-                // x = (width - line.width) * 0.5;
+                x = (width - line.width) * 0.5;
             }
             else {
-                x = -_originPixelX;
-                // x = 0;
+                x = 0;
             }
 
-            line.fragments.forEach((word, j) => {
+            for (let j = 0, n = line.fragments.length; j < n; j++) {
+                let word = line.fragments[j];
                 let ty = y;
                 let h = 0;
                 if (word) {
                     h = fontSize / word.width * word.height;
                     let p = (lineHeight - h) * 0.5;
                     ty = y + p;
+                    context.drawImage(word.source, 0, 0, word.width, word.height, x, ty, fontSize, h);
                 }
                 _fragmentsPos.push({ x, y: ty, height: h });
                 x += fontSize + wordSpace;
-            });
+            }
 
             y += lineHeight;
-        });
+        }
     }
 
+    // protected _updateFragmentsPos() {
+    //     if (!this._bmfontLines) {
+    //         return;
+    //     }
+
+    //     let { _originPixelX, _originPixelY, _textAlign, _bmfontLines, width, fontSize, lineHeight, wordSpace } = this;
+    //     let _fragmentsPos: { x: number; y: number; height: number }[] = this._fragmentsPos = [];
+    //     let y: number = -_originPixelY;
+    //     // let y = 0;
+
+    //     for (let i = 0, l = _bmfontLines.length; i < l; i++) {
+    //         let line = _bmfontLines[i];
+    //         let x: number;
+
+    //         if (_textAlign === "right") {
+    //             x = width - line.width - _originPixelX;
+    //             // x = width - line.width;
+    //         }
+    //         else if (_textAlign == "center") {
+    //             x = (width - line.width) * 0.5 - _originPixelX;
+    //             // x = (width - line.width) * 0.5;
+    //         }
+    //         else {
+    //             x = -_originPixelX;
+    //             // x = 0;
+    //         }
+
+    //         for (let j = 0, n = line.fragments.length; j < n; j++) {
+    //             let word = line.fragments[j];
+    //             let ty = y;
+    //             let h = 0;
+    //             if (word) {
+    //                 h = fontSize / word.width * word.height;
+    //                 let p = (lineHeight - h) * 0.5;
+    //                 ty = y + p;
+    //             }
+    //             _fragmentsPos.push({ x, y: ty, height: h });
+    //             x += fontSize + wordSpace;
+    //         }
+
+    //         y += lineHeight;
+    //     }
+    // }
     protected draw(context: CanvasRenderingContext2D) {
         super.draw(context);
 
-        if (!this._bmfontLines) {
+        let { _bmfontLines, _canvasSource } = this;
+        if (!_bmfontLines || !_canvasSource) {
             return;
         }
 
-        const { _originPixelX, _originPixelY, _textAlign, fontSize, lineHeight, wordSpace, width } = this;
-
-        // let y: number = -_originPixelY;
-        let _fragmentsPos = this._fragmentsPos;
-        let index = 0;
-
-        this._bmfontLines.forEach((line, i) => {
-            // let x: number;
-
-            // if (_textAlign === "right") {
-            //     x = width - line.width - _originPixelX;
-            // }
-            // else if (_textAlign == "center") {
-            //     x = (width - line.width) * 0.5 - _originPixelX;
-            // }
-            // else {
-            //     x = -_originPixelX;
-            // }
-
-            line.fragments.forEach((word, j) => {
-                if (word) {
-                    // let h = fontSize / word.width * word.height;
-                    // let p = (lineHeight - h) * 0.5;
-                    // context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
-                    let pos = _fragmentsPos[index];
-                    context.drawImage(word.source, 0, 0, word.width, word.height, pos.x, pos.y, fontSize, pos.height);
-                }
-                // x += fontSize + wordSpace;
-                index += 1;
-            });
-
-            // y += lineHeight;
-        });
+        let { _originPixelX, _originPixelY } = this;
+        context.drawImage(_canvasSource.canvas, 0, 0, _canvasSource.width, _canvasSource.height, -_originPixelX, -_originPixelY, _canvasSource.width, _canvasSource.height);
     }
+
+    // protected draw(context: CanvasRenderingContext2D) {
+    //     super.draw(context);
+
+    //     if (!this._bmfontLines) {
+    //         return;
+    //     }
+
+    //     const { _originPixelX, _originPixelY, _textAlign, fontSize, lineHeight, wordSpace, width } = this;
+
+    //     // let y: number = -_originPixelY;
+    //     let _fragmentsPos = this._fragmentsPos;
+    //     let index = 0;
+
+    //     for (let i = 0, l = this._bmfontLines.length; i < l; i++) {
+    //         let line = this._bmfontLines[i];
+    //         // let x: number;
+
+    //         // if (_textAlign === "right") {
+    //         //     x = width - line.width - _originPixelX;
+    //         // }
+    //         // else if (_textAlign == "center") {
+    //         //     x = (width - line.width) * 0.5 - _originPixelX;
+    //         // }
+    //         // else {
+    //         //     x = -_originPixelX;
+    //         // }
+
+    //         for (let j = 0, n = line.fragments.length; j < n; j++) {
+    //             let word = line.fragments[j];
+    //             if (word) {
+    //                 // let h = fontSize / word.width * word.height;
+    //                 // let p = (lineHeight - h) * 0.5;
+    //                 // context.drawImage(word.source, 0, 0, word.width, word.height, x, y + p, fontSize, h);
+    //                 let pos = _fragmentsPos[index];
+    //                 context.drawImage(word.source, 0, 0, word.width, word.height, pos.x, pos.y, fontSize, pos.height);
+    //             }
+    //             // x += fontSize + wordSpace;
+    //             index += 1;
+    //         }
+
+    //         // y += lineHeight;
+    //     }
+    // }
 
     addChild(target: any) {
         this._text = (this._text || "") + target;
@@ -342,4 +415,11 @@ export class BMFontLabel extends Sprite<IBMFontLabel> {
         this._text = (this._text || "") + children.join("");
     }
 
+    release(recusive?: boolean) {
+        if (this._canvasSource) {
+            this._canvasSource.recycle();
+            this._canvasSource = null;
+        }
+        super.release(recusive);
+    }
 }

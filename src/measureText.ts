@@ -84,7 +84,7 @@ export function measureText(
     let lineWidth = 0;
     let textMetrics: TextMetrics;
 
-    textFlow.forEach(flow => {
+    for (let i = 0, flow: TextFlow; flow = textFlow[i]; i++) {
         let text: string = flow.text;
         let props: TextFlow = {
             fontSize,
@@ -104,7 +104,7 @@ export function measureText(
                 width: textMetrics.width,
             });
             lineWidth += textMetrics.width;
-            return;
+            continue;
         }
 
         let currentPos = 0;
@@ -239,7 +239,7 @@ export function measureText(
             lineWidth += lastMeasuredWidth;
             remainWidth = width - lineWidth;
         }
-    });
+    }
 
     if (lineFragments.length) {
         measuredSize.lines.push({
@@ -251,11 +251,12 @@ export function measureText(
 
     if (autoResizeWidth) {
         let max = 0;
-        measuredSize.lines.forEach(l => {
-            if (l.width > max) {
-                max = l.width;
+        for (let i = 0, l = measuredSize.lines.length; i < l; i++) {
+            let line = measuredSize.lines[i];
+            if (line.width > max) {
+                max = line.width;
             }
-        });
+        }
         measuredSize.width = max;
     }
 

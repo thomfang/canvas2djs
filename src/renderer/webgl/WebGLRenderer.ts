@@ -101,9 +101,9 @@ export class WebGLRenderer {
         }
 
         if (sprite.children) {
-            sprite.children.forEach(child => {
+            for (let i = 0, child: Sprite<{}>; child = sprite.children[i]; i++) {
                 this.drawSprite(child, matrix, originOffsetX, originOffsetY, alpha);
-            });
+            }
         }
 
         if (sprite.clipOverflow) {

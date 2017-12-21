@@ -93,6 +93,15 @@ export class EventEmitter {
         return this;
     }
 
+    hasListener(type: string) {
+        let id = uid(this);
+        let eventCache = EventEmitter._eventCache;
+        if (!eventCache[id] || !eventCache[id][type] || !eventCache[id][type].length) {
+            return false;
+        }
+        return true;
+    }
+
     emit(type: string, ...args: any[]) {
         let id = uid(this);
         let cache = EventEmitter._eventCache[id];

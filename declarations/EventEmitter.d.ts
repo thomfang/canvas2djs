@@ -6,5 +6,6 @@ export declare class EventEmitter {
     once(type: string, listener: EventListener): this;
     removeListener(type: string, listener: EventListener): this;
     removeAllListeners(type?: string): this;
+    hasListener(type: string): boolean;
     emit(type: string, ...args: any[]): this;
 }

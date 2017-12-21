@@ -46,7 +46,7 @@ export class CanvasRenderTarget {
 
     public update(sprite: Sprite<{}>) {
         let needUpdate: boolean;
-        Object.keys(this.options).forEach(key => {
+        for (let key in this.options) {
             let value = sprite[key];
             if (key === 'bgColor' || key === 'borderColor' || key === 'fontColor' || key === 'strokeColor') {
                 value = convertColor(value);
@@ -64,7 +64,7 @@ export class CanvasRenderTarget {
                 this.options[key] = value;
                 needUpdate = true;
             }
-        });
+        }
         if (!needUpdate) {
             return false;
         }
@@ -94,7 +94,7 @@ export class CanvasRenderTarget {
             this.hasSomethingToDraw = false;
             return;
         }
-        
+
         if (!this.source) {
             this.createCanvas();
         }
@@ -182,8 +182,9 @@ export class CanvasRenderTarget {
             context.textAlign = "left";
             context.textBaseline = 'middle';
             context.lineJoin = 'round';
-            textLines.forEach(line => {
-                line.fragments.forEach((fragment) => {
+            for (let i = 0, l = textLines.length; i < l; i++) {
+                let line = textLines[i];
+                for (let i = 0, fragment: TextFragment; fragment = line.fragments[i]; i++) {
                     if (fragment.text) {
                         let _fontColor = fragment.fontColor != null ? fragment.fontColor : fontColor;
                         let _strokeColor = "strokeColor" in fragment ? fragment.strokeColor : strokeColor;
@@ -202,8 +203,8 @@ export class CanvasRenderTarget {
                         context.fillText(fragment.text, pos.x, pos.y);
                     }
                     index += 1;
-                });
-            });
+                }
+            }
             this.hasSomethingToDraw = true;
         }
     }
@@ -213,15 +214,17 @@ export class CanvasRenderTarget {
         let { bmfontLines, fragmentsPos, fontSize } = this.options;
         if (bmfontLines) {
             let index = 0;
-            bmfontLines.forEach((line, i) => {
-                line.fragments.forEach((word, j) => {
+            for (let l = bmfontLines.length, i = 0; i < l; i++) {
+                let line = bmfontLines[i];
+                for (let j = 0, n = line.fragments.length; j < n; j++) {
+                    let word = line.fragments[j];
                     if (word) {
                         let pos = fragmentsPos[index];
                         context.drawImage(word.source, 0, 0, word.width, word.height, pos.x, pos.y, fontSize, pos.height);
                     }
                     index += 1;
-                });
-            });
+                }
+            }
             this.hasSomethingToDraw = true;
         }
     }

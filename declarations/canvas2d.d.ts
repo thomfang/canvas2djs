@@ -7,6 +7,8 @@ export * from './createSprite';
 export * from './EventEmitter';
 export * from './UIEvent';
 export * from './Util';
+export * from './ReleasePool';
+export * from './CanvasSource';
 export * from './sound/Sound';
 export * from './sound/HTMLAudio';
 export * from './sound/WebAudio';

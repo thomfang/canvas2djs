@@ -9,6 +9,8 @@ export type TransByProps = {
     [name: string]: number | { value: number; easing: EasingFunc; }
 }
 
+export type TransOption = { name: string; dest: number; easing: EasingFunc; };
+
 export class Transition extends BaseAction {
 
     public static defaultEasingFunc = Tween.easeInOutQuad;
@@ -22,7 +24,7 @@ export class Transition extends BaseAction {
 
     protected isTransitionBy: boolean;
 
-    protected options: Array<{ name: string; dest: number; easing: EasingFunc; }>;
+    protected options: TransOption[];
     protected beginValue: { [name: string]: number };
     protected deltaValue: { [name: string]: number };
 
@@ -43,7 +45,7 @@ export class Transition extends BaseAction {
     }
 
     private _initAsTransitionTo(options: TransToProps) {
-        Object.keys(options).forEach(name => {
+        for (let name in options) {
             let info = options[name];
             let easing: EasingFunc;
             let dest: number;
@@ -57,13 +59,13 @@ export class Transition extends BaseAction {
             }
 
             this.options.push({ name, dest, easing });
-        });
+        }
     }
 
     private _initAsTransitionBy(options: TransByProps) {
         let deltaValue = this.deltaValue;
 
-        Object.keys(options).forEach(name => {
+        for (let name in options) {
             let info = options[name];
             let easing: EasingFunc;
             let dest: number;
@@ -77,7 +79,7 @@ export class Transition extends BaseAction {
             }
 
             this.options.push({ name, dest, easing });
-        });
+        }
     }
 
     private _initBeginValue(target: any) {
@@ -85,16 +87,16 @@ export class Transition extends BaseAction {
         let deltaValue = this.deltaValue;
 
         if (this.isTransitionBy) {
-            this.options.forEach(option => {
+            for (let i = 0, option: TransOption; option = this.options[i]; i++) {
                 beginValue[option.name] = target[option.name];
                 option.dest = target[option.name] + deltaValue[option.name];
-            });
+            }
         }
         else {
-            this.options.forEach(option => {
+            for (let i = 0, option: TransOption; option = this.options[i]; i++) {
                 beginValue[option.name] = target[option.name];
                 deltaValue[option.name] = option.dest - target[option.name];
-            });
+            }
         }
     }
 
@@ -113,16 +115,17 @@ export class Transition extends BaseAction {
         var beginValue = this.beginValue;
         var deltaValue = this.deltaValue;
 
-        this.options.forEach(({ name, dest, easing }) => {
+        for (let i = 0, option: TransOption; option = this.options[i]; i++) {
+            let { name, dest, easing } = option;
             easing = easing || Transition.defaultEasingFunc;
             target[name] = beginValue[name] + (easing(percent) * deltaValue[name]);
-        });
+        }
     }
 
     end(target: any): void {
-        this.options.forEach((attr) => {
-            target[attr.name] = attr.dest;
-        });
+        for (let i = 0, option: TransOption; option = this.options[i]; i++) {
+            target[option.name] = option.dest;
+        }
         this.done = true;
     }
 
@@ -143,11 +146,11 @@ export class Transition extends BaseAction {
 
         const { options, beginValue, deltaValue } = this;
 
-        options.forEach(e => {
-            let dest = beginValue[e.name];
-            beginValue[e.name] = e.dest;
-            deltaValue[e.name] = -deltaValue[e.name];
-            e.dest = dest;
-        });
+        for (let i = 0, option: TransOption; option = options[i]; i++) {
+            let dest = beginValue[option.name];
+            beginValue[option.name] = option.dest;
+            deltaValue[option.name] = -deltaValue[option.name];
+            option.dest = dest;
+        }
     }
 }

@@ -12,17 +12,18 @@ export declare type TransByProps = {
         easing: EasingFunc;
     };
 };
+export declare type TransOption = {
+    name: string;
+    dest: number;
+    easing: EasingFunc;
+};
 export declare class Transition extends BaseAction {
     static defaultEasingFunc: (pos: any) => number;
     static setDefaultEasingFunc(func: EasingFunc): void;
     protected elapsed: number;
     protected duration: number;
     protected isTransitionBy: boolean;
-    protected options: Array<{
-        name: string;
-        dest: number;
-        easing: EasingFunc;
-    }>;
+    protected options: TransOption[];
     protected beginValue: {
         [name: string]: number;
     };

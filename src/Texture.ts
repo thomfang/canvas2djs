@@ -1,4 +1,6 @@
-﻿export type Rect = {
+﻿import { CanvasSource } from "./CanvasSource";
+
+export type Rect = {
     x: number;
     y: number;
     width: number;
@@ -15,8 +17,11 @@ export class Texture {
     private static loadedImages: { [path: string]: HTMLImageElement } = {};
 
     private _readyCallbacks: any[] = [];
-    private _gridSourceCache: { [key: string]: HTMLCanvasElement } = {};
+    private _gridSourceCache: { [key: string]: CanvasSource } = {};
     private _gridSourceCount = 0;
+
+    public static retryTimes: number = 2;
+    public static version: string;
 
     public static create(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): Texture {
         var name = getCacheKey(source, sourceRect, textureRect);
@@ -62,8 +67,11 @@ export class Texture {
 
     width: number = 0;
     height: number = 0;
+    name: string;
 
     source: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement;
+
+    private canvasSource: CanvasSource;
 
     constructor(source: string | HTMLCanvasElement | HTMLImageElement, sourceRect?: Rect, textureRect?: Rect) {
         var name: any = getCacheKey(source, sourceRect, textureRect);
@@ -73,7 +81,7 @@ export class Texture {
         }
 
         if (typeof source === 'string') {
-            this._createByPath(source, sourceRect, textureRect);
+            this._createByPath(source, sourceRect, textureRect, Texture.retryTimes);
         }
         else if ((source instanceof HTMLImageElement) || (source instanceof HTMLCanvasElement)) {
             this._createByImage(<HTMLImageElement>source, sourceRect, textureRect);
@@ -83,6 +91,7 @@ export class Texture {
         }
 
         if (name) {
+            this.name = name;
             Texture.textureCache[name] = this;
         }
     }
@@ -100,10 +109,10 @@ export class Texture {
         w = Math.ceil(w);
         h = Math.ceil(h);
 
-        let cacheKey = getGridCacheKey(w, h, sx, sy, sw, sh, grid);
+        let cacheKey = [w, h, sx, sy, sw, sh, grid].join(':');
 
         if (this._gridSourceCache[cacheKey]) {
-            return this._gridSourceCache[cacheKey];
+            return this._gridSourceCache[cacheKey].canvas;
         }
 
         const [top, right, bottom, left, repeat] = grid;
@@ -118,12 +127,13 @@ export class Texture {
             { x: w - right, y: top, w: right, h: h - top - bottom, sx: sx + sw - right, sy: top, sw: right, sh: sh - top - bottom }, // right
         ];
         let centerGrid = { x: left, y: top, w: w - left - right, h: h - top - bottom, sx: sx + left, sy: top, sw: sw - left - right, sh: sh - top - bottom };
-        let canvas = document.createElement("canvas");
-        let context = canvas.getContext("2d");
+        let source = CanvasSource.create();
+        let canvas = source.canvas;
+        let context = source.context;
+        source.setSize(w, h);
 
-        canvas.width = w;
-        canvas.height = h;
-        grids.forEach(g => {
+        for (let i = 0, l = grids.length; i < l; i++) {
+            let g = grids[i];
             if (g.w && g.h) {
                 context.drawImage(this.source, g.sx, g.sy, g.sw, g.sh,
                     Math.ceil(g.x),
@@ -131,7 +141,7 @@ export class Texture {
                     Math.ceil(g.w),
                     Math.ceil(g.h));
             }
-        });
+        }
 
         if (repeat) {
             let cvs = getRepeatPatternSource(this.source, {
@@ -155,35 +165,64 @@ export class Texture {
                 Math.ceil(centerGrid.h));
         }
 
-        this._gridSourceCache[cacheKey] = canvas;
+        this._gridSourceCache[cacheKey] = source;
         this._gridSourceCount += 1;
         return canvas;
     }
 
     public clearCacheGridSources() {
+        for (let k in this._gridSourceCache) {
+            this._gridSourceCache[k].recycle();
+        }
         this._gridSourceCache = {};
         this._gridSourceCount = 0;
     }
 
-    private _createByPath(path: string, sourceRect?: Rect, textureRect?: Rect): void {
+    public destroy() {
+        if (this.canvasSource) {
+            this.canvasSource.recycle();
+        }
+        this.clearCacheGridSources();
+        this._readyCallbacks.length = 0;
+        this.source = this.canvasSource = null;
+    }
+
+    private _createByPath(path: string, sourceRect: Rect, textureRect: Rect, retryTimes: number): void {
         if (Texture.loadedImages[path]) {
             return this._onImageLoaded(img, path, sourceRect, textureRect);
         }
         var img: HTMLImageElement = Texture.loadingImages[path] || new Image();
-
-        img.addEventListener('load', () => {
+        var onLoad = () => {
             this._onImageLoaded(img, path, sourceRect, textureRect);
-        });
-        img.addEventListener('error', () => {
+            img.removeEventListener("load", onLoad);
+            img.removeEventListener("error", onError);
+        };
+        var onError = () => {
+            img.removeEventListener("load", onLoad);
+            img.removeEventListener("error", onError);
             delete Texture.loadingImages[path];
             img = null;
+            if (retryTimes) {
+                this._createByPath(path, sourceRect, textureRect, --retryTimes);
+            }
+            else {
+                this._readyCallbacks.length = 0;
+                if (this.name != null) {
+                    delete Texture.textureCache[this.name];
+                }
+            }
             console.warn(`canvas2d: Texture creating fail, error loading source "${path}".`);
-        });
+        };
+
+        img.addEventListener('load', onLoad);
+        img.addEventListener('error', onError);
+
+        let src = Texture.version != null ? path + '?v=' + Texture.version : path;
 
         if (!Texture.loadingImages[path]) {
             img.crossOrigin = 'anonymous';
-            img.src = path;
             Texture.loadingImages[path] = img;
+            img.src = src;
         }
     }
 
@@ -195,15 +234,15 @@ export class Texture {
 
         if (this._readyCallbacks.length) {
             let size = { width: this.width, height: this.height };
-            this._readyCallbacks.forEach((callback) => {
+            for (let i = 0, callback: Function; callback = this._readyCallbacks[i]; i++) {
                 callback(size);
-            });
+            }
             this._readyCallbacks.length = 0;
         }
         img = null;
     }
 
-    private _createByImage(image: HTMLImageElement, sourceRect?: Rect, textureRect?: Rect): void {
+    private _createByImage(image: HTMLImageElement, sourceRect: Rect, textureRect: Rect): void {
         var source;
 
         if (!sourceRect && !textureRect) {
@@ -227,7 +266,15 @@ export class Texture {
                 };
             }
 
-            source = createCanvas(image, sourceRect, textureRect);
+            // source = createCanvas(image, sourceRect, textureRect);
+
+            let canvasSource = this.canvasSource = CanvasSource.create();
+            canvasSource.setSize(textureRect.width, textureRect.height);
+            canvasSource.context.drawImage(
+                image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height,
+                textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
+
+            source = canvasSource.canvas;
         }
 
         this.width = source.width;
@@ -237,11 +284,7 @@ export class Texture {
     }
 }
 
-function getGridCacheKey(...args: any[]) {
-    return args.join(':');
-}
-
-function getCacheKey(source: any, sourceRect?: Rect, textureRect?: Rect): any {
+function getCacheKey(source: any, sourceRect: Rect, textureRect: Rect): any {
     var isStr = typeof source === 'string';
 
     if (!isStr && !source.src) {
@@ -255,19 +298,19 @@ function getCacheKey(source: any, sourceRect?: Rect, textureRect?: Rect): any {
     return src + sourceRectStr + textureRectStr;
 }
 
-function createCanvas(image: any, sourceRect: Rect, textureRect: Rect): HTMLCanvasElement {
-    var canvas: HTMLCanvasElement = document.createElement("canvas");
-    var context: CanvasRenderingContext2D = canvas.getContext('2d');
+// function createCanvas(image: any, sourceRect: Rect, textureRect: Rect): HTMLCanvasElement {
+//     var canvas: HTMLCanvasElement = document.createElement("canvas");
+//     var context: CanvasRenderingContext2D = canvas.getContext('2d');
 
-    canvas.width = textureRect.width;
-    canvas.height = textureRect.height;
+//     canvas.width = textureRect.width;
+//     canvas.height = textureRect.height;
 
-    context.drawImage(
-        image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height,
-        textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
+//     context.drawImage(
+//         image, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height,
+//         textureRect.x, textureRect.y, sourceRect.width, sourceRect.height);
 
-    return canvas;
-}
+//     return canvas;
+// }
 
 let cvs: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;

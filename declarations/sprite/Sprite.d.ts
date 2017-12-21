@@ -125,7 +125,7 @@ export declare class Sprite<T extends ISprite> extends EventEmitter {
     removeChildren(...children: Sprite<{}>[]): void;
     removeAllChildren(recusive?: boolean): void;
     replaceChild(oldChild: Sprite<{}>, ...newChildren: Sprite<{}>[]): void;
-    contains(target: Sprite<{}>): any;
+    contains(target: Sprite<{}>): boolean;
     release(recusive?: boolean): void;
     update(deltaTime: number): any;
 }

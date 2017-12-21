@@ -197,9 +197,9 @@ export class UIEvent {
 
         this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin, UIEvent.TOUCH_BEGIN);
 
-        helpers.forEach((touch) => {
+        for (let i = 0, touch: EventHelper; touch = helpers[i]; i++) {
             touch.beginTarget = touch.target;
-        });
+        }
 
         stage.emit(UIEvent.TOUCH_BEGIN, helpers, event);
         event.preventDefault();
@@ -228,14 +228,14 @@ export class UIEvent {
 
             this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, UIEvent.TOUCH_ENDED, true);
 
-            helpers.forEach(helper => {
+            for (let i = 0, helper: EventHelper; helper = helpers[i]; i++) {
                 if (!helper._moved || isMovedSmallRange(helper)) {
                     stage.emit(UIEvent.CLICK, helper, event);
                 }
                 helper.target = null;
                 helper.beginTarget = null;
                 this._touchHelperMap[helper.identifier] = null;
-            });
+            }
 
             stage.emit(UIEvent.TOUCH_ENDED, helpers, event);
             helpers = null;
@@ -355,8 +355,6 @@ export class UIEvent {
         var triggerreds: EventHelper[] = [];
         var result: EventHelper[];
 
-        var callback = helper => result.indexOf(helper) === -1;
-
         if (children && children.length) {
             let index = children.length;
 
@@ -366,7 +364,13 @@ export class UIEvent {
                     triggerreds.push(...result);
 
                     // Remove triggerred touch helper, it won't pass to other child sprites
-                    tmpHelpers = tmpHelpers.filter(callback);
+                    let t = [];
+                    for (let j = 0, e: EventHelper; e = tmpHelpers[j]; j++) {
+                        if (result.indexOf(e) === -1) {
+                            t.push(e);
+                        }
+                    }
+                    tmpHelpers = t;
 
                     // All triggerred then exit the loop
                     if (!tmpHelpers.length) {
@@ -376,9 +380,15 @@ export class UIEvent {
             }
         }
 
-        let hits: EventHelper[] = triggerreds.filter(helper => !helper.cancelBubble);
+        let hits: EventHelper[] = [];
         let count = 0;
-        
+
+        for (let k = 0, helper: EventHelper; helper = triggerreds[k]; k++) {
+            if (!helper.cancelBubble) {
+                hits.push(helper);
+            }
+        }
+
         if (tmpHelpers.length) {
             let rect: Rect = {
                 x: offsetX,
@@ -393,7 +403,7 @@ export class UIEvent {
             };
 
             for (let i = 0, helper: EventHelper; helper = tmpHelpers[i]; i++) {
-                if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+                if (isRectContainsPoint(rect, helper) || isCircleContainsPoint(circle, helper)) {
                     if (!helper.target) {
                         helper.target = sprite;
                     }
@@ -451,7 +461,7 @@ export class UIEvent {
         var count = 0;
 
         for (let i = 0, helper: EventHelper; helper = helpers[i]; i++) {
-            if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+            if (isRectContainsPoint(rect, helper) || isCircleContainsPoint(circle, helper)) {
                 helper.localX = helper.stageX - offsetX;
                 helper.localY = helper.stageY - offsetY;
 
@@ -467,7 +477,6 @@ export class UIEvent {
             if (children && children.length) {
                 let index = children.length;
                 let result;
-                let filterUnTriggerred = helper => result.indexOf(helper) === -1;
                 let tmpHelpers = hits.slice();
 
                 while (--index >= 0) {
@@ -476,7 +485,13 @@ export class UIEvent {
                         triggerreds.push(...result);
 
                         // Remove triggerred touch helper, it won't pass to other child sprites
-                        tmpHelpers = tmpHelpers.filter(filterUnTriggerred);
+                        let t = [];
+                        for (let j = 0, e: EventHelper; e = tmpHelpers[j]; j++) {
+                            if (result.indexOf(e) === -1) {
+                                t.push(e);
+                            }
+                        }
+                        tmpHelpers = t;
 
                         // All triggerred then exit the loop
                         if (!tmpHelpers.length) {
@@ -486,15 +501,19 @@ export class UIEvent {
                 }
             }
 
-            // hits = triggerreds.filter(helper => !helper.cancelBubble);
-            let bubbleHits = hits.filter(helper => !helper.cancelBubble);
+            let bubbleHits: EventHelper[] = [];
+            for (let k = 0, helper: EventHelper; helper = hits[k]; k++) {
+                if (!helper.cancelBubble) {
+                    bubbleHits.push(helper);
+                }
+            }
 
             if (bubbleHits.length) {
-                bubbleHits.forEach(e => {
+                for (let i = 0, e: EventHelper; e = bubbleHits[i]; i++) {
                     if (!e.target) {
                         e.target = sprite;
                     }
-                });
+                }
                 sprite.emit(eventName, bubbleHits, event);
                 sprite[methodName] && sprite[methodName](bubbleHits, event);
 
@@ -560,7 +579,7 @@ export class UIEvent {
             radius: sprite.radius
         };
 
-        if (triggerred || isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+        if (triggerred || isRectContainsPoint(rect, helper) || isCircleContainsPoint(circle, helper)) {
             if (!helper.target) {
                 helper.target = sprite;
             }
@@ -600,7 +619,7 @@ export class UIEvent {
             radius: sprite.radius
         };
 
-        if (isRectContainPoint(rect, helper) || isCircleContainPoint(circle, helper)) {
+        if (isRectContainsPoint(rect, helper) || isCircleContainsPoint(circle, helper)) {
             var children = sprite.children;
             var triggerred = false;
 
@@ -637,12 +656,12 @@ export class UIEvent {
     }
 }
 
-function isRectContainPoint(rect: Rect, p: EventHelper) {
+function isRectContainsPoint(rect: Rect, p: EventHelper) {
     return rect.x <= p.stageX && rect.x + rect.width >= p.stageX &&
         rect.y <= p.stageY && rect.y + rect.height >= p.stageY;
 }
 
-function isCircleContainPoint(circle: { x: number; y: number; radius: number }, p: EventHelper) {
+function isCircleContainsPoint(circle: { x: number; y: number; radius: number }, p: EventHelper) {
     var dx = p.stageX - circle.x;
     var dy = p.stageY - circle.y;
     return Math.sqrt(dx * dx + dy * dy) <= circle.radius;
