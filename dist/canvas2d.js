@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.5.9
+ * canvas2djs v2.6.0
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2243,7 +2243,7 @@ var UIEvent = (function () {
                     this.cancelBubble = true;
                 }
             };
-            _this._dispatchMouse(stage.sprite, 0, 0, helper, event, UIEvent.MOUSE_BEGIN, onMouseBegin);
+            _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseBegin, UIEvent.MOUSE_BEGIN);
             if (helper.target) {
                 helper.beginTarget = helper.target;
                 _this._mouseBeginHelper = helper;
@@ -2263,7 +2263,7 @@ var UIEvent = (function () {
                 mouseBeginHelper.stageY = location.y;
                 mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
                 mouseBeginHelper.cancelBubble = false;
-                _this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, UIEvent.MOUSE_MOVED, onMouseMoved);
+                _this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved, UIEvent.MOUSE_MOVED);
                 stage.emit(UIEvent.MOUSE_MOVED, mouseBeginHelper, event);
             }
             else {
@@ -2277,7 +2277,7 @@ var UIEvent = (function () {
                         this.cancelBubble = true;
                     }
                 };
-                _this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, UIEvent.MOUSE_MOVED, onMouseMoved);
+                _this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved, UIEvent.MOUSE_MOVED);
                 stage.emit(UIEvent.MOUSE_MOVED, mouseMovedHelper, event);
             }
             event.preventDefault();

@@ -260,7 +260,7 @@ export class UIEvent {
             }
         };
 
-        this._dispatchMouse(stage.sprite, 0, 0, helper, event, UIEvent.MOUSE_BEGIN, onMouseBegin);
+        this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseBegin, UIEvent.MOUSE_BEGIN);
 
         if (helper.target) {
             helper.beginTarget = helper.target;
@@ -285,7 +285,7 @@ export class UIEvent {
             mouseBeginHelper.stageY = location.y;
             mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
             mouseBeginHelper.cancelBubble = false;
-            this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, UIEvent.MOUSE_MOVED, onMouseMoved);
+            this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved, UIEvent.MOUSE_MOVED);
             stage.emit(UIEvent.MOUSE_MOVED, mouseBeginHelper, event);
         }
         else {
@@ -299,7 +299,7 @@ export class UIEvent {
                     this.cancelBubble = true;
                 }
             };
-            this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, UIEvent.MOUSE_MOVED, onMouseMoved);
+            this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved, UIEvent.MOUSE_MOVED);
             stage.emit(UIEvent.MOUSE_MOVED, mouseMovedHelper, event);
         }
 
