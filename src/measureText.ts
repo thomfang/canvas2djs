@@ -114,7 +114,7 @@ export function measureText(
 
         while (currentPos < text.length) {
             // console.log("remain width", remainWidth)
-            let breaker = nextBreak(text, currentPos, remainWidth, props.fontSize, autoResizeWidth);
+            let breaker = nextBreak(text, currentPos, remainWidth, props.fontSize, autoResizeWidth, width);
 
             if (breaker.words) {
                 tryLine = currentLine + breaker.words;
@@ -277,7 +277,7 @@ type Breaker = {
     required: boolean;
 }
 
-function nextBreak(text: string, currPos: number, width: number, fontSize: number, autoResizeWidth: boolean): Breaker {
+function nextBreak(text: string, currPos: number, width: number, fontSize: number, autoResizeWidth: boolean, maxWidth: number): Breaker {
     if (!autoResizeWidth && width < fontSize) {
         return {
             pos: currPos,
@@ -292,7 +292,40 @@ function nextBreak(text: string, currPos: number, width: number, fontSize: numbe
     let pos: number;
     let num: number;
 
-    num = autoResizeWidth ? text.length - currPos : Math.min(text.length - currPos, Math.floor(width / fontSize));
+    if (autoResizeWidth) {
+        num = text.length - currPos;
+    }
+    else {
+        num = Math.min(text.length - currPos, Math.floor(width / fontSize));
+        if (num > 0) {
+            var nt = text.slice(currPos);
+            var arr = nt.match(/[\u4e00-\u9fa5]|[\u3002|\uff1f|\uff01|\uff0c|\u3001|\uff1b|\uff1a|\u201c|\u201d|\u2018|\u2019|\uff08|\uff09|\u300a|\u300b|\u3008|\u3009|\u3010|\u3011|\u300e|\u300f|\u300c|\u300d|\ufe43|\ufe44|\u3014|\u3015|\u2026|\u2014|\uff5e|\ufe4f|\uffe5]+|[a-zA-Z0-9]+|\S/g);
+            if (arr) {
+                var i = 0;
+                var n = 0;
+                while (i < arr.length) {
+                    var w = arr[i];
+                    var p = nt.indexOf(w);
+                    var l = p + w.length;
+                    if (l > num && !(i === 0 && maxWidth / fontSize < l)) {
+                        break;
+                    }
+                    n = l;
+                    i++;
+                }
+                if (n == 0) {
+                    return {
+                        pos: currPos,
+                        words: "",
+                        required: true,
+                    }
+                }
+                num = n;
+            }
+        }
+    }
+
+    // num = autoResizeWidth ? text.length - currPos : Math.min(text.length - currPos, Math.floor(width / fontSize));
     nextWords = text.slice(currPos, currPos + num);
     breakPos = nextWords.indexOf('\n');
     required = breakPos > -1;
