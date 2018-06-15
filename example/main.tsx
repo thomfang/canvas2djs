@@ -176,7 +176,7 @@ namespace demo {
                     console.log("red box");
                 }} />
             </sprite>*/}
-            <sprite touchEnabled={false} left={10} right={10} top={10} bottom={10} grid={[20,20,20,20]} texture="img/roundrect-bg.png" />
+            {/* <sprite touchEnabled={false} left={10} right={10} top={10} bottom={10} grid={[20,20,20,20]} texture="img/roundrect-bg.png" /> */}
             <text {...titleProps} />
             {/* <text {...tipProps} text="This is a text with\n autoResizeWidth=true."></text> */}
             <text {...stateProps} update={() => {

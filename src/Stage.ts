@@ -353,6 +353,8 @@ export class Stage extends EventEmitter {
     step(deltaTime: number): void {
         var startComputeTime = Date.now();
 
+        this._uiEvent._handleEvent();
+
         this._frameCount += 1;
         this._elapsedTime += deltaTime;
         if (this._elapsedTime > 1) {

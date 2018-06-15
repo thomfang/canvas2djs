@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.6.1
+ * canvas2djs v2.6.2
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2187,17 +2187,15 @@ var UIEvent = (function () {
     function UIEvent(stage) {
         var _this = this;
         this._touchHelperMap = {};
+        this._eventQueue = [];
         this._touchBeginHandler = function (event) {
             var stage = _this.stage;
             if (!stage.isRunning || !stage.touchEnabled) {
                 return;
             }
-            var helpers = _this._transformTouches(event.changedTouches);
-            _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin, UIEvent.TOUCH_BEGIN);
-            for (var i = 0, touch = void 0; touch = helpers[i]; i++) {
-                touch.beginTarget = touch.target;
+            if (_this._eventQueue.indexOf(event) < 0) {
+                _this._eventQueue.push(event);
             }
-            stage.emit(UIEvent.TOUCH_BEGIN, helpers, event);
             event.preventDefault();
         };
         this._touchMovedHandler = function (event) {
@@ -2205,26 +2203,17 @@ var UIEvent = (function () {
             if (!stage.isRunning || !stage.touchEnabled) {
                 return;
             }
-            var helpers = _this._transformTouches(event.changedTouches);
-            _this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved, UIEvent.TOUCH_MOVED);
-            stage.emit(UIEvent.TOUCH_MOVED, helpers, event);
+            if (_this._eventQueue.indexOf(event) < 0) {
+                _this._eventQueue.push(event);
+            }
             event.preventDefault();
         };
         this._touchEndedHandler = function (event) {
             var stage = _this.stage;
             if (stage.isRunning && stage.touchEnabled) {
-                var helpers = _this._transformTouches(event.changedTouches, true);
-                _this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, UIEvent.TOUCH_ENDED, true);
-                for (var i = 0, helper = void 0; helper = helpers[i]; i++) {
-                    if (!helper._moved || isMovedSmallRange(helper)) {
-                        stage.emit(UIEvent.CLICK, helper, event);
-                    }
-                    helper.target = null;
-                    helper.beginTarget = null;
-                    _this._touchHelperMap[helper.identifier] = null;
+                if (_this._eventQueue.indexOf(event) < 0) {
+                    _this._eventQueue.push(event);
                 }
-                stage.emit(UIEvent.TOUCH_ENDED, helpers, event);
-                helpers = null;
             }
         };
         this._mouseBeginHandler = function (event) {
@@ -2232,23 +2221,9 @@ var UIEvent = (function () {
             if (!stage.isRunning || !stage.mouseEnabled) {
                 return;
             }
-            var location = _this._transformLocation(event);
-            var helper = {
-                beginX: location.x,
-                beginY: location.y,
-                stageX: location.x,
-                stageY: location.y,
-                cancelBubble: false,
-                stopPropagation: function () {
-                    this.cancelBubble = true;
-                }
-            };
-            _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseBegin, UIEvent.MOUSE_BEGIN);
-            if (helper.target) {
-                helper.beginTarget = helper.target;
-                _this._mouseBeginHelper = helper;
+            if (_this._eventQueue.indexOf(event) < 0) {
+                _this._eventQueue.push(event);
             }
-            stage.emit(UIEvent.MOUSE_BEGIN, helper, event);
             event.preventDefault();
         };
         this._mouseMovedHandler = function (event) {
@@ -2256,50 +2231,18 @@ var UIEvent = (function () {
             if (!stage.isRunning || !stage.mouseEnabled) {
                 return;
             }
-            var location = _this._transformLocation(event);
-            var mouseBeginHelper = _this._mouseBeginHelper;
-            if (mouseBeginHelper) {
-                mouseBeginHelper.stageX = location.x;
-                mouseBeginHelper.stageY = location.y;
-                mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
-                mouseBeginHelper.cancelBubble = false;
-                _this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved, UIEvent.MOUSE_MOVED);
-                stage.emit(UIEvent.MOUSE_MOVED, mouseBeginHelper, event);
-            }
-            else {
-                var mouseMovedHelper = _this._mouseMovedHelper = {
-                    beginX: null,
-                    beginY: null,
-                    stageX: location.x,
-                    stageY: location.y,
-                    cancelBubble: false,
-                    stopPropagation: function () {
-                        this.cancelBubble = true;
-                    }
-                };
-                _this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved, UIEvent.MOUSE_MOVED);
-                stage.emit(UIEvent.MOUSE_MOVED, mouseMovedHelper, event);
+            if (_this._eventQueue.indexOf(event) < 0) {
+                _this._eventQueue.push(event);
             }
             event.preventDefault();
         };
         this._mouseEndedHandler = function (event) {
             var stage = _this.stage;
             if (stage.isRunning && stage.mouseEnabled) {
-                var location = _this._transformLocation(event);
-                var helper = _this._mouseBeginHelper || _this._mouseMovedHelper;
-                var target;
-                helper.stageX = location.x;
-                helper.stageY = location.y;
-                target = helper.target;
-                var triggerClick = !helper._moved || isMovedSmallRange(helper);
-                _this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, UIEvent.MOUSE_ENDED, triggerClick);
-                if (!helper._moved || isMovedSmallRange(helper)) {
-                    stage.emit(UIEvent.CLICK, helper, event);
+                if (_this._eventQueue.indexOf(event) < 0) {
+                    _this._eventQueue.push(event);
                 }
-                stage.emit(UIEvent.MOUSE_ENDED, helper, event);
-                helper.target = helper.beginTarget = null;
             }
-            _this._mouseBeginHelper = _this._mouseMovedHelper = null;
         };
         this.stage = stage;
         this.element = stage.canvas;
@@ -2340,6 +2283,39 @@ var UIEvent = (function () {
         this._touchBeginHandler = this._touchMovedHandler = this._touchEndedHandler = null;
         this._touchHelperMap = null;
         this.element = this.stage = null;
+    };
+    UIEvent.prototype._handleEvent = function () {
+        var queue = this._eventQueue;
+        if (queue.length <= 0 || !this.stage.isRunning) {
+            return;
+        }
+        try {
+            for (var i = 0, event = void 0; event = queue[i]; i++) {
+                switch (event.type) {
+                    case 'touchstart':
+                        this._handleTouchBegin(event);
+                        break;
+                    case 'touchmove':
+                        this._handleTouchMoved(event);
+                        break;
+                    case 'touchend':
+                        this._handleTouchEnded(event);
+                        break;
+                    case 'mousedown':
+                        this._handleMouseBegin(event);
+                        break;
+                    case 'mousemove':
+                        this._handleMouseMoved(event);
+                        break;
+                    case 'mouseup':
+                        this._handleMouseEnded(event);
+                        break;
+                }
+            }
+        }
+        catch (e) {
+        }
+        queue.length = 0;
     };
     UIEvent.prototype._transformLocation = function (event) {
         var clientRect = this.element.getBoundingClientRect();
@@ -2410,6 +2386,100 @@ var UIEvent = (function () {
             helpers.push(helper);
         }
         return helpers;
+    };
+    UIEvent.prototype._handleTouchBegin = function (event) {
+        var stage = this.stage;
+        var helpers = this._transformTouches(event.changedTouches);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchBegin, UIEvent.TOUCH_BEGIN);
+        for (var i = 0, touch = void 0; touch = helpers[i]; i++) {
+            touch.beginTarget = touch.target;
+        }
+        stage.emit(UIEvent.TOUCH_BEGIN, helpers, event);
+    };
+    UIEvent.prototype._handleTouchMoved = function (event) {
+        var stage = this.stage;
+        var helpers = this._transformTouches(event.changedTouches);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers, event, onTouchMoved, UIEvent.TOUCH_MOVED);
+        stage.emit(UIEvent.TOUCH_MOVED, helpers, event);
+    };
+    UIEvent.prototype._handleTouchEnded = function (event) {
+        var stage = this.stage;
+        var helpers = this._transformTouches(event.changedTouches, true);
+        this._dispatchTouch(stage.sprite, 0, 0, helpers.slice(), event, onTouchEnded, UIEvent.TOUCH_ENDED, true);
+        for (var i = 0, helper = void 0; helper = helpers[i]; i++) {
+            if (!helper._moved || isMovedSmallRange(helper)) {
+                stage.emit(UIEvent.CLICK, helper, event);
+            }
+            helper.target = null;
+            helper.beginTarget = null;
+            this._touchHelperMap[helper.identifier] = null;
+        }
+        stage.emit(UIEvent.TOUCH_ENDED, helpers, event);
+        helpers = null;
+    };
+    UIEvent.prototype._handleMouseBegin = function (event) {
+        var stage = this.stage;
+        var location = this._transformLocation(event);
+        var helper = {
+            beginX: location.x,
+            beginY: location.y,
+            stageX: location.x,
+            stageY: location.y,
+            cancelBubble: false,
+            stopPropagation: function () {
+                this.cancelBubble = true;
+            }
+        };
+        this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseBegin, UIEvent.MOUSE_BEGIN);
+        if (helper.target) {
+            helper.beginTarget = helper.target;
+            this._mouseBeginHelper = helper;
+        }
+        stage.emit(UIEvent.MOUSE_BEGIN, helper, event);
+    };
+    UIEvent.prototype._handleMouseMoved = function (event) {
+        var stage = this.stage;
+        var location = this._transformLocation(event);
+        var mouseBeginHelper = this._mouseBeginHelper;
+        if (mouseBeginHelper) {
+            mouseBeginHelper.stageX = location.x;
+            mouseBeginHelper.stageY = location.y;
+            mouseBeginHelper._moved = mouseBeginHelper.beginX - location.x !== 0 || mouseBeginHelper.beginY - location.y !== 0;
+            mouseBeginHelper.cancelBubble = false;
+            this._dispatchMouse(stage.sprite, 0, 0, mouseBeginHelper, event, onMouseMoved, UIEvent.MOUSE_MOVED);
+            stage.emit(UIEvent.MOUSE_MOVED, mouseBeginHelper, event);
+        }
+        else {
+            var mouseMovedHelper = this._mouseMovedHelper = {
+                beginX: null,
+                beginY: null,
+                stageX: location.x,
+                stageY: location.y,
+                cancelBubble: false,
+                stopPropagation: function () {
+                    this.cancelBubble = true;
+                }
+            };
+            this._dispatchMouse(stage.sprite, 0, 0, mouseMovedHelper, event, onMouseMoved, UIEvent.MOUSE_MOVED);
+            stage.emit(UIEvent.MOUSE_MOVED, mouseMovedHelper, event);
+        }
+    };
+    UIEvent.prototype._handleMouseEnded = function (event) {
+        var stage = this.stage;
+        var location = this._transformLocation(event);
+        var helper = this._mouseBeginHelper || this._mouseMovedHelper;
+        var target;
+        helper.stageX = location.x;
+        helper.stageY = location.y;
+        target = helper.target;
+        var triggerClick = !helper._moved || isMovedSmallRange(helper);
+        this._dispatchMouse(stage.sprite, 0, 0, helper, event, onMouseEnded, UIEvent.MOUSE_ENDED, triggerClick);
+        if (!helper._moved || isMovedSmallRange(helper)) {
+            stage.emit(UIEvent.CLICK, helper, event);
+        }
+        stage.emit(UIEvent.MOUSE_ENDED, helper, event);
+        helper.target = helper.beginTarget = null;
+        this._mouseBeginHelper = this._mouseMovedHelper = null;
     };
     UIEvent.prototype._dispatchTouch = function (sprite, offsetX, offsetY, helpers, event, methodName, eventName, needTriggerClick) {
         if (!sprite.touchEnabled || !sprite.visible) {
@@ -3021,6 +3091,7 @@ var Stage = (function (_super) {
     };
     Stage.prototype.step = function (deltaTime) {
         var startComputeTime = Date.now();
+        this._uiEvent._handleEvent();
         this._frameCount += 1;
         this._elapsedTime += deltaTime;
         if (this._elapsedTime > 1) {
