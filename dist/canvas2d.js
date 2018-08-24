@@ -1,5 +1,5 @@
 /**
- * canvas2djs v2.6.2
+ * canvas2djs v2.6.3
  * Copyright (c) 2013-present Todd Fon <tilfon@live.com>
  * All rights reserved.
  */
@@ -2653,9 +2653,9 @@ var UIEvent = (function () {
                     break;
                 }
             }
-            if (helper.cancelBubble) {
-                return true;
-            }
+            // if (helper.cancelBubble) {
+            //     return true;
+            // }
         }
         var rect = {
             x: offsetX,
@@ -2706,9 +2706,9 @@ var UIEvent = (function () {
                         break;
                     }
                 }
-                if (helper.cancelBubble) {
-                    return true;
-                }
+                // if (helper.cancelBubble) {
+                //     return true;
+                // }
             }
             if (!helper.target) {
                 helper.target = sprite;

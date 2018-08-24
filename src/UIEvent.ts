@@ -644,9 +644,9 @@ export class UIEvent {
                 }
             }
 
-            if (helper.cancelBubble) {
-                return true;
-            }
+            // if (helper.cancelBubble) {
+            //     return true;
+            // }
         }
 
         var rect: Rect = {
@@ -715,9 +715,9 @@ export class UIEvent {
                     }
                 }
 
-                if (helper.cancelBubble) {
-                    return true;
-                }
+                // if (helper.cancelBubble) {
+                //     return true;
+                // }
             }
 
             if (!helper.target) {
